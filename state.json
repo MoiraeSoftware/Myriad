@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-02-27T10:03:59Z",
-  "last_run_id": "22481680928",
-  "tasks_run": ["task1", "task7", "task11"],
+  "last_run": "2026-02-28T09:45:41Z",
+  "last_run_id": "22518295281",
+  "tasks_run": ["task7", "task11"],
   "backlog_cursor": {
     "issues_last_processed": 183,
-    "labels_last_processed": 208
+    "labels_last_processed": 210
   },
   "monthly_activity_issue": {
     "number": 204,
@@ -18,15 +18,16 @@
   },
   "labels_applied": {
     "203": ["enhancement", "help wanted"],
-    "208": ["refactor"]
+    "208": ["refactor"],
+    "210": ["refactor"]
   },
   "fix_attempts": {},
   "welcomed_contributors": [],
   "improvement_ideas_submitted": [],
   "last_tasks": {
     "task1": "2026-02-27T10:03:59Z",
-    "task7": "2026-02-27T10:03:59Z",
-    "task11": "2026-02-27T10:03:59Z",
+    "task7": "2026-02-28T09:45:41Z",
+    "task11": "2026-02-28T09:45:41Z",
     "task2": null,
     "task3": null,
     "task4": null,
@@ -38,8 +39,8 @@
   },
   "open_prs": {
     "189": "Remove mergenupkg - draft Copilot PR fixing #183 (critical for enabling releases)",
-    "207": "Docs update for external-plugins cross-framework compatibility - created by github-actions"
+    "207": "Docs update for external-plugins cross-framework compatibility - from daily-doc-updater"
   },
   "checked_off_by_maintainer": ["201", "202"],
-  "notes": "Default branch is 'master'. Latest release is v0.8.3 (Sep 2023). Current version in code is 0.8.4 (Directory.Build.props). [Unreleased] section in CHANGELOG has significant changes but PR #189 (remove mergenupkg) must be merged first to fix the publish pipeline before a release can be cut. Issues 175, 176, 183 are old open issues. #176: FS3560 warning fix identified (change copyInfo to None in FieldsGenerator.fs). #208 and #203 are automated duplicate-code-detection issues."
+  "notes": "Default branch is 'master'. Latest release is v0.8.3 (Sep 2023). Current version in code is 0.8.4 (Directory.Build.props). [Unreleased] section in CHANGELOG has significant changes but PR #189 (remove mergenupkg) must be merged first to fix the publish pipeline before a release can be cut. Issues 175, 176, 183 are old open issues. #176: FS3560 warning fix identified (change copyInfo to None in FieldsGenerator.fs). #208 and #210 are automated duplicate-code-detection issues (already labeled refactor). #209 is agentics no-op tracker (do not engage). #207 expires Mar 1 2026."
 }
