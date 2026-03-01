@@ -1,15 +1,15 @@
 {
-  "last_run": "2026-02-28T09:45:41Z",
-  "last_run_id": "22518295281",
-  "tasks_run": ["task7", "task11"],
+  "last_run": "2026-03-01T09:50:15Z",
+  "last_run_id": "22540828706",
+  "tasks_run": ["task3", "task7", "task11"],
   "backlog_cursor": {
-    "issues_last_processed": 183,
-    "labels_last_processed": 210
+    "issues_last_processed": 211,
+    "labels_last_processed": 211
   },
   "monthly_activity_issue": {
-    "number": 204,
-    "month": "2026-02",
-    "title": "[Repo Assist] Monthly Activity 2026-02"
+    "number": "TBD-aw_mar26",
+    "month": "2026-03",
+    "title": "[Repo Assist] Monthly Activity 2026-03"
   },
   "comments_made": {
     "184": "2026-02-26T10:11:47Z",
@@ -19,17 +19,21 @@
   "labels_applied": {
     "203": ["enhancement", "help wanted"],
     "208": ["refactor"],
-    "210": ["refactor"]
+    "210": ["refactor"],
+    "211": ["refactor", "enhancement"]
   },
   "fix_attempts": {},
+  "pr_attempts": {
+    "211": "2026-03-01 - created repo-assist/improve-config-extraction PR (GeneratorConfig helper refactoring)"
+  },
   "welcomed_contributors": [],
-  "improvement_ideas_submitted": [],
+  "improvement_ideas_submitted": ["GeneratorConfig helper refactoring (issue #211, March 2026)"],
   "last_tasks": {
     "task1": "2026-02-27T10:03:59Z",
-    "task7": "2026-02-28T09:45:41Z",
-    "task11": "2026-02-28T09:45:41Z",
+    "task7": "2026-03-01T09:50:15Z",
+    "task11": "2026-03-01T09:50:15Z",
     "task2": null,
-    "task3": null,
+    "task3": "2026-03-01T09:50:15Z",
     "task4": null,
     "task5": "2026-02-27T10:03:59Z",
     "task6": null,
@@ -39,8 +43,8 @@
   },
   "open_prs": {
     "189": "Remove mergenupkg - draft Copilot PR fixing #183 (critical for enabling releases)",
-    "207": "Docs update for external-plugins cross-framework compatibility - from daily-doc-updater"
+    "TBD-config-extraction": "Refactor GeneratorConfig helper extraction (branch: repo-assist/improve-config-extraction, Closes #211)"
   },
   "checked_off_by_maintainer": ["201", "202"],
-  "notes": "Default branch is 'master'. Latest release is v0.8.3 (Sep 2023). Current version in code is 0.8.4 (Directory.Build.props). [Unreleased] section in CHANGELOG has significant changes but PR #189 (remove mergenupkg) must be merged first to fix the publish pipeline before a release can be cut. Issues 175, 176, 183 are old open issues. #176: FS3560 warning fix identified (change copyInfo to None in FieldsGenerator.fs). #208 and #210 are automated duplicate-code-detection issues (already labeled refactor). #209 is agentics no-op tracker (do not engage). #207 expires Mar 1 2026."
+  "notes": "Default branch is 'master'. Latest release is v0.8.3 (Sep 2023). Latest tag is v0.8.4. [Unreleased] section in CHANGELOG has significant changes but PR #189 (remove mergenupkg) must be merged first to fix the publish pipeline before a release can be cut. Issues 175, 176, 183 are old open issues. #176: FS3560 warning fix identified (change copyInfo to None in FieldsGenerator.fs). #207 was merged on Feb 28 by 7sharp9. Feb monthly activity issue #204 closed on Mar 1; new March issue created. PR #189 still draft/open. PR for GeneratorConfig extraction created this run (Closes #211). Issues #208 and #210 are automated duplicate-code-detection issues (already labeled refactor). #209 is agentics no-op tracker (do not engage)."
 }
