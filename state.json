@@ -1,9 +1,9 @@
 {
-  "last_run": "2026-03-03T10:05:01Z",
-  "last_run_id": "22617950600",
-  "tasks_run": ["task1", "task2", "task11"],
+  "last_run": "2026-03-04T10:02:41Z",
+  "last_run_id": "22664378092",
+  "tasks_run": ["task2", "task11"],
   "backlog_cursor": {
-    "issues_last_processed": 229,
+    "issues_last_processed": 231,
     "labels_last_processed": 221
   },
   "monthly_activity_issue": {
@@ -12,7 +12,8 @@
     "title": "[Repo Assist] Monthly Activity 2026-03"
   },
   "comments_made": {
-    "221": "2026-03-03T10:05:01Z"
+    "221": "2026-03-03T10:05:01Z",
+    "231": "2026-03-04T10:02:41Z"
   },
   "labels_applied": {
     "221": ["refactor", "enhancement"]
@@ -22,23 +23,26 @@
   },
   "fix_attempts": {
     "duplicate-editorConfigTests": "2026-03-02 - fixed in PR #227 (merged)",
-    "issue-229-extract-case-match-clause": "2026-03-03 - created PR (branch: repo-assist/fix-issue-229-extract-case-match-clause-helper)"
+    "issue-229-extract-case-match-clause": "2026-03-03 - created PR #230 (merged by 7sharp9)",
+    "issue-231-extract-generator-helpers": "2026-03-04 - created PR (branch: repo-assist/fix-issue-231-extract-generator-helpers)"
   },
   "pr_attempts": {
     "release-v0.8.5": "2026-03-02 - created PR #222, merged by 7sharp9",
-    "fix-issue-229": "2026-03-03 - created PR (branch: repo-assist/fix-issue-229-extract-case-match-clause-helper)"
+    "fix-issue-229": "2026-03-03 - created PR #230, merged by 7sharp9",
+    "fix-issue-231": "2026-03-04 - created PR (branch: repo-assist/fix-issue-231-extract-generator-helpers)"
   },
   "welcomed_contributors": [],
   "improvement_ideas_submitted": [
     "GeneratorConfig helper refactoring (issue #211, closed)",
     "Release v0.8.5 preparation (PR #222, merged)",
-    "Extract createCaseMatchClause helper in DUCasesGenerator (PR for #229, branch: repo-assist/fix-issue-229-extract-case-match-clause-helper)"
+    "Extract createCaseMatchClause helper in DUCasesGenerator (PR #230, merged by 7sharp9)",
+    "Extract parseInputAst and filterByAttribute helpers to GeneratorHelpers (PR for #231, branch: repo-assist/fix-issue-231-extract-generator-helpers)"
   ],
   "last_tasks": {
     "task1": "2026-03-03T10:05:01Z",
     "task7": "2026-03-02T10:11:05Z",
-    "task11": "2026-03-03T10:05:01Z",
-    "task2": "2026-03-03T10:05:01Z",
+    "task11": "2026-03-04T10:02:41Z",
+    "task2": "2026-03-04T10:02:41Z",
     "task3": "2026-03-01T09:50:15Z",
     "task4": null,
     "task5": "2026-02-27T10:03:59Z",
@@ -48,9 +52,8 @@
     "task10": null
   },
   "open_prs": {
-    "228": "[docs] Update documentation for v0.8.5 features from 2026-03-03",
-    "TBD-fix-229": "Extract createCaseMatchClause helper in DUCasesGenerator (closes #229, branch: repo-assist/fix-issue-229-extract-case-match-clause-helper)"
+    "TBD-fix-231": "Extract parseInputAst and filterByAttribute helpers to GeneratorHelpers (closes #231, branch: repo-assist/fix-issue-231-extract-generator-helpers)"
   },
   "checked_off_by_maintainer": ["201", "202", "release-v0.8.5-pr", "220-pr", "221-label"],
-  "notes": "Default branch is 'master'. v0.8.5 was released (PR #222 merged 2026-03-02 by 7sharp9). PR #227 (fix duplicate editorConfigTests) also merged same day. Monthly activity PR items all checked off by maintainer. Open issues: #229 (duplicate code in DUCasesGenerator - fix PR created this run), #221 (duplicate code extraction across generators - commented this run), #209 (agentics no-op tracker - do not engage). PR #228 open (daily docs update for v0.8.5 features). Next priority tasks: task4 (deps check), task6 (stale PRs), task9 (new contributors), task10 (take repo forward)."
+  "notes": "Default branch is 'master'. v0.8.5 was released (PR #222 merged 2026-03-02 by 7sharp9). PR #227 (fix duplicate editorConfigTests) merged 2026-03-02. PR #228 (docs update) closed 2026-03-03. PR #230 (fix-issue-229) merged by 7sharp9 on 2026-03-03. Issue #229 closed as completed. Issue #231 (AST parsing + namespace filtering boilerplate in all generators) opened 2026-03-04 by duplicate-code-detector - fix PR created this run. Open issues: #231 (new, fix PR created), #221 (duplicate code extraction - commented), #209 (agentics no-op tracker - do not engage). Next priority tasks: task4 (deps check), task6 (stale PRs - likely nothing), task7 (labels), task9 (new contributors), task10 (take repo forward)."
 }
