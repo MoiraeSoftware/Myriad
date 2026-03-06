@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-03-05T10:07:20Z",
-  "last_run_id": "22712714919",
-  "tasks_run": ["task2", "task11"],
+  "last_run": "2026-03-06T10:00:50Z",
+  "last_run_id": "22758465247",
+  "tasks_run": ["task1", "task4", "task7", "task11"],
   "backlog_cursor": {
-    "issues_last_processed": 240,
-    "labels_last_processed": 221
+    "issues_last_processed": 242,
+    "labels_last_processed": 242
   },
   "monthly_activity_issue": {
     "number": 223,
@@ -13,10 +13,12 @@
   },
   "comments_made": {
     "221": "2026-03-05T10:07:20Z",
-    "231": "2026-03-04T10:02:41Z"
+    "231": "2026-03-04T10:02:41Z",
+    "242": "2026-03-06T10:00:50Z"
   },
   "labels_applied": {
-    "221": ["refactor", "enhancement"]
+    "221": ["refactor", "enhancement"],
+    "242": ["duplicate"]
   },
   "labels_removed": {
     "221": ["bug"]
@@ -25,13 +27,15 @@
     "duplicate-editorConfigTests": "2026-03-02 - fixed in PR #227 (merged)",
     "issue-229-extract-case-match-clause": "2026-03-03 - created PR #230 (merged by 7sharp9)",
     "issue-231-extract-generator-helpers": "2026-03-04 - created PR #232 (merged by 7sharp9)",
-    "issue-240-extract-generate-modules": "2026-03-05 - created PR (branch: repo-assist/fix-issue-240-extract-generate-modules-helper)"
+    "issue-240-extract-generate-modules": "2026-03-05 - created PR #241 (open/draft)",
+    "deps-update-2026-03-06": "2026-03-06 - Expecto 10.2.1 -> 10.2.3 patch update PR created"
   },
   "pr_attempts": {
     "release-v0.8.5": "2026-03-02 - created PR #222, merged by 7sharp9",
     "fix-issue-229": "2026-03-03 - created PR #230, merged by 7sharp9",
     "fix-issue-231": "2026-03-04 - created PR #232, merged by 7sharp9",
-    "fix-issue-240": "2026-03-05 - created PR (branch: repo-assist/fix-issue-240-extract-generate-modules-helper)"
+    "fix-issue-240": "2026-03-05 - created PR #241 (open/draft, branch: repo-assist/fix-issue-240-extract-generate-modules-helper)",
+    "deps-update-2026-03-06": "2026-03-06 - created PR (branch: repo-assist/deps-update-2026-03-06, Expecto 10.2.1 -> 10.2.3)"
   },
   "welcomed_contributors": [],
   "improvement_ideas_submitted": [
@@ -39,15 +43,16 @@
     "Release v0.8.5 preparation (PR #222, merged)",
     "Extract createCaseMatchClause helper in DUCasesGenerator (PR #230, merged by 7sharp9)",
     "Extract parseInputAst and filterByAttribute helpers to GeneratorHelpers (PR #232, merged by 7sharp9)",
-    "Extract generateModules helper to eliminate Generate boilerplate (PR for #240, branch: repo-assist/fix-issue-240-extract-generate-modules-helper)"
+    "Extract generateModules helper to eliminate Generate boilerplate (PR #241, open/draft, closes #240)",
+    "Dependency update: Expecto 10.2.1 -> 10.2.3 (patch, PR created 2026-03-06)"
   ],
   "last_tasks": {
-    "task1": "2026-03-03T10:05:01Z",
-    "task7": "2026-03-02T10:11:05Z",
-    "task11": "2026-03-05T10:07:20Z",
+    "task1": "2026-03-06T10:00:50Z",
+    "task7": "2026-03-06T10:00:50Z",
+    "task11": "2026-03-06T10:00:50Z",
     "task2": "2026-03-05T10:07:20Z",
     "task3": "2026-03-01T09:50:15Z",
-    "task4": null,
+    "task4": "2026-03-06T10:00:50Z",
     "task5": "2026-02-27T10:03:59Z",
     "task6": null,
     "task8": "2026-03-02T10:11:05Z",
@@ -55,9 +60,16 @@
     "task10": null
   },
   "open_prs": {
-    "TBD-fix-240": "Extract generateModules helper (closes #240, branch: repo-assist/fix-issue-240-extract-generate-modules-helper)",
-    "239": "[docs] Update documentation for infrastructure fixes from 2026-03-04 (github-actions[bot], needs maintainer review/close)"
+    "241": "[Repo Assist] Refactor: extract generateModules helper - closes #240 (branch: repo-assist/fix-issue-240-extract-generate-modules-helper)",
+    "239": "[docs] Update documentation for infrastructure fixes from 2026-03-04 (github-actions[bot], needs maintainer review/close)",
+    "deps-2026-03-06": "[Repo Assist] chore: update Expecto 10.2.1 -> 10.2.3 (branch: repo-assist/deps-update-2026-03-06)"
   },
   "checked_off_by_maintainer": ["201", "202", "release-v0.8.5-pr", "220-pr", "221-label", "232-pr-merged"],
-  "notes": "Default branch is 'master'. v0.8.5 was released (PR #222 merged 2026-03-02). PR #227 merged 2026-03-02. PR #230 merged by 7sharp9 2026-03-03. PR #232 (parseInputAst+filterByAttribute helpers) merged by 7sharp9 2026-03-04. Issues #229, #231 closed. Issue #240 (new, 2026-03-05) - generateModules helper fix PR created this run. Issue #221 still open (partially addressed). PR #239 ([docs]) open and needs maintainer attention. Next priority tasks: task4 (deps check), task6 (stale PRs), task7 (labels), task9 (new contributors), task10 (take repo forward)."
+  "pending_deps_investigation": {
+    "FSharp.Core": "9.0.101 -> 10.0.103 (requires .NET 10 SDK migration)",
+    "FSharp.Compiler.Service": "43.9.101 -> 43.10.103 (requires .NET 10)",
+    "Tomlyn": "0.18 -> 1.0.0 (major version bump, needs API compat check)",
+    "System_packages": "9.0.x -> 10.0.x (transitive, will update with FCS/FSharp.Core)"
+  },
+  "notes": "Default branch is 'master'. v0.8.5 was released (PR #222 merged 2026-03-02). PR #230, #232 merged by 7sharp9. PR #241 (generateModules helper, closes #240) still open/draft. Issue #242 is duplicate of #240 - commented + labelled duplicate. PR for Expecto patch update created (2026-03-06). Next priority tasks: task5 (maintain Repo Assist PRs), task6 (stale PRs), task9 (new contributors), task10 (take repo forward)."
 }
