@@ -20,3 +20,13 @@ module internal GeneratorHelpers =
             match types |> List.filter Ast.hasAttribute<'A> with
             | [] -> None
             | types -> Some (ns, types))
+
+    /// Resolves a DU case identifier, optionally qualifying it with the parent type name
+    /// when RequireQualifiedAccess is present.
+    let resolveCaseIdent (requiresQualifiedAccess: bool) (parent: LongIdent) (id: Ident) : SynLongIdent =
+        let parts =
+            if requiresQualifiedAccess then
+                (parent |> List.map (fun i -> i.idText)) @ [id.idText]
+            else
+                [id.idText]
+        SynLongIdent.Create parts
