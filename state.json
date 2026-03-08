@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-03-07T09:49:12Z",
-  "last_run_id": "22796745540",
-  "tasks_run": ["task5", "task10", "task11"],
+  "last_run": "2026-03-08T09:50:47Z",
+  "last_run_id": "22818604144",
+  "tasks_run": ["task1", "task7", "task11"],
   "backlog_cursor": {
-    "issues_last_processed": 244,
-    "labels_last_processed": 244
+    "issues_last_processed": 246,
+    "labels_last_processed": 246
   },
   "monthly_activity_issue": {
     "number": 223,
@@ -15,11 +15,13 @@
     "221": "2026-03-05T10:07:20Z",
     "231": "2026-03-04T10:02:41Z",
     "242": "2026-03-06T10:00:50Z",
-    "244": "2026-03-07T09:49:12Z"
+    "244": "2026-03-07T09:49:12Z",
+    "246": "2026-03-08T09:50:47Z"
   },
   "labels_applied": {
     "221": ["refactor", "enhancement"],
-    "242": ["duplicate"]
+    "242": ["duplicate"],
+    "246": ["duplicate"]
   },
   "labels_removed": {
     "221": ["bug"]
@@ -30,15 +32,15 @@
     "issue-231-extract-generator-helpers": "2026-03-04 - created PR #232 (merged by 7sharp9)",
     "issue-240-extract-generate-modules": "2026-03-05 - created PR #241 (open/draft)",
     "deps-update-2026-03-06": "2026-03-06 - Expecto 10.2.1 -> 10.2.3 patch update PR #243 created",
-    "issue-244-resolve-case-ident": "2026-03-07 - created PR (branch: repo-assist/fix-issue-244-resolve-case-ident-helper, closes #244)"
+    "issue-244-resolve-case-ident": "2026-03-07 - created PR #245 (closes #244)"
   },
   "pr_attempts": {
     "release-v0.8.5": "2026-03-02 - created PR #222, merged by 7sharp9",
     "fix-issue-229": "2026-03-03 - created PR #230, merged by 7sharp9",
     "fix-issue-231": "2026-03-04 - created PR #232, merged by 7sharp9",
-    "fix-issue-240": "2026-03-05 - created PR #241 (open/draft, branch: repo-assist/fix-issue-240-extract-generate-modules-helper)",
+    "fix-issue-240": "2026-03-05 - created PR #241 (open/draft, branch: repo-assist/fix-issue-240-extract-generate-modules-helper-19e608b3b561b611)",
     "deps-update-2026-03-06": "2026-03-06 - created PR #243 (branch: repo-assist/deps-update-2026-03-06, Expecto 10.2.1 -> 10.2.3)",
-    "fix-issue-244": "2026-03-07 - created PR (branch: repo-assist/fix-issue-244-resolve-case-ident-helper, move resolveCaseIdent to GeneratorHelpers)"
+    "fix-issue-244": "2026-03-07 - created PR #245 (branch: repo-assist/fix-issue-244-resolve-case-ident-helper-6b915e96232c0348)"
   },
   "welcomed_contributors": [],
   "improvement_ideas_submitted": [
@@ -48,12 +50,12 @@
     "Extract parseInputAst and filterByAttribute helpers to GeneratorHelpers (PR #232, merged by 7sharp9)",
     "Extract generateModules helper to eliminate Generate boilerplate (PR #241, open/draft, closes #240)",
     "Dependency update: Expecto 10.2.1 -> 10.2.3 (patch, PR #243 created 2026-03-06)",
-    "Move resolveCaseIdent to GeneratorHelpers (PR created 2026-03-07, closes #244)"
+    "Move resolveCaseIdent to GeneratorHelpers (PR #245, closes #244)"
   ],
   "last_tasks": {
-    "task1": "2026-03-06T10:00:50Z",
-    "task7": "2026-03-06T10:00:50Z",
-    "task11": "2026-03-07T09:49:12Z",
+    "task1": "2026-03-08T09:50:47Z",
+    "task7": "2026-03-08T09:50:47Z",
+    "task11": "2026-03-08T09:50:47Z",
     "task2": "2026-03-05T10:07:20Z",
     "task3": "2026-03-01T09:50:15Z",
     "task4": "2026-03-06T10:00:50Z",
@@ -64,10 +66,10 @@
     "task10": "2026-03-07T09:49:12Z"
   },
   "open_prs": {
-    "241": "[Repo Assist] Refactor: extract generateModules helper - closes #240 (branch: repo-assist/fix-issue-240-extract-generate-modules-helper)",
+    "241": "[Repo Assist] Refactor: extract generateModules helper - closes #240 (branch: repo-assist/fix-issue-240-extract-generate-modules-helper-19e608b3b561b611)",
     "243": "[Repo Assist] chore: update Expecto 10.2.1 -> 10.2.3 (branch: repo-assist/deps-update-2026-03-06)",
-    "239": "[docs] Update documentation for infrastructure fixes from 2026-03-04 (github-actions[bot], needs maintainer review/close)",
-    "new-244": "[Repo Assist] Refactor: move resolveCaseIdent to GeneratorHelpers - closes #244 (branch: repo-assist/fix-issue-244-resolve-case-ident-helper)"
+    "245": "[Repo Assist] Refactor: move resolveCaseIdent to GeneratorHelpers - closes #244 (branch: repo-assist/fix-issue-244-resolve-case-ident-helper-6b915e96232c0348)",
+    "239": "[docs] Update documentation for infrastructure fixes from 2026-03-04 (github-actions[bot], needs maintainer review/close)"
   },
   "checked_off_by_maintainer": ["201", "202", "release-v0.8.5-pr", "220-pr", "221-label", "232-pr-merged"],
   "pending_deps_investigation": {
@@ -76,5 +78,9 @@
     "Tomlyn": "0.18 -> 1.0.0 (major version bump, needs API compat check)",
     "System_packages": "9.0.x -> 10.0.x (transitive, will update with FCS/FSharp.Core)"
   },
-  "notes": "Default branch is 'master'. v0.8.5 was released (PR #222 merged 2026-03-02). PRs #230, #232 merged by 7sharp9. PR #241 (generateModules helper, closes #240) still open/draft. PR #243 (Expecto patch update) open/draft. New PR created 2026-03-07 for issue #244 (resolveCaseIdent to GeneratorHelpers). Issue #242 is duplicate of #240. Next priority tasks: task6 (stale PRs - check 14+ days), task9 (new contributors), task1 (triage), task7 (labels)."
+  "duplicate_issues": {
+    "242": "duplicate of #240 - commented and labelled 2026-03-06",
+    "246": "duplicate of #240 - commented and labelled 2026-03-08"
+  },
+  "notes": "Default branch is 'master'. v0.8.5 released (PR #222 merged). PRs #230, #232 merged by 7sharp9. PR #241 (generateModules helper, closes #240) open/draft. PR #243 (Expecto patch) open/draft. PR #245 (resolveCaseIdent, closes #244) open/draft. Issue #246 is a duplicate code detector issue, same as #240/#242, labelled duplicate and commented 2026-03-08. Next priority: task3 (codebase improvements, last 2026-03-01), task6 (stale PRs, never run - check back when PRs are 14+ days old), task9 (new contributors - none detected yet), task10 (take repo forward)."
 }
