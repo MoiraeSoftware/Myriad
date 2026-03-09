@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-03-08T09:50:47Z",
-  "last_run_id": "22818604144",
+  "last_run": "2026-03-09T10:11:56Z",
+  "last_run_id": "22848460918",
   "tasks_run": ["task1", "task7", "task11"],
   "backlog_cursor": {
-    "issues_last_processed": 246,
-    "labels_last_processed": 246
+    "issues_last_processed": 248,
+    "labels_last_processed": 248
   },
   "monthly_activity_issue": {
     "number": 223,
@@ -16,12 +16,16 @@
     "231": "2026-03-04T10:02:41Z",
     "242": "2026-03-06T10:00:50Z",
     "244": "2026-03-07T09:49:12Z",
-    "246": "2026-03-08T09:50:47Z"
+    "246": "2026-03-08T09:50:47Z",
+    "247": "2026-03-09T10:11:56Z",
+    "248": "2026-03-09T10:11:56Z"
   },
   "labels_applied": {
     "221": ["refactor", "enhancement"],
     "242": ["duplicate"],
-    "246": ["duplicate"]
+    "246": ["duplicate"],
+    "247": ["bug"],
+    "248": ["enhancement", "refactor"]
   },
   "labels_removed": {
     "221": ["bug"]
@@ -53,9 +57,9 @@
     "Move resolveCaseIdent to GeneratorHelpers (PR #245, closes #244)"
   ],
   "last_tasks": {
-    "task1": "2026-03-08T09:50:47Z",
-    "task7": "2026-03-08T09:50:47Z",
-    "task11": "2026-03-08T09:50:47Z",
+    "task1": "2026-03-09T10:11:56Z",
+    "task7": "2026-03-09T10:11:56Z",
+    "task11": "2026-03-09T10:11:56Z",
     "task2": "2026-03-05T10:07:20Z",
     "task3": "2026-03-01T09:50:15Z",
     "task4": "2026-03-06T10:00:50Z",
@@ -80,7 +84,11 @@
   },
   "duplicate_issues": {
     "242": "duplicate of #240 - commented and labelled 2026-03-06",
-    "246": "duplicate of #240 - commented and labelled 2026-03-08"
+    "246": "duplicate of #240 - commented and labelled 2026-03-08",
+    "248": "addresses same refactoring as PR #245 (resolveCaseIdent + LensesGenerator) - commented 2026-03-09"
   },
-  "notes": "Default branch is 'master'. v0.8.5 released (PR #222 merged). PRs #230, #232 merged by 7sharp9. PR #241 (generateModules helper, closes #240) open/draft. PR #243 (Expecto patch) open/draft. PR #245 (resolveCaseIdent, closes #244) open/draft. Issue #246 is a duplicate code detector issue, same as #240/#242, labelled duplicate and commented 2026-03-08. Next priority: task3 (codebase improvements, last 2026-03-01), task6 (stale PRs, never run - check back when PRs are 14+ days old), task9 (new contributors - none detected yet), task10 (take repo forward)."
+  "version_issue": {
+    "247": "v0.85 tag caused 0.85.0 NuGet package instead of 0.8.5 - commented 2026-03-09, labelled bug. Maintainer needs to deprecate 0.85.0 and republish as 0.8.5, or accept the version name change."
+  },
+  "notes": "Default branch is 'master'. v0.8.5 intended but published as 0.85.0 due to v0.85 tag (issue #247, labelled bug). PRs #230, #232 merged by 7sharp9. PR #241 (generateModules helper, closes #240) open/draft. PR #243 (Expecto patch) open/draft. PR #245 (resolveCaseIdent, closes #244) open/draft. Issue #248 (duplicate code detector - LensesGenerator duplication) commented pointing to PR #245 which already addresses it. Next priority: task3 (codebase improvements, last 2026-03-01), task9 (new contributors - never run), task6 (stale PRs - PRs need to be 14+ days old)."
 }
