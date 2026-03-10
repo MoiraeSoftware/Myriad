@@ -1,9 +1,9 @@
 {
-  "last_run": "2026-03-09T10:11:56Z",
-  "last_run_id": "22848460918",
-  "tasks_run": ["task1", "task7", "task11"],
+  "last_run": "2026-03-10T10:07:14Z",
+  "last_run_id": "22897181205",
+  "tasks_run": ["task2", "task11"],
   "backlog_cursor": {
-    "issues_last_processed": 248,
+    "issues_last_processed": 249,
     "labels_last_processed": 248
   },
   "monthly_activity_issue": {
@@ -18,7 +18,8 @@
     "244": "2026-03-07T09:49:12Z",
     "246": "2026-03-08T09:50:47Z",
     "247": "2026-03-09T10:11:56Z",
-    "248": "2026-03-09T10:11:56Z"
+    "248": "2026-03-09T10:11:56Z",
+    "249": "2026-03-10T10:07:14Z"
   },
   "labels_applied": {
     "221": ["refactor", "enhancement"],
@@ -36,7 +37,8 @@
     "issue-231-extract-generator-helpers": "2026-03-04 - created PR #232 (merged by 7sharp9)",
     "issue-240-extract-generate-modules": "2026-03-05 - created PR #241 (open/draft)",
     "deps-update-2026-03-06": "2026-03-06 - Expecto 10.2.1 -> 10.2.3 patch update PR #243 created",
-    "issue-244-resolve-case-ident": "2026-03-07 - created PR #245 (closes #244)"
+    "issue-244-resolve-case-ident": "2026-03-07 - created PR #245 (closes #244)",
+    "issue-249-filterTypes-helper": "2026-03-10 - created PR (branch: repo-assist/fix-issue-249-filterTypes-helper-ast, closes #249)"
   },
   "pr_attempts": {
     "release-v0.8.5": "2026-03-02 - created PR #222, merged by 7sharp9",
@@ -44,7 +46,8 @@
     "fix-issue-231": "2026-03-04 - created PR #232, merged by 7sharp9",
     "fix-issue-240": "2026-03-05 - created PR #241 (open/draft, branch: repo-assist/fix-issue-240-extract-generate-modules-helper-19e608b3b561b611)",
     "deps-update-2026-03-06": "2026-03-06 - created PR #243 (branch: repo-assist/deps-update-2026-03-06, Expecto 10.2.1 -> 10.2.3)",
-    "fix-issue-244": "2026-03-07 - created PR #245 (branch: repo-assist/fix-issue-244-resolve-case-ident-helper-6b915e96232c0348)"
+    "fix-issue-244": "2026-03-07 - created PR #245 (branch: repo-assist/fix-issue-244-resolve-case-ident-helper-6b915e96232c0348)",
+    "fix-issue-249": "2026-03-10 - created PR (branch: repo-assist/fix-issue-249-filterTypes-helper-ast, all tests pass)"
   },
   "welcomed_contributors": [],
   "improvement_ideas_submitted": [
@@ -54,13 +57,14 @@
     "Extract parseInputAst and filterByAttribute helpers to GeneratorHelpers (PR #232, merged by 7sharp9)",
     "Extract generateModules helper to eliminate Generate boilerplate (PR #241, open/draft, closes #240)",
     "Dependency update: Expecto 10.2.1 -> 10.2.3 (patch, PR #243 created 2026-03-06)",
-    "Move resolveCaseIdent to GeneratorHelpers (PR #245, closes #244)"
+    "Move resolveCaseIdent to GeneratorHelpers (PR #245, closes #244)",
+    "Extract filterTypes helper in Ast.fs to eliminate 5-fold duplication (PR created 2026-03-10, closes #249)"
   ],
   "last_tasks": {
     "task1": "2026-03-09T10:11:56Z",
     "task7": "2026-03-09T10:11:56Z",
-    "task11": "2026-03-09T10:11:56Z",
-    "task2": "2026-03-05T10:07:20Z",
+    "task11": "2026-03-10T10:07:14Z",
+    "task2": "2026-03-10T10:07:14Z",
     "task3": "2026-03-01T09:50:15Z",
     "task4": "2026-03-06T10:00:50Z",
     "task5": "2026-03-07T09:49:12Z",
@@ -73,7 +77,8 @@
     "241": "[Repo Assist] Refactor: extract generateModules helper - closes #240 (branch: repo-assist/fix-issue-240-extract-generate-modules-helper-19e608b3b561b611)",
     "243": "[Repo Assist] chore: update Expecto 10.2.1 -> 10.2.3 (branch: repo-assist/deps-update-2026-03-06)",
     "245": "[Repo Assist] Refactor: move resolveCaseIdent to GeneratorHelpers - closes #244 (branch: repo-assist/fix-issue-244-resolve-case-ident-helper-6b915e96232c0348)",
-    "239": "[docs] Update documentation for infrastructure fixes from 2026-03-04 (github-actions[bot], needs maintainer review/close)"
+    "239": "[docs] Update documentation for infrastructure fixes from 2026-03-04 (github-actions[bot], needs maintainer review/close)",
+    "new-249": "[Repo Assist] Refactor: extract filterTypes helper to eliminate 5-fold duplication in Ast.fs - closes #249 (branch: repo-assist/fix-issue-249-filterTypes-helper-ast)"
   },
   "checked_off_by_maintainer": ["201", "202", "release-v0.8.5-pr", "220-pr", "221-label", "232-pr-merged"],
   "pending_deps_investigation": {
@@ -90,5 +95,5 @@
   "version_issue": {
     "247": "v0.85 tag caused 0.85.0 NuGet package instead of 0.8.5 - commented 2026-03-09, labelled bug. Maintainer needs to deprecate 0.85.0 and republish as 0.8.5, or accept the version name change."
   },
-  "notes": "Default branch is 'master'. v0.8.5 intended but published as 0.85.0 due to v0.85 tag (issue #247, labelled bug). PRs #230, #232 merged by 7sharp9. PR #241 (generateModules helper, closes #240) open/draft. PR #243 (Expecto patch) open/draft. PR #245 (resolveCaseIdent, closes #244) open/draft. Issue #248 (duplicate code detector - LensesGenerator duplication) commented pointing to PR #245 which already addresses it. Next priority: task3 (codebase improvements, last 2026-03-01), task9 (new contributors - never run), task6 (stale PRs - PRs need to be 14+ days old)."
+  "notes": "Default branch is 'master'. v0.8.5 intended but published as 0.85.0 due to v0.85 tag (issue #247, labelled bug). PRs #230, #232 merged by 7sharp9. PR #241 (generateModules helper, closes #240) open/draft. PR #243 (Expecto patch) open/draft. PR #245 (resolveCaseIdent, closes #244) open/draft. New PR created 2026-03-10 for filterTypes helper (closes #249, all tests pass). Next priority: task9 (new contributors - never run), task6 (stale PRs - check when PRs are 14+ days old), task3 (codebase improvements, last 2026-03-01)."
 }
