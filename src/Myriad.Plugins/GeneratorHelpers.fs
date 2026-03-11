@@ -6,6 +6,17 @@ open Myriad.Core.Ast
 
 module internal GeneratorHelpers =
 
+    /// Resolves the fully-qualified SynLongIdent for a DU case identifier.
+    /// When RequireQualifiedAccess is in effect the parent type name is prepended to the case name.
+    let resolveCaseIdent (requiresQualifiedAccess: bool) (parent: LongIdent) (id: Ident) : SynLongIdent =
+        let parts =
+            if requiresQualifiedAccess then
+                (parent |> List.map (fun i -> i.idText)) @ [id.idText]
+            else
+                [id.idText]
+        SynLongIdent.Create parts
+
+
     /// Parses the input file specified in the generator context and returns the first parsed AST.
     let parseInputAst (context: GeneratorContext) =
         Ast.fromFilename context.InputFilename
@@ -21,12 +32,15 @@ module internal GeneratorHelpers =
             | [] -> None
             | types -> Some (ns, types))
 
-    /// Resolves a DU case identifier, optionally qualifying it with the parent type name
-    /// when RequireQualifiedAccess is present.
-    let resolveCaseIdent (requiresQualifiedAccess: bool) (parent: LongIdent) (id: Ident) : SynLongIdent =
-        let parts =
-            if requiresQualifiedAccess then
-                (parent |> List.map (fun i -> i.idText)) @ [id.idText]
-            else
-                [id.idText]
-        SynLongIdent.Create parts
+    /// Runs the standard generator pipeline: parse input AST, extract types, filter by attribute,
+    /// and collect modules. Eliminates the boilerplate shared by DUCasesGenerator and FieldsGenerator.
+    let generateModules<'Attr> (context: GeneratorContext) (extract: ParsedInput -> (LongIdent * SynTypeDefn list) list) (create: LongIdent -> SynTypeDefn -> (string * obj) seq -> SynModuleOrNamespace) : Output =
+        let ast, _ = parseInputAst context
+        let namespacedTypes = extract ast |> filterByAttribute<'Attr>
+        let modules =
+            namespacedTypes
+            |> List.collect (fun (ns, types) ->
+                types |> List.map (fun t ->
+                    let config = Generator.getConfigFromAttribute<'Attr> context.ConfigGetter t
+                    create ns t config))
+        Output.Ast modules

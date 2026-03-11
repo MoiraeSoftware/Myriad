@@ -240,19 +240,14 @@ module Ast =
         | SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.Union _, _) -> true
         | _ -> false
 
+    let private filterTypes predicate types =
+        types |> List.map (fun (ns, types) -> ns, types |> List.filter predicate)
+
     let extractRecords (ast: ParsedInput) =
-        let types = extractTypeDefn ast
-        let onlyRecords =
-            types
-            |> List.map (fun (ns, types) -> ns, types |> List.filter isRecord )
-        onlyRecords
+        extractTypeDefn ast |> filterTypes isRecord
 
     let extractDU (ast: ParsedInput) =
-        let types = extractTypeDefn ast
-        let onlyDus =
-            types
-            |> List.map (fun (ns, types) -> ns, types |> List.filter isDu )
-        onlyDus
+        extractTypeDefn ast |> filterTypes isDu
         
         
     module ModuleOrNamespace =
@@ -286,31 +281,13 @@ module Ast =
             extractTypes moduleDecls namespaceId
         
         let records (nsOrModule: SynModuleOrNamespace) =
-            let types = getTypeDefns nsOrModule
-
-            let onlyRecords =
-                types
-                |> List.map (fun (ns, types) -> ns, types |> List.filter isRecord)
-
-            onlyRecords
+            getTypeDefns nsOrModule |> filterTypes isRecord
 
         let dus (nsOrModule: SynModuleOrNamespace) =
-            let types = getTypeDefns nsOrModule
-
-            let onlyDus =
-                types
-                |> List.map (fun (ns, types) -> ns, types |> List.filter isDu)
-
-            onlyDus
+            getTypeDefns nsOrModule |> filterTypes isDu
         
         let recordsOrDus (nsOrModule: SynModuleOrNamespace) =
-            let types = getTypeDefns nsOrModule
-
-            let recordsOrDus =
-                types
-                |> List.map (fun (ns, types) -> ns, types |> List.filter (fun t -> t |> isDu || t |> isRecord))
-
-            recordsOrDus
+            getTypeDefns nsOrModule |> filterTypes (fun t -> isDu t || isRecord t)
 
     module Ident =
         let asCamelCase (ident: Ident) =
