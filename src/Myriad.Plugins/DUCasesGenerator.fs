@@ -15,20 +15,12 @@ module internal CreateDUModule =
         let args = SynPat.CreateTyped(name, duType) |> SynPat.CreateParen
         SynPat.CreateLongIdent(varIdent, [args])
 
-    let resolveCaseIdent (requiresQualifiedAccess: bool) (parent: LongIdent) (id: Fantomas.FCS.Syntax.Ident) : SynLongIdent =
-        let parts =
-            if requiresQualifiedAccess then
-                (parent |> List.map (fun i -> i.idText)) @ [id.idText]
-            else
-                [id.idText]
-        SynLongIdent.Create parts
-
     let createMatchOnIdent (inputIdent: string) : SynExpr =
         let ident = SynLongIdent.CreateString inputIdent
         SynExpr.CreateLongIdent(false, ident, None)
 
     let createCaseMatchClause (requiresQualifiedAccess: bool) (parent: LongIdent) (id: Ident) (hasFields: bool) (rhs: SynExpr) : SynMatchClause =
-        let indent = resolveCaseIdent requiresQualifiedAccess parent id
+        let indent = GeneratorHelpers.resolveCaseIdent requiresQualifiedAccess parent id
         let args = if hasFields then [SynPat.CreateWild] else []
         let p = SynPat.CreateLongIdent(indent, args)
         SynMatchClause.Create(p, None, rhs)
@@ -65,7 +57,7 @@ module internal CreateDUModule =
                     let pat = SynPat.CreateConst(con)
                     let rhs =
                         let f = SynExpr.Ident (Ident("Some", range0))
-                        let fullCaseName = resolveCaseIdent requiresQualifiedAccess parent id
+                        let fullCaseName = GeneratorHelpers.resolveCaseIdent requiresQualifiedAccess parent id
                         let x = SynExpr.CreateLongIdent fullCaseName
                         SynExpr.App(ExprAtomicFlag.NonAtomic, false, f, x, range0)
                     SynMatchClause.Create(pat, None, rhs)

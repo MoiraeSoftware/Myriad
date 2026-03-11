@@ -21,6 +21,16 @@ module internal GeneratorHelpers =
             | [] -> None
             | types -> Some (ns, types))
 
+    /// Resolves a DU case identifier, optionally qualifying it with the parent type name
+    /// when RequireQualifiedAccess is present.
+    let resolveCaseIdent (requiresQualifiedAccess: bool) (parent: LongIdent) (id: Ident) : SynLongIdent =
+        let parts =
+            if requiresQualifiedAccess then
+                (parent |> List.map (fun i -> i.idText)) @ [id.idText]
+            else
+                [id.idText]
+        SynLongIdent.Create parts
+
     /// Runs the standard generator pipeline: parse input AST, extract types, filter by attribute,
     /// and collect modules. Eliminates the boilerplate shared by DUCasesGenerator and FieldsGenerator.
     let generateModules<'Attr> (context: GeneratorContext) (extract: ParsedInput -> (LongIdent * SynTypeDefn list) list) (create: LongIdent -> SynTypeDefn -> (string * obj) seq -> SynModuleOrNamespace) : Output =

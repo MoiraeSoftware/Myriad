@@ -65,14 +65,8 @@ module internal CreateLenses =
         let pattern =
             SynPat.CreateLongIdent(SynLongIdent.CreateString "Lens'", [])
 
-        let matchCaseIdentParts =
-            if requiresQualifiedAccess then
-                (parent |> List.map (fun i -> i.idText)) @ [id.idText]
-            else
-                [id.idText]
-
         // The name of the DU case, optionally preceded by the name of the DU itself, if fully qualified access is required
-        let fullCaseName = SynLongIdent.Create matchCaseIdentParts
+        let fullCaseName = GeneratorHelpers.resolveCaseIdent requiresQualifiedAccess parent id
 
         let lensExpression =
             let matchCase =
