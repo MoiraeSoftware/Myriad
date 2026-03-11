@@ -15,13 +15,7 @@ module internal CreateDUModule =
         let args = SynPat.CreateTyped(name, duType) |> SynPat.CreateParen
         SynPat.CreateLongIdent(varIdent, [args])
 
-    let resolveCaseIdent (requiresQualifiedAccess: bool) (parent: LongIdent) (id: Fantomas.FCS.Syntax.Ident) : SynLongIdent =
-        let parts =
-            if requiresQualifiedAccess then
-                (parent |> List.map (fun i -> i.idText)) @ [id.idText]
-            else
-                [id.idText]
-        SynLongIdent.Create parts
+    let resolveCaseIdent = GeneratorHelpers.resolveCaseIdent
 
     let createMatchOnIdent (inputIdent: string) : SynExpr =
         let ident = SynLongIdent.CreateString inputIdent

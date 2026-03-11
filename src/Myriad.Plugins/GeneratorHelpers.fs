@@ -6,6 +6,15 @@ open Myriad.Core.Ast
 
 module internal GeneratorHelpers =
 
+    /// Builds a qualified SynLongIdent for a DU case identifier, respecting RequireQualifiedAccess.
+    let resolveCaseIdent (requiresQualifiedAccess: bool) (parent: LongIdent) (id: Fantomas.FCS.Syntax.Ident) : SynLongIdent =
+        let parts =
+            if requiresQualifiedAccess then
+                (parent |> List.map (fun i -> i.idText)) @ [id.idText]
+            else
+                [id.idText]
+        SynLongIdent.Create parts
+
     /// Parses the input file specified in the generator context and returns the first parsed AST.
     let parseInputAst (context: GeneratorContext) =
         Ast.fromFilename context.InputFilename
