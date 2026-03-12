@@ -1,7 +1,7 @@
 {
-  "last_run": "2026-03-11T10:06:38Z",
-  "last_run_id": "22947157543",
-  "tasks_run": ["task1", "task7", "task11"],
+  "last_run": "2026-03-12T10:05:18Z",
+  "last_run_id": "22996533329",
+  "tasks_run": ["task5", "task6", "task9", "task11"],
   "backlog_cursor": {
     "issues_last_processed": 251,
     "labels_last_processed": 251
@@ -20,7 +20,8 @@
     "247": "2026-03-09T10:11:56Z",
     "248": "2026-03-09T10:11:56Z",
     "249": "2026-03-10T10:07:14Z",
-    "251": "2026-03-11T10:06:38Z"
+    "251": "2026-03-11T10:06:38Z",
+    "pr245": "2026-03-12T10:05:18Z"
   },
   "labels_applied": {
     "221": ["refactor", "enhancement"],
@@ -37,19 +38,19 @@
     "duplicate-editorConfigTests": "2026-03-02 - fixed in PR #222 (merged)",
     "issue-229-extract-case-match-clause": "2026-03-03 - created PR #230 (merged by 7sharp9)",
     "issue-231-extract-generator-helpers": "2026-03-04 - created PR #232 (merged by 7sharp9)",
-    "issue-240-extract-generate-modules": "2026-03-05 - created PR #241 (open/draft)",
-    "deps-update-2026-03-06": "2026-03-06 - Expecto 10.2.1 -> 10.2.3 patch update PR #243 created",
-    "issue-244-resolve-case-ident": "2026-03-07 - created PR #245 (closes #244, #248, #251)",
-    "issue-249-filterTypes-helper": "2026-03-10 - created PR #250 (branch: repo-assist/fix-issue-249-filterTypes-helper-ast, closes #249)"
+    "issue-240-extract-generate-modules": "2026-03-05 - created PR #241 (merged by 7sharp9 on 2026-03-11)",
+    "deps-update-2026-03-06": "2026-03-06 - Expecto 10.2.1 -> 10.2.3 patch update PR #243 (merged by 7sharp9 on 2026-03-11)",
+    "issue-244-resolve-case-ident": "2026-03-07 - created PR #245 (superseded by Copilot PR #253 merged 2026-03-11; commented on PR #245 to close)",
+    "issue-249-filterTypes-helper": "2026-03-10 - created PR #250 (merged by 7sharp9 on 2026-03-11)"
   },
   "pr_attempts": {
     "release-v0.8.5": "2026-03-02 - created PR #222, merged by 7sharp9",
     "fix-issue-229": "2026-03-03 - created PR #230, merged by 7sharp9",
     "fix-issue-231": "2026-03-04 - created PR #232, merged by 7sharp9",
-    "fix-issue-240": "2026-03-05 - created PR #241 (open/draft, branch: repo-assist/fix-issue-240-extract-generate-modules-helper-19e608b3b561b611)",
-    "deps-update-2026-03-06": "2026-03-06 - created PR #243 (branch: repo-assist/deps-update-2026-03-06, Expecto 10.2.1 -> 10.2.3)",
-    "fix-issue-244": "2026-03-07 - created PR #245 (branch: repo-assist/fix-issue-244-resolve-case-ident-helper-6b915e96232c0348, closes #244, #248, #251)",
-    "fix-issue-249": "2026-03-10 - created PR #250 (branch: repo-assist/fix-issue-249-filterTypes-helper-ast, all tests pass)"
+    "fix-issue-240": "2026-03-05 - created PR #241, merged by 7sharp9 on 2026-03-11",
+    "deps-update-2026-03-06": "2026-03-06 - created PR #243, merged by 7sharp9 on 2026-03-11",
+    "fix-issue-244": "2026-03-07 - created PR #245 (superseded by Copilot PR #253, commented to close on 2026-03-12)",
+    "fix-issue-249": "2026-03-10 - created PR #250, merged by 7sharp9 on 2026-03-11"
   },
   "welcomed_contributors": [],
   "improvement_ideas_submitted": [
@@ -57,32 +58,35 @@
     "Release v0.8.5 preparation (PR #222, merged)",
     "Extract createCaseMatchClause helper in DUCasesGenerator (PR #230, merged by 7sharp9)",
     "Extract parseInputAst and filterByAttribute helpers to GeneratorHelpers (PR #232, merged by 7sharp9)",
-    "Extract generateModules helper to eliminate Generate boilerplate (PR #241, open/draft, closes #240)",
-    "Dependency update: Expecto 10.2.1 -> 10.2.3 (patch, PR #243 created 2026-03-06)",
-    "Move resolveCaseIdent to GeneratorHelpers (PR #245, closes #244, #248, #251)",
-    "Extract filterTypes helper in Ast.fs to eliminate 5-fold duplication (PR #250 created 2026-03-10, closes #249)"
+    "Extract generateModules helper to eliminate Generate boilerplate (PR #241, merged by 7sharp9 on 2026-03-11)",
+    "Dependency update: Expecto 10.2.1 -> 10.2.3 (patch, PR #243, merged by 7sharp9 on 2026-03-11)",
+    "Move resolveCaseIdent to GeneratorHelpers (PR #245, superseded by Copilot PR #253)",
+    "Extract filterTypes helper in Ast.fs to eliminate 5-fold duplication (PR #250, merged by 7sharp9 on 2026-03-11)"
   ],
   "last_tasks": {
     "task1": "2026-03-11T10:06:38Z",
     "task7": "2026-03-11T10:06:38Z",
-    "task11": "2026-03-11T10:06:38Z",
+    "task11": "2026-03-12T10:05:18Z",
     "task2": "2026-03-10T10:07:14Z",
     "task3": "2026-03-01T09:50:15Z",
     "task4": "2026-03-06T10:00:50Z",
-    "task5": "2026-03-07T09:49:12Z",
-    "task6": null,
+    "task5": "2026-03-12T10:05:18Z",
+    "task6": "2026-03-12T10:05:18Z",
     "task8": "2026-03-02T10:11:05Z",
-    "task9": null,
+    "task9": "2026-03-12T10:05:18Z",
     "task10": "2026-03-07T09:49:12Z"
   },
   "open_prs": {
-    "241": "[Repo Assist] Refactor: extract generateModules helper - closes #240 (branch: repo-assist/fix-issue-240-extract-generate-modules-helper-19e608b3b561b611)",
-    "243": "[Repo Assist] chore: update Expecto 10.2.1 -> 10.2.3 (branch: repo-assist/deps-update-2026-03-06)",
-    "245": "[Repo Assist] Refactor: move resolveCaseIdent to GeneratorHelpers - closes #244, #248, #251 (branch: repo-assist/fix-issue-244-resolve-case-ident-helper-6b915e96232c0348)",
-    "250": "[Repo Assist] Refactor: extract filterTypes helper to eliminate 5-fold duplication in Ast.fs - closes #249 (branch: repo-assist/fix-issue-249-filterTypes-helper-ast)",
-    "239": "[docs] Update documentation for infrastructure fixes from 2026-03-04 (github-actions[bot], needs maintainer review/close)"
+    "245": "[Repo Assist] Refactor: move resolveCaseIdent to GeneratorHelpers — superseded by merged PR #253; commented to close",
+    "254": "Copilot: consolidate resolveCaseIdent — superseded by merged PR #253",
+    "256": "Copilot: No-op agentic tracking — superseded",
+    "257": "Copilot: extract generateModules — superseded by merged PR #241/#255",
+    "258": "Copilot: Extract shared generateModules helper — superseded",
+    "259": "Copilot: move resolveCaseIdent — superseded by merged PR #253",
+    "260": "Copilot: Consolidate resolveCaseIdent — superseded by merged PR #253",
+    "261": "Copilot: Resolve merge conflicts / rename indent->ident — superseded"
   },
-  "checked_off_by_maintainer": ["201", "202", "release-v0.8.5-pr", "220-pr", "221-label", "232-pr-merged"],
+  "checked_off_by_maintainer": ["201", "202", "release-v0.8.5-pr", "220-pr", "221-label", "232-pr-merged", "241-pr-merged", "243-pr-merged", "250-pr-merged", "247-issue-closed"],
   "pending_deps_investigation": {
     "FSharp.Core": "9.0.101 -> 10.0.103 (requires .NET 10 SDK migration)",
     "FSharp.Compiler.Service": "43.9.101 -> 43.10.103 (requires .NET 10)",
@@ -95,8 +99,5 @@
     "248": "addresses same refactoring as PR #245 (resolveCaseIdent + LensesGenerator) - commented 2026-03-09",
     "251": "duplicate of #244 and #248 - addresses same resolveCaseIdent refactoring as PR #245 - commented and labelled 2026-03-11"
   },
-  "version_issue": {
-    "247": "v0.85 tag caused 0.85.0 NuGet package instead of 0.8.5 - commented 2026-03-09, labelled bug. Maintainer needs to deprecate 0.85.0 and republish as 0.8.5, or accept the version name change."
-  },
-  "notes": "Default branch is 'master'. v0.8.5 intended but published as 0.85.0 due to v0.85 tag (issue #247, labelled bug). PRs #230, #232 merged by 7sharp9. PR #241 (generateModules helper, closes #240) open/draft. PR #243 (Expecto patch) open/draft. PR #245 (resolveCaseIdent, closes #244, #248, #251) open/draft. PR #250 (filterTypes helper, closes #249) open/draft. Issue #251 newly labelled duplicate of #244/#248 (all fixed by PR #245). Next priority: task3 (codebase improvements, last 2026-03-01), task6 (stale PRs - PRs #241, #243 approaching 14 days on 2026-03-19 and 2026-03-20), task9 (new contributors - never run)."
+  "notes": "Default branch is 'master'. 7sharp9 merged all Repo Assist PRs (#241, #243, #250) and multiple Copilot PRs (#252, #253, #255) on 2026-03-11. Issue #247 (wrong version 0.85.0) closed by 7sharp9 as resolved — Copilot PR #252 added version validation to prevent recurrence. PR #245 (Repo Assist resolveCaseIdent) is superseded by merged Copilot PR #253 — commented on PR #245 to close. Remaining open Copilot PRs (#254, #256-261) are all superseded and should be closed by maintainer. Open issues that can be closed: #221, #242 (fixed by generateModules PR #241), #244, #248 (fixed by resolveCaseIdent PR #253). Next priority: task3 (codebase improvements, last 2026-03-01), task8 (release prep, last 2026-03-02), task10 (take repo forward, last 2026-03-07), task1/task7 (triage/labels, last 2026-03-11)."
 }
