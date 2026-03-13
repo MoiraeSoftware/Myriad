@@ -5,7 +5,7 @@
         <GitHome>https://github.com/$(gitOwner)</GitHome>
         <GitUrl>$(gitHome)/$(gitName)</GitUrl>
         <NupkgsDir>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)/bin/nupkg"))</NupkgsDir>
-        <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">0.8.5</VersionPrefix>
+        <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">0.8.6</VersionPrefix>
         <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)$(VersionSuffix)</Version>
         <!-- pack stuff -->
         <TargetFrameworks>net9.0</TargetFrameworks>
