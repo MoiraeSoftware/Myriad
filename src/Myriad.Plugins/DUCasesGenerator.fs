@@ -20,9 +20,9 @@ module internal CreateDUModule =
         SynExpr.CreateLongIdent(false, ident, None)
 
     let createCaseMatchClause (requiresQualifiedAccess: bool) (parent: LongIdent) (id: Ident) (hasFields: bool) (rhs: SynExpr) : SynMatchClause =
-        let indent = GeneratorHelpers.resolveCaseIdent requiresQualifiedAccess parent id
+        let ident = GeneratorHelpers.resolveCaseIdent requiresQualifiedAccess parent id
         let args = if hasFields then [SynPat.CreateWild] else []
-        let p = SynPat.CreateLongIdent(indent, args)
+        let p = SynPat.CreateLongIdent(ident, args)
         SynMatchClause.Create(p, None, rhs)
 
     let createDuLetBinding (varName: string) (inputType: SynType) (returnType: SynType) (buildMatchClauses: unit -> SynMatchClause list) : SynModuleDecl =
