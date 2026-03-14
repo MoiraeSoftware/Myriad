@@ -131,17 +131,4 @@ type DUCasesGenerator() =
         member _.ValidInputExtensions = seq {".fs"}
         member _.Generate(context: GeneratorContext) =
             //context.ConfigKey is not currently used but could be a failover config section to use when the attribute passes no config section, or used as a root config
-            let ast, _ = GeneratorHelpers.parseInputAst context
-
-            let namespaceAndrecords =
-                Ast.extractDU ast
-                |> GeneratorHelpers.filterByAttribute<Generator.DuCasesAttribute>
-
-            let modules =
-                namespaceAndrecords
-                |> List.collect (fun (ns, dus) ->
-                                    dus
-                                    |> List.map (fun du -> let config = Generator.getConfigFromAttribute<Generator.DuCasesAttribute> context.ConfigGetter du
-                                                           CreateDUModule.createDuModule ns du config))
-
-            Output.Ast modules
+            GeneratorHelpers.generateModules<Generator.DuCasesAttribute> context Ast.extractDU CreateDUModule.createDuModule

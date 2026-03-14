@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Publish workflow now supports manual dispatch via `workflow_dispatch` input, uses `$GITHUB_OUTPUT` instead of deprecated `::set-output`, and replaces archived GitHub Actions with `softprops/action-gh-release@v2`. A missing `dotnet paket restore` step was also added before build and test steps. (#234)
+- `Myriad.Sdk.proj` now uses `PackageDownload` instead of `PackageReference` for the `Myriad` tool dependency, resolving **NU1102** and **NU1212** errors that caused every publish attempt to fail since v0.8.4. Consumers of `Myriad.Sdk` also get the matching `Myriad` package placed in the NuGet cache automatically via a `PackageDownload` item in `Myriad.Sdk.props`. (#236)
+- `build.proj` Pack target now normalises 2-segment version numbers (e.g. `0.85`) to 3-segment (`0.85.0`) before passing them to `dotnet pack`/`dotnet restore`, preventing a Paket nuspec filename mismatch that caused pack to fail when using versions like `/p:Version=0.85`. (#238)
+- Publish workflow now requires 3-segment version tags (e.g. `v0.8.5`, not `v0.85`) and validates that the tag version matches `VersionPrefix` in `Directory.Build.props`, preventing accidental releases under the wrong version number (e.g. `0.85.0` instead of `0.8.5`). (#239)
+
 ## [0.8.5]
 ### Fixed
 - Custom plugins built against a different target framework than the Myriad tool no longer fail with `System.Reflection.ReflectionTypeLoadException`. The plugin loader now sets `PreferSharedTypes = true` so that assemblies already loaded by the host (such as `FSharp.Core` and `Fantomas.FCS`) are shared with the plugin instead of being loaded again from the plugin's output directory. Type load failures are also handled gracefully so that generators that do load are not lost.

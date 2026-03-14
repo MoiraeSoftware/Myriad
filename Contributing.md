@@ -1,7 +1,8 @@
 # How to build:
 1. Make sure you have version of `dotnet` specified in [global.json](global.json)
 2. Run `dotnet tool restore` to install required local tools
-3. Run `dotnet build -c Release -t:Build`
+3. Run `dotnet paket restore` to restore Paket-managed dependencies
+4. Run `dotnet build build.proj -c Release -t:Build`
 
 # How to build documentation:
 The documentation is built using Hugo and automatically deployed to GitHub Pages on every push to the master branch.
