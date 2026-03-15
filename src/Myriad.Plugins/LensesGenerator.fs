@@ -52,7 +52,8 @@ module internal CreateLenses =
         SynModuleDecl.CreateLet [SynBinding.Let(pattern = letPat, expr = letBody)]
 
     let private createLensForDU (requiresQualifiedAccess : bool) (parent: LongIdent) (wrapperName : Option<string>) (du : SynUnionCase) =
-        let (SynUnionCase.SynUnionCase(_,(SynIdent(id, _)),duType,_,_,_,_)) = du
+        let id = GeneratorHelpers.getCaseIdent du
+        let (SynUnionCase.SynUnionCase(_,_,duType,_,_,_,_)) = du
         let (SynField.SynField(_,_,_,fieldType,_,_,_,_,_)) =
             match duType with
             | SynUnionCaseKind.Fields [singleCase] -> singleCase

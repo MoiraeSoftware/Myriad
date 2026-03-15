@@ -6,6 +6,9 @@ open Myriad.Core.Ast
 
 module internal GeneratorHelpers =
 
+    /// Extracts the Ident from a SynUnionCase.
+    let getCaseIdent (SynUnionCase.SynUnionCase(_, SynIdent(id, _), _, _, _, _, _)) : Ident = id
+
     /// Resolves the fully-qualified SynLongIdent for a DU case identifier.
     /// When RequireQualifiedAccess is in effect the parent type name is prepended to the case name.
     let resolveCaseIdent (requiresQualifiedAccess: bool) (parent: LongIdent) (id: Ident) : SynLongIdent =
