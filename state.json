@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-03-16T10:35:23Z",
-  "last_run_id": "23139365423",
+  "last_run": "2026-03-17T10:12:58Z",
+  "last_run_id": "23189082146",
   "tasks_run": ["task2", "task7", "task11"],
   "backlog_cursor": {
-    "issues_last_processed": 269,
-    "labels_last_processed": 269
+    "issues_last_processed": 271,
+    "labels_last_processed": 271
   },
   "monthly_activity_issue": {
     "number": 223,
@@ -25,6 +25,7 @@
     "265": "2026-03-14T09:54:24Z",
     "267": "2026-03-15T09:55:33Z",
     "269": "2026-03-16T10:35:23Z",
+    "271": "2026-03-17T10:12:58Z",
     "pr245": "2026-03-12T10:05:18Z"
   },
   "labels_applied": {
@@ -36,7 +37,8 @@
     "251": ["duplicate"],
     "265": ["refactor"],
     "267": ["refactor"],
-    "269": ["refactor"]
+    "269": ["refactor"],
+    "271": ["refactor"]
   },
   "labels_removed": {
     "221": ["bug"]
@@ -52,7 +54,8 @@
     "issue-262-extract-types-helper": "2026-03-13 - created PR #263 (extractTypesFromDecls shared helper in Ast.fs, merged 2026-03-14)",
     "issue-265-typed-named-paren": "2026-03-14 - created PR #266 (createTypedNamedParen helper in GeneratorHelpers.fs, merged 2026-03-14)",
     "issue-267-getCaseIdent": "2026-03-15 - created PR #268 (getCaseIdent helper in GeneratorHelpers.fs, 5 call sites)",
-    "issue-269-lenses-generate-modules": "2026-03-16 - created PR #270 (collectModulesWithAttr helper in GeneratorHelpers.fs, refactored LensesGenerator)"
+    "issue-269-lenses-generate-modules": "2026-03-16 - created PR #270 (collectModulesWithAttr helper in GeneratorHelpers.fs, refactored LensesGenerator)",
+    "issue-271-createNamespacedModule": "2026-03-17 - created PR on branch repo-assist/fix-issue-271-createNamespacedModule (createNamespacedModule helper, 3 call sites)"
   },
   "pr_attempts": {
     "release-v0.8.5": "2026-03-02 - created PR #222, merged by 7sharp9",
@@ -66,7 +69,8 @@
     "release-v0.8.6": "2026-03-13 - created PR #264 (bump version, finalise CHANGELOG)",
     "fix-issue-265": "2026-03-14 - created PR #266 (createTypedNamedParen helper, 13 call sites, merged 2026-03-14)",
     "fix-issue-267": "2026-03-15 - created PR #268 (getCaseIdent helper, 5 call sites)",
-    "fix-issue-269": "2026-03-16 - created PR #270 (collectModulesWithAttr helper, LensesGenerator refactored)"
+    "fix-issue-269": "2026-03-16 - created PR #270 (collectModulesWithAttr helper, LensesGenerator refactored)",
+    "fix-issue-271": "2026-03-17 - created PR on branch repo-assist/fix-issue-271-createNamespacedModule (createNamespacedModule helper, 3 call sites)"
   },
   "welcomed_contributors": [],
   "improvement_ideas_submitted": [
@@ -82,13 +86,14 @@
     "Release v0.8.6 preparation (PR #264)",
     "Extract createTypedNamedParen helper to eliminate 13-site SynPat duplication (PR #266, merged 2026-03-14)",
     "Extract getCaseIdent helper to eliminate 5-fold SynUnionCase destructure (PR #268, closes #267)",
-    "Extract collectModulesWithAttr helper to eliminate LensesGenerator processTypeList duplication (PR #270, closes #269)"
+    "Extract collectModulesWithAttr helper to eliminate LensesGenerator processTypeList duplication (PR #270, closes #269)",
+    "Extract createNamespacedModule helper to eliminate namespace resolution duplication across 3 generators (PR on branch repo-assist/fix-issue-271-createNamespacedModule, closes #271)"
   ],
   "last_tasks": {
     "task1": "2026-03-11T10:06:38Z",
-    "task7": "2026-03-16T10:35:23Z",
-    "task11": "2026-03-16T10:35:23Z",
-    "task2": "2026-03-16T10:35:23Z",
+    "task7": "2026-03-17T10:12:58Z",
+    "task11": "2026-03-17T10:12:58Z",
+    "task2": "2026-03-17T10:12:58Z",
     "task3": "2026-03-13T10:01:42Z",
     "task4": "2026-03-06T10:00:50Z",
     "task5": "2026-03-12T10:05:18Z",
@@ -105,7 +110,8 @@
     "260": "Copilot: Consolidate resolveCaseIdent — superseded by merged PR #253",
     "264": "[Repo Assist] chore: prepare release v0.8.6",
     "268": "[Repo Assist] Refactor: extract getCaseIdent helper — closes #267",
-    "270": "[Repo Assist] Refactor: extract collectModulesWithAttr helper — closes #269"
+    "270": "[Repo Assist] Refactor: extract collectModulesWithAttr helper — closes #269",
+    "271-branch": "[Repo Assist] Refactor: extract createNamespacedModule helper — closes #271 (branch: repo-assist/fix-issue-271-createNamespacedModule)"
   },
   "checked_off_by_maintainer": ["201", "202", "release-v0.8.5-pr", "220-pr", "221-label", "232-pr-merged", "241-pr-merged", "243-pr-merged", "250-pr-merged", "247-issue-closed"],
   "pending_deps_investigation": {
@@ -120,5 +126,5 @@
     "248": "addresses same refactoring as PR #245 (resolveCaseIdent + LensesGenerator) - commented 2026-03-09",
     "251": "duplicate of #244 and #248 - addresses same resolveCaseIdent refactoring as PR #245 - commented and labelled 2026-03-11"
   },
-  "notes": "Default branch is 'master'. PRs #263 and #266 merged 2026-03-14. PRs #264, #268, #270 open for review. Issues #267 (closed by PR #268) and #269 (closed by PR #270) - still technically open pending merge. Issues still open needing closure: #221, #242 (fixed by #241), #244, #248 (fixed by #253). Stale Copilot PRs to close: #254, #256, #259, #260 (all superseded). PR #245 to close (superseded by #253). Next priority tasks: task4 (deps, last 2026-03-06), task10 (take repo forward, last 2026-03-07), task1 (triage, last 2026-03-11)."
+  "notes": "Default branch is 'master'. PRs #263 and #266 merged 2026-03-14. PRs #264, #268, #270 open for review. New PR created 2026-03-17 on branch repo-assist/fix-issue-271-createNamespacedModule (PR number unknown - check open PRs). Issues #267, #269, #271 still technically open pending their respective PR merges. Stale Copilot PRs to close: #254, #256, #259, #260 (all superseded). PR #245 to close (superseded by #253). Next priority tasks: task4 (deps, last 2026-03-06), task10 (take repo forward, last 2026-03-07), task1 (triage, last 2026-03-11)."
 }
