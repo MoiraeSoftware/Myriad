@@ -9,17 +9,14 @@ module internal Create =
 
     let createFieldMap (parent: LongIdent) (field: SynField)  =
         let (SynField.SynField(_,_,id,_,_,_,_,_,_)) = field
-        let fieldName = match id with None -> failwith "no field name" | Some f -> f
+        let fieldName = GeneratorHelpers.getFieldName id
 
         let recordType = SynType.CreateFromLongIdent parent
 
         let varName = "x"
         let pattern =
             let name = SynLongIdent.CreateString fieldName.idText
-            let arg =
-                let named = SynPat.CreateNamed(Ident.Create varName)
-                SynPat.CreateTyped(named, recordType)
-                |> SynPat.CreateParen
+            let arg = GeneratorHelpers.createTypedNamedParen (Ident.Create varName) recordType
 
             SynPat.CreateLongIdent(name, [arg])
 
@@ -43,8 +40,7 @@ module internal Create =
             let arguments =
                 fields
                 |> List.map (fun (SynField.SynField(_,_,id,typ,_,_,_,_,_)) ->
-                                 let name = SynPat.CreateNamed(Ast.Ident.asCamelCase id.Value)
-                                 SynPat.CreateTyped(name, typ) |> SynPat.CreateParen)
+                                 GeneratorHelpers.createTypedNamedParen (Ast.Ident.asCamelCase id.Value) typ)
 
             SynPat.CreateLongIdent(varIdent, arguments)
 
@@ -52,7 +48,7 @@ module internal Create =
             let fields =
                 fields
                 |> List.map (fun (SynField.SynField(_,_,id,_,_,_,_,_,_)) ->
-                                 let fieldIdent = match id with None -> failwith "no field name" | Some f -> f
+                                 let fieldIdent = GeneratorHelpers.getFieldName id
                                  let name = SynLongIdent.Create([fieldIdent.idText])
                                  let ident = SynExpr.CreateIdent(Ast.Ident.asCamelCase fieldIdent)
                                  SynExprRecordField.SynExprRecordField(RecordFieldName(name, true), Some range0, Some ident, None))
@@ -76,18 +72,13 @@ module internal Create =
                 |> List.map (fun (SynField.SynField(_,_,id, fieldType,_,_,_,_,_)) ->
                                  let funType = SynType.CreateFun(fieldType, fieldType)
                                  let ident = createFieldMapNameIdent id
-                                 let name = SynPat.CreateNamed(ident)
-                                 SynPat.CreateTyped(name, funType)
-                                 |> SynPat.CreateParen)
+                                 GeneratorHelpers.createTypedNamedParen ident funType)
 
             let recordParam =
-                let name = SynPat.CreateNamed(recordPrimeIdent)
                 let typ =
                     SynLongIdent.Create (recordId |> List.map (fun i -> i.idText))
                     |> SynType.CreateLongIdent
-
-                SynPat.CreateTyped(name, typ)
-                |> SynPat.CreateParen
+                GeneratorHelpers.createTypedNamedParen recordPrimeIdent typ
 
             let allArgs = [yield! arguments; yield recordParam]
 
@@ -146,9 +137,7 @@ module internal Create =
 
             let info = SynComponentInfo.Create recordId
             let mdl = SynModuleDecl.CreateNestedModule(info,  decls)
-            let fieldsNamespace = GeneratorConfig.getOrDefault "namespace" "UnknownNamespace" config
-
-            SynModuleOrNamespace.CreateNamespace(Ident.CreateLong fieldsNamespace, isRecursive = true, decls = [mdl])
+            GeneratorHelpers.createNamespacedModule config mdl
         | _ -> failwithf "Not a record type"
 
 [<MyriadGenerator("fields")>]

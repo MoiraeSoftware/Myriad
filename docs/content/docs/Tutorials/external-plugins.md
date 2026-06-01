@@ -43,7 +43,7 @@ Then add a new folder `build` with the `Generator.props` file within:
 ```xml
 <Project>
     <ItemGroup>
-        <MyriadSdkGenerator Include="$(MSBuildThisFileDirectory)/../lib/netstandard2.1/Generator.dll" />
+        <MyriadSdkGenerator Include="$(MSBuildThisFileDirectory)/../lib/net9.0/Generator.dll" />
     </ItemGroup>
 </Project>
 ```
@@ -53,7 +53,7 @@ Often an additional props file (In this smaple the file would be `Generator.InTe
 ```xml
 <Project>
     <ItemGroup>
-        <MyriadSdkGenerator Include="$(MSBuildThisFileDirectory)/../bin/$(Configuration)/netstandard2.1/Generator.dll" />
+        <MyriadSdkGenerator Include="$(MSBuildThisFileDirectory)/../bin/$(Configuration)/net9.0/Generator.dll" />
     </ItemGroup>
 </Project>
 ```

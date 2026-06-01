@@ -212,22 +212,20 @@ module Ast =
         |> List.collect (fun n -> n.Attributes)
         |> List.tryFind (typeNameMatches typeof<'a>)
 
-    let extractTypeDefn (ast: ParsedInput) =
-        let rec extractTypes (moduleDecls: SynModuleDecl list) (ns: LongIdent) =
-            [   for moduleDecl in moduleDecls do
-                    match moduleDecl with
-                    | SynModuleDecl.Types(types, _) ->
-                        yield (ns, types)
-                    | SynModuleDecl.NestedModule(SynComponentInfo(_, _, _, longId, _, _, _, _), _, decls, _, _, _) ->
-                        let combined = longId |> List.append ns
-                        yield! (extractTypes decls combined)
-                    | other -> ()
-            ]
+    let rec private extractTypesFromDecls (moduleDecls: SynModuleDecl list) (ns: LongIdent) =
+        [ for moduleDecl in moduleDecls do
+              match moduleDecl with
+              | SynModuleDecl.Types (types, _) -> yield (ns, types)
+              | SynModuleDecl.NestedModule (SynComponentInfo (_, _, _, longId, _, _, _, _), _, decls, _, _, _) ->
+                  let combined = longId |> List.append ns
+                  yield! extractTypesFromDecls decls combined
+              | _ -> () ]
 
+    let extractTypeDefn (ast: ParsedInput) =
         [   match ast with
             | ParsedInput.ImplFile(ParsedImplFileInput(_name, _isScript, _qualifiedNameOfFile, _scopedPragmas, _hashDirectives, modules, _g, _, _)) ->
                 for SynModuleOrNamespace(namespaceId, _isRec, _isModule, moduleDecls, _preXmlDoc, _attributes, _access, _, _) as ns in modules do
-                    yield! extractTypes moduleDecls namespaceId
+                    yield! extractTypesFromDecls moduleDecls namespaceId
             | _ -> () ]
 
     let isRecord (SynTypeDefn(_componentInfo, typeDefRepr, _memberDefs,_,_,_)) =
@@ -266,19 +264,10 @@ module Ast =
               | _ -> () ]
             
         let getTypeDefns (nsOrModule: SynModuleOrNamespace) =
-            let rec extractTypes (moduleDecls: SynModuleDecl list) (ns: LongIdent) =
-                [ for moduleDecl in moduleDecls do
-                      match moduleDecl with
-                      | SynModuleDecl.Types (types, _) -> yield (ns, types)
-                      | SynModuleDecl.NestedModule (SynComponentInfo (_attribs, _typeParams, _constraints, longId, _xmlDoc, _preferPostfix, _accessibility, _range), _isRec, decls, _local, _outerRange,_trivia) ->
-                          let combined = longId |> List.append ns
-                          yield! (extractTypes decls combined)
-                      | _other -> () ]
-
             let (SynModuleOrNamespace (namespaceId, _isRec, _isModule, moduleDecls, _preXmlDoc, _attributes, _access, _range, _)) =
                 nsOrModule
 
-            extractTypes moduleDecls namespaceId
+            extractTypesFromDecls moduleDecls namespaceId
         
         let records (nsOrModule: SynModuleOrNamespace) =
             getTypeDefns nsOrModule |> filterTypes isRecord

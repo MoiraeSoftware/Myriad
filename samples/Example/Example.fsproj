@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
@@ -9,8 +9,12 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Myriad.Sdk" Version="0.5.1" />
-    <PackageReference Include="Myriad.Core" Version="0.5.1" />
-    <PackageReference Include="Myriad.Plugins" Version="0.5.1" />
+    <ProjectReference Include="..\..\src\Myriad.Plugins\Myriad.Plugins.fsproj" PrivateAssets="All" />
   </ItemGroup>
+  <PropertyGroup>
+    <MyriadSdk_Generator_ExeHost>dotnet </MyriadSdk_Generator_ExeHost>
+    <MyriadSdk_Generator_Exe>../../src/Myriad/bin/$(Configuration)/net9.0/Myriad.dll</MyriadSdk_Generator_Exe>
+  </PropertyGroup>
+  <Import Project="..\..\src\Myriad.Sdk\build\Myriad.Sdk.targets" />
+  <Import Project="..\..\src\Myriad.Plugins\build\Myriad.Plugins.InTest.props" />
 </Project>

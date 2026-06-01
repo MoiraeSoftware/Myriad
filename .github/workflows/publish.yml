@@ -3,11 +3,11 @@ name: Publish
 on:
   push:
     tags:
-      - 'v*' # Publish on any new tag matching v*, i.e. v1.0, v1.7.2
+      - 'v*.*.*' # Only publish on 3-segment tags, e.g. v1.0.0, v1.7.2 (not v1.0)
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (without v prefix, e.g. 1.0.0)'
+        description: 'Version to publish (without v prefix, must be X.Y.Z, e.g. 1.0.0)'
         required: true
         type: string
 
@@ -31,6 +31,28 @@ jobs:
         fi
       shell: bash
     - uses: actions/checkout@v4
+    - name: Validate version
+      run: |
+        VERSION="${{ steps.tag_name.outputs.current_version }}"
+        # Require exactly three numeric segments (X.Y.Z), optionally followed by a pre-release suffix.
+        # This prevents 2-segment tags like v0.85 (which would publish as 0.85.0 instead of 0.8.5).
+        if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+          echo "::error::Version '$VERSION' does not match the required X.Y.Z format. Did you mean to add a missing segment (e.g. '0.85' should be '0.8.5')?"
+          exit 1
+        fi
+        # Verify the version matches VersionPrefix in Directory.Build.props so that the tag and
+        # source code are always in sync.
+        EXPECTED=$(sed -n 's/.*<VersionPrefix[^>]*>\([^<]*\)<\/VersionPrefix>.*/\1/p' Directory.Build.props | head -1)
+        if [ -z "$EXPECTED" ]; then
+          echo "::error::Could not extract VersionPrefix from Directory.Build.props."
+          exit 1
+        fi
+        EXPECTED_ESCAPED=$(printf '%s' "$EXPECTED" | sed 's/[.]/[.]/g')
+        if [ "$VERSION" != "$EXPECTED" ] && ! echo "$VERSION" | grep -qE "^${EXPECTED_ESCAPED}-"; then
+          echo "::error::Tag version '$VERSION' does not match VersionPrefix '$EXPECTED' in Directory.Build.props. Update Directory.Build.props before tagging."
+          exit 1
+        fi
+      shell: bash
     - name: Setup dotnet
       uses: actions/setup-dotnet@v4
       with:

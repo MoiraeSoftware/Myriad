@@ -58,11 +58,17 @@ type GeneratorContext = {
     ConfigKey: string option
     ConfigGetter: string -> (string * obj) seq
     InputFilename: string
+    ProjectContext: ProjectContext option
+    AdditionalParameters: IDictionary<string, string>
 }
+
+type Output =
+    | Ast of SynModuleOrNamespace list
+    | Source of string
 
 type IMyriadGenerator =
     abstract member ValidInputExtensions: string seq
-    abstract member Generate: GeneratorContext -> FsAst.AstRcd.SynModuleOrNamespaceRcd list
+    abstract member Generate: GeneratorContext -> Output
 ```
 
 ValidInputExtensions is used so a plugin is tied to certain file types as input, if you plugin generating ast fragments from java files then you would add `.java` to the `ValidInputExtensions` implementation for example.  

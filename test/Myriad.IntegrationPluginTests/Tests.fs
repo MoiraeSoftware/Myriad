@@ -363,5 +363,73 @@ let tests =
             ]
         ]
 
+        testList "DU Cases" [
+            testList "toString" [
+                test "CAD maps to 'CAD'" {
+                    Expect.equal (TestDus.Currency.toString CAD) "CAD" "CAD maps to 'CAD'"
+                }
+                test "PLN maps to 'PLN'" {
+                    Expect.equal (TestDus.Currency.toString PLN) "PLN" "PLN maps to 'PLN'"
+                }
+                test "EUR maps to 'EUR'" {
+                    Expect.equal (TestDus.Currency.toString EUR) "EUR" "EUR maps to 'EUR'"
+                }
+                test "USD maps to 'USD'" {
+                    Expect.equal (TestDus.Currency.toString USD) "USD" "USD maps to 'USD'"
+                }
+                test "Custom _ maps to 'Custom'" {
+                    Expect.equal (TestDus.Currency.toString (Custom "CHF")) "Custom" "Custom _ maps to 'Custom'"
+                }
+            ]
+            testList "fromString" [
+                test "parses 'CAD' to Some CAD" {
+                    Expect.equal (TestDus.Currency.fromString "CAD") (Some CAD) "parses 'CAD'"
+                }
+                test "parses 'PLN' to Some PLN" {
+                    Expect.equal (TestDus.Currency.fromString "PLN") (Some PLN) "parses 'PLN'"
+                }
+                test "parses 'EUR' to Some EUR" {
+                    Expect.equal (TestDus.Currency.fromString "EUR") (Some EUR) "parses 'EUR'"
+                }
+                test "parses 'USD' to Some USD" {
+                    Expect.equal (TestDus.Currency.fromString "USD") (Some USD) "parses 'USD'"
+                }
+                test "returns None for unknown string" {
+                    Expect.equal (TestDus.Currency.fromString "CHF") None "unknown string returns None"
+                }
+            ]
+            testList "toTag" [
+                test "CAD has tag 0" {
+                    Expect.equal (TestDus.Currency.toTag CAD) 0 "CAD tag is 0"
+                }
+                test "PLN has tag 1" {
+                    Expect.equal (TestDus.Currency.toTag PLN) 1 "PLN tag is 1"
+                }
+                test "EUR has tag 2" {
+                    Expect.equal (TestDus.Currency.toTag EUR) 2 "EUR tag is 2"
+                }
+                test "USD has tag 3" {
+                    Expect.equal (TestDus.Currency.toTag USD) 3 "USD tag is 3"
+                }
+                test "Custom has tag 4" {
+                    Expect.equal (TestDus.Currency.toTag (Custom "CHF")) 4 "Custom tag is 4"
+                }
+            ]
+            testList "predicates" [
+                test "isCAD returns true for CAD" {
+                    Expect.isTrue (TestDus.Currency.isCAD CAD) "isCAD is true for CAD"
+                }
+                test "isCAD returns false for PLN" {
+                    Expect.isFalse (TestDus.Currency.isCAD PLN) "isCAD is false for PLN"
+                }
+                test "isCustom returns true for Custom value" {
+                    Expect.isTrue (TestDus.Currency.isCustom (Custom "CHF")) "isCustom is true for Custom"
+                }
+                test "isCustom returns false for CAD" {
+                    Expect.isFalse (TestDus.Currency.isCustom CAD) "isCustom is false for CAD"
+                }
+            ]
+        ]
+
         literalBindingTests
     ]
