@@ -1,0 +1,14 @@
+{
+  "id": "Q015",
+  "status": "closed",
+  "verdict": "SHIP, narrowly scoped - like Q010, not like Q014. All four pre-registered SHIP conjuncts were met and independently reproduced at a third n value: a MethodInfo for a function defined only inside a live FsiEvaluationSession (plugin text read at runtime, never compiled by the host) was handed back across the FSI/host boundary, confirmed to genuinely originate from FSI's dynamic assembly (not the host's), and Expr.TryGetReflectedDefinition returned the identical quotation shape Q014 got at host-compile-time - closing Q014's specific 'no FSI ran / both pieces were compile-time literals' gap. But the review found FSI performs none of the actual staging: it compiles the plugin and hands back a MethodInfo via a quotation-destructure one-liner that never executes power; 100% of the partial evaluation is host-compiled code byte-identical to Q014. The origin is dynamic-body/static-interface only - the host still hardcodes the plugin's name, arity, and types, and unroll is still hand-matched to power's exact shape. Composition with Myriad's real architecture (ALC-isolated plugin loading, config from parsed attributed source) remains untested. See 03-review.md for the full adversarial review and four named follow-ups.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": null
+}

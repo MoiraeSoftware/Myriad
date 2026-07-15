@@ -1,0 +1,14 @@
+{
+  "id": "Q016",
+  "status": "running",
+  "verdict": null,
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": null
+}

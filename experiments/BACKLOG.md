@@ -63,14 +63,48 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
    step behave the same as Q001/Q002 when the spliced file's content depends on an FSI evaluation
    result rather than typed-tree introspection? No reason to expect a difference, but Q001 already
    taught this session not to assume compiler-hosting behavior without running it.
-   Stretch goal once the base loop lands, not part of the base claim: true staged compilation —
-   evaluate at build time against a general implementation and bake a *specialized* result into
-   generated code (a parser or state machine compiled from running the general version, not just a
-   schema value read off). This needs reifying arbitrary evaluated FSI values (potentially
-   closures, captured environments) back into a hygienic `SynExpr`, which is a materially harder
-   problem than the primitive/record-shaped data Q003 already proved crosses the boundary cleanly —
-   don't fold it into the base loop's pass/fail criteria, scope it as a separate follow-on
-   hypothesis once the base loop's own verdict is in.
+   **Stretch goal — PROMOTED TO Q014, CLOSED, REVISE.** See
+   `Q014-fsi-staged-compilation/03-review.md` for the full verdict; original framing kept below for
+   context. Q014 scoped the reification target as a real F# quotation (`Expr<'T>`), not an arbitrary
+   closure — reifying a closure's captured environment back into a hygienic `SynExpr` is very likely
+   structurally impossible in general, whereas a quotation is already a code-shaped data structure and
+   stays inside F#'s own sanctioned metaprogramming surface — and that half held up: a quotation
+   obtained via `[<ReflectedDefinition>]`/`TryGetReflectedDefinition` (no hand-built `Expr.Call`) was
+   specialized and rendered by Unquote's `decompile` into F# source that reparsed, typechecked, and,
+   verified by actually compiling and executing the text, ran correctly with a recursive general
+   implementation (`power`, unrolled at n=4) fully unrolled away — *code*, not just Q003's *data*,
+   crossing the generation-time-to-source boundary. **What didn't survive review, on independent
+   re-execution:** no `FsiEvaluationSession` ever ran — the spike quietly substituted host-compile-time
+   `[<ReflectedDefinition>]` capture for the generation-time FSI evaluation the hypothesis's own title
+   and SHIP threshold named, and both the general implementation and its static config were source-level
+   literals in the same program, so the dynamic-origin staging boundary Myriad would actually need was
+   never crossed. The partial evaluator is also a hand transcription of `power`'s own three node shapes,
+   not the generic `ExprShape` expander the design's own recon named but didn't build, so the capability
+   claim doesn't generalize past that one shape. Four follow-ups named in the review, the most direct
+   being to actually host FSI and reify a result whose origin isn't a compile-time literal — that is the
+   claim this quartet's title made and didn't test. **That follow-up was run in the same session as
+   `Q015-fsi-dynamic-origin-staging`, CLOSED, SHIP (narrowly scoped — like Q010, not like Q014).** A real
+   `FsiEvaluationSession` evaluated a general implementation read from a separate plugin file (never in
+   the host's own compiled source) plus a config value read from an environment variable; the resulting
+   `MethodInfo` was confirmed to genuinely originate from FSI's dynamic assembly (not the host's), and
+   `Expr.TryGetReflectedDefinition` returned the identical quotation shape Q014 got at host-compile-time —
+   closing Q014's "no FSI ran" gap for real, reproduced independently at a third `n` value. But Q015's own
+   review found FSI performs none of the actual staging: it compiles the plugin and hands back a
+   `MethodInfo` via a one-line quotation-destructure that never executes anything, so every line of the
+   actual partial-evaluation logic remains host-compiled code identical to Q014's, and the origin proven
+   dynamic is the implementation body and a scalar config only — the host still hardcodes the plugin's
+   function name, arity, and argument types, and the specializer is still hand-matched to `power`'s one
+   shape. See `Q015-fsi-dynamic-origin-staging/03-review.md` for the full verdict and four follow-ups, the
+   first being to make FSI perform real computation rather than hand back a pointer to code whose shape
+   the host already statically knows. Original framing: true staged compilation — evaluate
+   at build time against a general implementation and bake a *specialized* result into generated code (a
+   parser or state machine compiled from running the general version, not just a schema value read off).
+   The base loop's own core claim (an FSI value can drive template text) was judged not materially in
+   doubt given Q003 and Q006's string-static-parameter result, so Q014 proceeded straight to the
+   higher-uncertainty, higher-payoff reify-code question rather than re-proving the lower-value base case
+   first — in hindsight, skipping the base loop is also what let the missing-FSI substitution go
+   unnoticed until review, since the base loop's own claim would have forced an actual `FsiEvaluationSession`
+   into the harness from the start.
 
 2. **FSI under `AssemblyLoadContext` isolation (extends Q003).** Q003 deliberately tested the
    simplest configuration (no isolation) and it passed cleanly — cleaner than expected. Myriad's
@@ -236,6 +270,60 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     one erased provider over one record's path, opened in a **real Ionide workspace** (the actual
     live-host test Q006/Q007 never did, only `FSharpChecker`-as-library) — confirm members appear
     and there's no collision with the build-generated file.
+
+15. **Type provider subsuming a Myriad-compiled satellite DLL — cross-project case — PROMOTED TO Q016,
+    RUNNING (as of 2026-07-16).** See `Q016-satellite-dll-type-provider/00-hypothesis.md` for the
+    pre-registered version; original framing kept below for context. Raised in conversation: instead
+    of a provider hand-building `ProvidedTypes` members from an untyped Myriad AST (item 14's own
+    open problem — `ProvidedProperty`/`ProvidedMethod` need concrete CLR `Type`s, Myriad's
+    `Fantomas.FCS.Syntax` AST has none without a full typecheck), let Myriad run its *real* generator
+    unmodified, compile the resulting source to a small satellite DLL via `checker.Compile` — a
+    mechanism already proven working twice in this repo, not speculative: `Q014-fsi-staged-compilation`
+    and `Q015-fsi-dynamic-origin-staging` both compiled spliced text to a real `.dll` via
+    `checker.Compile`, `Assembly.LoadFrom`'d it, and invoked it by reflection, in both cases matching
+    a second, independent correctness check — then have a type provider `Assembly.LoadFrom` that
+    satellite DLL and re-expose its already-fully-resolved members. **For Myriad's cross-project usage
+    (attributed type in project A, consumer wants generated members in project B which references A):
+    this fully sidesteps Q006's wall with no new mechanism risk**, because by the time project B
+    compiles, the satellite DLL is — by construction — an already-compiled, externally-referenced
+    artifact, exactly the shape Q006/Q008/Q009/Q011 already proved type providers handle comfortably.
+    Honest caveat, stated in the conversation that raised this and worth keeping attached to any
+    write-up: for this cross-project case a type provider is barely pulling its weight over an ordinary
+    `<ProjectReference>` — its actual differentiator is dynamic re-exposure of whatever the satellite
+    DLL currently contains without static reference wiring, refreshed live via `Invalidate()` +
+    `FileSystemWatcher` (the mechanism already named, and already flagged as real-but-narrower-than-
+    novel, in the "External-signal `Invalidate()`" bullet under the general-ideas section below).
+    Cheapest falsifier: inside a generative provider's `ApplyStaticArguments`, `Assembly.LoadFrom` a
+    Myriad-produced scratch DLL and re-expose one real compiled member via reflection-forwarding — does
+    it work end to end, and does `Invalidate()` correctly pick up a re-generated DLL after a file
+    change without a stale-handle/file-lock problem (the satellite DLL will be rewritten by Myriad
+    while a live `FsiEvaluationSession`-adjacent host may still hold it loaded — untested, and a
+    real risk `Assembly.LoadFrom`'s file-locking behavior on Windows makes worth checking first).
+
+16. **Pre-build scratch-DLL type provider for same-project IDE preview — real but strictly weaker than
+    Q010 for the same target (new, extends Q006/Q010, the direct route to the named IDE-invisibility
+    gap).** For Myriad's actual *dominant* pattern — `[<Lenses>]` on a record in the file/project
+    currently being built — item 15's satellite-DLL trick does not sidestep Q006's wall: a type
+    provider resolving mid-compilation still cannot see `Person` until `Person` is compiled, and
+    `Person` is part of the very compilation the provider is running inside, so Myriad cannot compile a
+    real satellite DLL referencing `Person`'s real compiled type at that point either. The route around
+    this is not to beat the wall but to change *when* compilation happens: Myriad's pre-build step
+    already runs before `dotnet build` (`DEVNOTES.md`) — have it produce the scratch DLL *ahead of* the
+    main build, cached the same way today's `_MyriadSdkCodeGenInputCache` rebuild cache works, and have
+    the type provider consume the **last successfully generated version**, not the in-flight one. This
+    gives eventually-consistent live IDE preview — one save behind, the same staleness character as
+    Roslyn source-generator IDE preview or Fable's watch mode — not true reentrant same-compilation
+    visibility. **State this plainly rather than overselling it: this is explicitly weaker than
+    `Q010-prefix-stratified-generation`'s already-shipped mechanism** (reentrant
+    `DocumentSource.Custom`, staying inside Myriad's own CLI-hosted `FSharpChecker`, genuine
+    same-in-progress-compilation visibility) for the identical target — worth building only if a
+    type-provider-shaped delivery mechanism (IntelliSense-visible members with no FCS/Ionide-specific
+    host plumbing required on Myriad's side) is independently valued over Q010's approach, or as a
+    fallback for a host that can't adopt Q010's reentrant-checker model. Named risks, not yet checked:
+    build-ordering (does MSBuild's design-time build actually trigger, or wait on, the scratch-compile
+    step with sensible timing, or does DTB run against a stale-or-missing scratch DLL on a cold
+    checkout); `FileSystemWatcher` + `Invalidate()` correctness and cost under rapid successive edits,
+    inherited from item 15's same open question.
 
 ## General type-provider capability ideas (independent of Myriad, unverified brainstorming)
 
@@ -424,6 +512,47 @@ and asked for higher-risk ideas, produced five; one has since been spiked and sh
   move at once. Secondary, more mundane falsifier: whether client assemblies are even discoverable
   from the schema project's design-time context in a realistic multi-project layout — plumbing, and
   the more likely source of a REVISE than the coordination semantics.
+- **Reconstruct and re-verify Q008/Q09 — DONE, 2026-07-16.** Q008 and Q009 shipped with no saved
+  `artifacts/`, and Q012 found that the fast, incremental `FSharpChecker` checking API
+  (`ParseAndCheckFileInProject`) they both claim to have used **never** resolves a generative provided
+  type — a direct, reproducible contradiction. `Q013-compile-then-pc-warming` (`CLOSED`, `NULL`) then
+  tested the cheapest reconciling explanation (compile-then-PC warming) and it failed, but named the
+  untested axis a reconstruction should vary first: real, non-script `FSharpProjectOptions` vs the
+  `.fsx` script both Q012/Q013 used. **That reconstruction has now happened, and it was won by luck as
+  much as design: Q008/Q09's actual original scratch source was found intact, unintentionally
+  preserved, in a session job's own temp directory** (never copied into either quartet's `artifacts/`
+  before closing). Rebuilt unmodified, both quartets' claimed results reproduced exactly, timings
+  included. A direct same-checker isolation then confirmed Q013's named axis as the exact explanation:
+  Q008/Q09's real harness drives PC with a hand-built, non-script `FSharpProjectOptions`; every
+  Q012/Q013 shape used `GetProjectOptionsFromScript` instead. Given identical checker, identical
+  provider, identical consumer text, the script route fails with Q012's exact diagnostic and the
+  real-project-options route resolves cleanly, deterministic across repeats. Full account:
+  `Q008-provenance-closed-loop/RECONSTRUCTION.md`, `Q009-field-level-provenance/RECONSTRUCTION.md`, and
+  `FINDINGS.md`'s credibility section. Q008/Q09's SHIP verdicts are no longer disputed. **Named
+  follow-ups, not yet done:** retest Q011's own two real providers and Q012's toy probes via the
+  real-project-options route (both were only ever checked via `checker.Compile` or the script route
+  respectively) — cheap, would round out the picture but don't block anything.
+- **Stricter same-project-object PC form (new, extends Q013, cheap).** `Q013-compile-then-pc-warming`'s
+  own review named this as the one warming variant most likely to differ from what Q013 actually
+  tested: Compile a non-script `.fs` project, then PC the *same* project object, in place, on the same
+  checker — as opposed to Q013's tested form (Compile via `fsc`-style args, PC via a separate `.fsx`
+  script), which never shared a project object at all. A NULL here would close the residual doubt
+  Q013's Correction 1 left open cheaply, before or alongside the Q008/Q09 reconstruction above, since
+  both use the same underlying provider infrastructure already saved in `Q013-compile-then-pc-warming/
+  artifacts/`.
+- **Cross-instance / process-global compile-then-PC warming (new, extends Q013, low priority).** The
+  Round 2 named in `Q013-compile-then-pc-warming/01-design.md` but correctly not run, since it was
+  gated behind a positive Round 1 and Round 1 came back NULL. A same-instance null makes a
+  process-global positive unlikely (and Q013's own incidental observation — cold controls run after
+  earlier repeats' Compile calls in the same process still fail — weakly points the same way), but it
+  is the one warming mechanism Q013's NULL does not logically exclude. Worth one run only if both items
+  above come back negative too.
+- **Locate the FCS code path behind PC's generative-emit failure (new, extends Q012/Q013).** Named as
+  out of scope for Q012's own probe spike and still unlocated after Q013. Q013 narrowed where to look:
+  each `ParseAndCheckFileInProject` call mints a fresh temp assembly for a generative provided type and
+  never consults a prior `checker.Compile`'s output, so the gap is inside PC's own generative-emit
+  path, not cross-API cache sharing. The only route from "characterize" to "fix," not required for the
+  Q008/Q09 reconstruction itself.
 - **Two-version schema-diff provider (new, extends Q008/Q009, stays inside the proven envelope).**
   Feed a provider two versions of a schema, both already-compiled external artifacts (`v1.dll`,
   `v2.dll`), and have it compute the structural diff at design time, exposing as typed methods only

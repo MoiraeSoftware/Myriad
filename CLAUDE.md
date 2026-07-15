@@ -28,15 +28,18 @@ adversarial-review discipline (adapted from an ML-training experiment convention
 pre-registration, or a spike whose result doesn't survive its own adversarial review, doesn't get
 oversold. Read a quartet's `03-review.md` for the honest verdict, not just `02-results.md`.
 
-**Status as of 2026-07-15 — nine quartets (Q001–Q009), six closed, three planned. Full digest:
-`experiments/FINDINGS.md`** — read that first, it synthesizes both lines without requiring all nine
-`03-review.md`s as context. One-line summary: Myriad's-own-architecture line has two SHIPs and two
-REVISE/NULLs, and nothing has been built that would replace Myriad's current pipeline end to end;
-the general type-provider line has a two-quartet SHIP streak (Q008, Q009 — compile-time provenance
-enforcement, both whole-type and field-level granularity) plus one hard structural wall found along
-the way (Q006 — generative type providers can never see a type from the compilation currently in
-progress, only already-compiled referenced code, which rules out Myriad's own dominant same-file
-usage pattern specifically).
+**Status as of 2026-07-15 — thirteen quartets (Q001–Q013), ten closed, three planned. Full digest:
+`experiments/FINDINGS.md`** — read that first, it synthesizes both lines without requiring all
+thirteen `03-review.md`s as context. One-line summary: Myriad's-own-architecture line has three SHIPs
+(Q002, Q003, Q010) and two REVISE/NULLs (Q001, Q006), and nothing has been built that would replace
+Myriad's current pipeline end to end; the general type-provider line shipped a provenance-enforcement
+mechanism (Q008, Q009, Q011) plus one hard structural wall (Q006 — generative type providers can never
+see a type from the compilation currently in progress, only already-compiled referenced code, which
+rules out Myriad's own dominant same-file usage pattern specifically) — **but Q012 then found a
+direct, reproducible contradiction with Q008's own claimed measurement (Q008 saved no source, so it
+can't defend itself), and Q013 closed off the cheapest reconciling explanation with a NULL result, so
+Q008/Q09's SHIP verdicts are now actively disputed, not just unverified.** Read `FINDINGS.md`'s "gap
+in this file's own credibility" section before citing any Thread 2 SHIP verdict.
 
 **Next steps, prioritized, with why:** `experiments/BACKLOG.md`. Split into spike-shaped hypotheses
 (need a quartet — both Myriad-specific and general-type-provider ideas, kept in separate sections)
