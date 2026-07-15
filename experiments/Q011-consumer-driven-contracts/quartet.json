@@ -1,0 +1,14 @@
+{
+  "id": "Q011",
+  "status": "closed",
+  "verdict": "SHIP, the claims as literally pre-registered - but the pre-registration didn't anticipate the biggest surprise. A client-side provider's own emitted attribute survives into reflectable IL (symmetric with Q009). A schema-side provider correctly blocks a schema edit that breaks a stale client's recorded dependency, citing the client, field, and both versions, and correctly clears once that client is recompiled, with no deadlock. Field removal produces a diagnostic distinct from version-mismatch wording, closing Q009's own follow-up. HOWEVER: the fast, incremental FSharpChecker API path Q008/Q09 relied on (ParseAndCheckFileInProject/ParseAndCheckProject) does not resolve this quartet's generative type even on the success path, for a reason not identified despite real investigation - forcing a fallback to checker.Compile (full compiles, 106-201ms, not Q008/Q09's 15-57ms incremental band). This means the primary reason this idea was picked as highest-value this session (moved to keystroke-time, not CI-time) is NOT demonstrated and is now specifically in doubt, not merely untested. Also found: DefineStaticParameters fires more than once per logical check and must be memoized (a real, probably lineage-wide finding, unconfirmed against Q008/Q09's own unpreserved provider code); the clean unwedge result depends on the provider's own deliberate choice not to cache failures, a real design lesson not purely an FCS property; the duplicate-diagnostic defect (Q008, Q09) recurs a third time, unfixed.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": null
+}

@@ -1,0 +1,14 @@
+{
+  "id": "Q012",
+  "status": "closed",
+  "verdict": "SHIP the mechanism (a provider can capture and expose a StackTrace containing real FSharp.Compiler.* frames, a genuine window into FCS's own call pattern, verified directly from saved artifacts). NULL on the two pre-registered capability-isolation factors (parameter count, instantiation-time I/O) - both cleanly falsified, the simplest shape already fails under ParseAndCheckFileInProject. BUT the design's own mandated positive control for exactly this all-fail branch found a real, different, reproducible answer: the axis is generative-vs-erased. ParseAndCheckFileInProject resolves erased provided types cleanly and never resolves generative ones - confirmed against 3 toy shapes AND both of Q011's real, unmodified providers. This is the single most consequential finding in the whole experiments/ lineage so far: it directly and specifically contradicts Q008's own claimed success-path resolution of a generative type via the same API (real generated members accessed, ~1161ms cold). Q008 has no saved artifacts, so this cannot be mechanically reconciled. The most valuable untested reconciling hypothesis: does a prior checker.Compile of the same scenario make a subsequent ParseAndCheckFileInProject call resolve the generative type (caching leakage across API boundaries)? Q012's own harness never tested this ordering. Until resolved, treat Q008/Q09's SHIP verdicts as actively disputed, not merely unverified.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": null
+}

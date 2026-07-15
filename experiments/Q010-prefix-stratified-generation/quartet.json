@@ -1,0 +1,14 @@
+{
+  "id": "Q010",
+  "status": "closed",
+  "verdict": "SHIP, scoped. A DocumentSource.Custom callback can compute a later virtual file's content from the already-typed prefix of the same in-progress project, and a third generator can correctly reuse a second generator's already-generated (still virtual) output via verified typed symbol resolution, zero diagnostics, no hang/exception. Proven for the acyclic, later-depends-on-earlier case only; mutual cross-generator dependency remains BACKLOG item 10's territory. Cost result (reentrant cheaper than staged) is real but tied to the specific staged baseline tested (two independent, non-cache-sharing checkers), not a general claim. Whether the reentrancy tested was genuinely in-flight or landing on an already-idle checker is unresolved from what was measured - see 03-review.md objection 1. A real, silent API footgun was found (explicit source text on ParseAndCheckFileInProject silently bypasses DocumentSource.Custom for that file, no error) and should be guarded against in any follow-on build.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": null
+}
