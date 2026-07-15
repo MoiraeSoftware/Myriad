@@ -1,0 +1,14 @@
+{
+  "id": "Q006",
+  "status": "closed",
+  "verdict": "REVISE. A generative type provider hosting LensesGenerator\u0027s real getter/setter logic typechecks and is runtime-correct on all four lenses, and a source edit re-checks live in 47ms with zero dotnet build of the consumer (cold check 1137ms) - real, measured evidence the type-provider hosting protocol can deliver on BACKLOG.md\u0027s IDE-invisibility gap. Held short of SHIP by two things the hypothesis pre-registered as disqualifying: (1) only tested through FSharpChecker as a library, never a real Ionide/FSAC/VS session, which 00-hypothesis.md\u0027s own validity preconditions said would not test the actual claim; (2) type providers resolve types only from already-built referenced assemblies, so the capability reaches record types already compiled elsewhere, not Myriad\u0027s actual dominant same-file/same-project attributed-record workflow - a structural wall, not an encoding detail (System.Type isn\u0027t a valid static argument; string type-name \u002B reflection works, but doesn\u0027t route around the deeper limitation). Detail: Q006-myriad-as-type-provider/03-review.md.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": "2026-07-14"
+}

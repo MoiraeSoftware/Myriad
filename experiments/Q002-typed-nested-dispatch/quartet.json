@@ -1,0 +1,14 @@
+{
+  "id": "Q002",
+  "status": "closed",
+  "verdict": "SHIP, now measured on both sides. Typed access correctly resolves a field\u0027s type to another cross-file, Fields-attributed entity (Round A) and drives correct recursive dispatch in a generated \u0027describe\u0027 function (Round B). Round C (addendum, same day) built a real syntax-only resolver using Myriad\u0027s own Ast.fs matching code: it gets the unambiguous case right, then fails the adversarial one (two same-named records in different modules) in a measured, reproducible way - the identical resolver flips between correct and silently-wrong answers depending only on file processing order. Required BOTH Q001 pillars together (typed access AND whole-project in-process hosting) - Myriad\u0027s current per-file plugin invocation model (GeneratorContext.InputFilename, singular) would not reproduce this without also changing to a whole-project view. Output-side safety remains untested; Round B\u0027s own bug (unparenthesized nested call) is a live example of the failure class typed output would prevent.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": "2026-07-14"
+}

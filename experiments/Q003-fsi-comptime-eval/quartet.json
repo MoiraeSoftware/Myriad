@@ -1,0 +1,15 @@
+{
+  "id": "Q003",
+  "status": "closed",
+  "verdict": "SHIP the falsifier\u0027s own narrow claim; capability claim stays open. FsiEvaluationSession and FSharpChecker coexist in one process with no collision, and an FSI-evaluated F#-typed value (not just a BCL primitive - a (string*string) list) crossed into host code as a directly usable, correctly-typed value via direct cast, no InvalidCastException, because FSI resolved to the same FSharp.Core assembly identity as the host. Clears the single biggest \u0027does this even work\u0027 doubt cheaply. Does NOT clear: AssemblyLoadContext-isolated hosting (the production-relevant case for Myriad\u0027s real plugin loader, untested here and the likeliest place this breaks), or the full evaluate-to-generate-to-splice-to-typecheck loop (only \u0027can data cross the boundary\u0027 was tested, not \u0027can this drive real generation\u0027).",
+  "note": "Falsifier-only close. Two concrete follow-ups named in 03-review.md: test under ALC isolation, and build the full comptime-to-generation loop.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": "2026-07-14"
+}

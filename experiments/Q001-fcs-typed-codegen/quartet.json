@@ -1,0 +1,15 @@
+{
+  "id": "Q001",
+  "status": "closed",
+  "verdict": "REVISE, not SHIP. In-process typed FCS hosting (Fable-style) \u002B TransparentCompiler is a viable, now-measured foundation for a Myriad successor: zero-disk-write splice, correct typed field/attribute access, and automatic stale-dependency detection all confirmed by running code. But this validated exactly one of ~5-6 pillars a real successor needs (typed output, comptime/FSI schema evaluation, hygiene, composable pipelines, plugin packaging all untested), and the one real Myriad generator ported (Fields) came back NULL on the headline \u0027typed beats syntax\u0027 claim - typed access changed nothing for a pure structural-echo generator. Not evidence Myriad has evolved; evidence the foundation for a successor doesn\u0027t collapse on contact.",
+  "note": "First quartet under this repo\u0027s own experiments/ methodology (see ../README.md, adapted from an ML-training quartet convention in a different repo). Originally run as an untracked scratch spike; artifacts/ was reconstructed and re-verified after the fact (see artifacts/README.md).",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": "2026-07-14"
+}

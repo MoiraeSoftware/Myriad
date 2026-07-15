@@ -1,0 +1,14 @@
+{
+  "id": "Q008",
+  "status": "closed",
+  "verdict": "SHIP. A custom attribute stamped on a generative provided type survives into independently-reflectable on-disk IL (confirmed by a program with zero SDK involvement). A second, genuinely separate provider reads that attribute via plain reflection and gates real member generation on it: matching provenance passes with 0 diagnostics and real generated members; mismatched provenance fails with a specific diagnostic naming both versions, not a swallowed generic error. The conflict is caught on a live source edit through the same FSharpChecker instance with no rebuild, at 19-32ms, at or below Q006\u0027s 47ms baseline in the fair success-path comparison. Every threshold this quartet\u0027s own hypothesis pre-registered was met without a forced downgrade, unlike Q006. Scoped precisely per the review: the differentiating value is when/where the check fires (keystroke-time, source-cited) not whether such a check can exist at all - a build-time version-check script already achieves the same outcome, just later and without the source citation. Detail: Q008-provenance-closed-loop/03-review.md.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": "2026-07-14"
+}

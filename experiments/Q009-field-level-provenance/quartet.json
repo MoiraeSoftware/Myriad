@@ -1,0 +1,14 @@
+{
+  "id": "Q009",
+  "status": "closed",
+  "verdict": "SHIP. Generalizes Q008 from whole-type to field-level provenance. Member-level custom attributes survive into independently-reflectable IL via the same defineCustomAttrs/assemblyReplacementMap path as type-level (Round 1, answering the question Q008 left open). A client declaring a subset of fields stays clean when an undeclared field\u0027s provenance changes and fails with a diagnostic naming the specific field(s) - including multiple at once - when a declared field changes, both proven live via same-checker re-check with no rebuild (Round 2/3). Re-check cost stayed flat (15-57ms) across a 3-to-12-field schema, matching Q008\u0027s 19-32ms band; genuine cold ~1183ms matched Q008\u0027s 1161ms. The design-mandated competing alternative (N separately-versioned whole types) was measured honestly: it also achieves selective enforcement: this quartet\u0027s real, measured edge is design-time cost (one Assembly.LoadFrom vs N) and one dependency declaration as data rather than N instantiations. The stronger ergonomic claim (grouping matters for real per-field data access) is plausible and consistent with Q006 but wasn\u0027t independently re-proven here, since both this quartet and Q008 generate verification-only marker members, not real accessors - scoped explicitly in the review, doesn\u0027t change the verdict. Detail: Q009-field-level-provenance/03-review.md.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": "2026-07-14"
+}
