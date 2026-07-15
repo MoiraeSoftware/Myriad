@@ -13,9 +13,9 @@ Plugins for Myriad are supplied by simply including the nuget package in your pr
 To use Myriad via its MSBuild support you add the `Myriad.Core` and `Myriad.Sdk` package references:
 ```xml
     <ItemGroup>
-      <PackageReference Include="Myriad.Core" Version="0.5.1" />
-      <PackageReference Include="Myriad.Sdk" Version="0.5.1" />
-      <PackageReference Include="Myriad.Plugins" Version="0.5.1" /> <!-- Built in set of plugins -->
+      <PackageReference Include="Myriad.Core" Version="0.8.6" />
+      <PackageReference Include="Myriad.Sdk" Version="0.8.6" />
+      <PackageReference Include="Myriad.Plugins" Version="0.8.6" /> <!-- Built in set of plugins -->
     </ItemGroup>
 ```
 

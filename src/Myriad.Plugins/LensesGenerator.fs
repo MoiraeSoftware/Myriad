@@ -18,7 +18,7 @@ module internal CreateLenses =
 
     let private createLensForRecordField (parent: LongIdent) (wrapperName : Option<string>) (aetherStyle: bool) (field: SynField) =
         let (SynField.SynField(_,_,id,fieldType,_,_,_,_,_)) = field
-        let fieldName = match id with None -> failwith "no field name" | Some f -> f
+        let fieldName = GeneratorHelpers.getFieldName id
 
         let recordType = SynType.CreateFromLongIdent parent
                     
@@ -87,10 +87,6 @@ module internal CreateLenses =
 
             let setter =
                 let valueIdent = Ident.Create "value"
-
-                let valueArgPatterns = [GeneratorHelpers.createTypedNamedParen valueIdent fieldType]
-
-                let duType = SynType.CreateFromLongIdent parent
 
                 let createCase = SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.LongIdent (false, fullCaseName, None, range0), SynExpr.Ident valueIdent, range0)
                 
@@ -178,24 +174,9 @@ type LensesGenerator() =
         member _.ValidInputExtensions = seq {".fs"}
         member _.Generate(context: GeneratorContext) =
             //context.ConfigKey is not currently used but could be a failover config section to use when the attribute passes no config section, or used as a root config
-            let ast, _ = GeneratorHelpers.parseInputAst context
-
-            let processTypeList namespaceAndTypes =
-                namespaceAndTypes
-                |> List.collect (
-                    fun (ns, types) ->
-                    types
-                    |> List.choose (fun t ->
-                        let attr = Ast.getAttribute<Generator.LensesAttribute> t
-                        Option.map (fun a -> t, a) attr)
-                    |> List.map (fun (typeDefn, attrib) ->
-                        let config = Generator.getConfigFromAttribute<Generator.LensesAttribute> context.ConfigGetter typeDefn
-                        let typeNamespace = GeneratorConfig.getOrDefault "namespace" "UnknownNamespace" config
-                        let usePipedSetter = GeneratorConfig.getOrDefault "pipedsetter" false config
-                        let synModule = CreateLenses.createLensModule ns typeDefn attrib usePipedSetter
-                        SynModuleOrNamespace.CreateNamespace(Ident.CreateLong typeNamespace, isRecursive = true, decls = [synModule])))
-
-            let recordsModules = processTypeList (Ast.extractRecords ast)
-            let duModules = processTypeList (Ast.extractDU ast)
-
-            Output.Ast [yield! recordsModules; yield! duModules]
+            let createModule ns typeDefn (attrib: SynAttribute) config =
+                let usePipedSetter = GeneratorConfig.getOrDefault "pipedsetter" false config
+                let synModule = CreateLenses.createLensModule ns typeDefn attrib usePipedSetter
+                GeneratorHelpers.createNamespacedModule config synModule
+            let extract ast = Ast.extractRecords ast @ Ast.extractDU ast
+            GeneratorHelpers.generateModulesWithAttr<Generator.LensesAttribute> context extract createModule

@@ -4,13 +4,17 @@
         <MyriadSdk_Generator_ExeHost>dotnet </MyriadSdk_Generator_ExeHost>
         <!-- Extract the version from the Myriad.Sdk package directory path so we can locate the matching Myriad tool package -->
         <_MyriadSdkVersion>$([System.IO.Path]::GetFileName($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName('$(MSBuildThisFileFullPath)'))))))</_MyriadSdkVersion>
-        <MyriadSdk_Generator_Exe Condition="'$(MyriadSdk_Generator_Exe)' == ''">$([System.IO.Path]::Combine('$(NuGetPackageRoot)', 'myriad', '$(_MyriadSdkVersion)', 'tools', 'net9.0', 'any', 'Myriad.dll'))</MyriadSdk_Generator_Exe>
+        <!-- Remember whether the consumer supplied a custom exe BEFORE we set the default,
+             so that the PackageDownload below can use the same check. -->
+        <_MyriadSdkUseDefaultExe Condition="'$(MyriadSdk_Generator_Exe)' == ''">true</_MyriadSdkUseDefaultExe>
+        <MyriadSdk_Generator_Exe Condition="'$(_MyriadSdkUseDefaultExe)' == 'true'">$([System.IO.Path]::Combine('$(NuGetPackageRoot)', 'myriad', '$(_MyriadSdkVersion)', 'tools', 'net9.0', 'any', 'Myriad.dll'))</MyriadSdk_Generator_Exe>
     </PropertyGroup>
 
     <!-- Download the matching Myriad tool package into the NuGet cache so that
-         MyriadSdk_Generator_Exe above resolves to a valid path at build time. -->
-    <ItemGroup>
-        <PackageDownload Include="myriad" Version="[$(_MyriadSdkVersion)]" />
+         MyriadSdk_Generator_Exe above resolves to a valid path at build time.
+         Skipped when the consumer provides a custom MyriadSdk_Generator_Exe. -->
+    <ItemGroup Condition="'$(_MyriadSdkUseDefaultExe)' == 'true'">
+        <PackageDownload Include="Myriad" Version="[$(_MyriadSdkVersion)]" />
     </ItemGroup>
 
 </Project>

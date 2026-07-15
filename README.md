@@ -21,8 +21,8 @@ If you enjoy this repo and wanted to shown your appriciation etc then I do have 
 To use Myriad via its MSBuild support you add the `Myriad.Core` and `Myriad.Sdk` package references:
 ```xml
     <ItemGroup>
-      <PackageReference Include="Myriad.Core" Version="0.8.4" />
-      <PackageReference Include="Myriad.Sdk" Version="0.8.4" />
+      <PackageReference Include="Myriad.Core" Version="0.8.6" />
+      <PackageReference Include="Myriad.Sdk" Version="0.8.6" />
     </ItemGroup>
 ```
 
@@ -158,8 +158,8 @@ The full fsproj is detail below:
         </Compile>
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="Myriad.Core" Version="0.8.4" />
-      <PackageReference Include="Myriad.Sdk" Version="0.8.4" />
+      <PackageReference Include="Myriad.Core" Version="0.8.6" />
+      <PackageReference Include="Myriad.Sdk" Version="0.8.6" />
     </ItemGroup>
 </Project>
 ```
@@ -210,7 +210,7 @@ Then add a new folder `build` with the `Generator.props` file within:
 ```xml
 <Project>
     <ItemGroup>
-        <MyriadSdkGenerator Include="$(MSBuildThisFileDirectory)/../lib/netstandard2.1/Generator.dll" />
+        <MyriadSdkGenerator Include="$(MSBuildThisFileDirectory)/../lib/net9.0/Generator.dll" />
     </ItemGroup>
 </Project>
 ```
@@ -220,7 +220,7 @@ Often an additional props file (In this sample the file would be `Generator.InTe
 ```xml
 <Project>
     <ItemGroup>
-        <MyriadSdkGenerator Include="$(MSBuildThisFileDirectory)/../bin/$(Configuration)/netstandard2.1/Generator.dll" />
+        <MyriadSdkGenerator Include="$(MSBuildThisFileDirectory)/../bin/$(Configuration)/net9.0/Generator.dll" />
     </ItemGroup>
 </Project>
 ```
@@ -248,10 +248,10 @@ The nuget package for Myriad can be found here:
 [Nuget package](https://www.nuget.org/packages/myriad/).
 
 ## Dotnet template
-A dotnet template for a Myriad plugin/generator is available here:
+A dotnet template for a Myriad plugin/generator is available on NuGet:
 ```
 #install dotnet template
-dotnet new -i Myriad.Templates
+dotnet new install Myriad.Templates
 
 #create myriad generator from the template
 dotnet new myriadgenerator -n myMyriadPlugin
@@ -259,7 +259,7 @@ dotnet new myriadgenerator -n myMyriadPlugin
 
 ## How to build and test
 
-1. Make sure you have .Net Core SDK installed - check required version in [global.json](global.json)
+1. Make sure you have .NET SDK installed - check required version in [global.json](global.json)
 2. Run `dotnet tool restore`
 3. Run `dotnet build -c Release -t:Build`
 

@@ -34,16 +34,21 @@ jobs:
     - name: Validate version
       run: |
         VERSION="${{ steps.tag_name.outputs.current_version }}"
-        # Require at least three numeric segments (X.Y.Z), optionally followed by a pre-release suffix.
+        # Require exactly three numeric segments (X.Y.Z), optionally followed by a pre-release suffix.
         # This prevents 2-segment tags like v0.85 (which would publish as 0.85.0 instead of 0.8.5).
-        if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
+        if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
           echo "::error::Version '$VERSION' does not match the required X.Y.Z format. Did you mean to add a missing segment (e.g. '0.85' should be '0.8.5')?"
           exit 1
         fi
         # Verify the version matches VersionPrefix in Directory.Build.props so that the tag and
         # source code are always in sync.
         EXPECTED=$(sed -n 's/.*<VersionPrefix[^>]*>\([^<]*\)<\/VersionPrefix>.*/\1/p' Directory.Build.props | head -1)
-        if [ "$VERSION" != "$EXPECTED" ] && ! echo "$VERSION" | grep -q "^${EXPECTED}-"; then
+        if [ -z "$EXPECTED" ]; then
+          echo "::error::Could not extract VersionPrefix from Directory.Build.props."
+          exit 1
+        fi
+        EXPECTED_ESCAPED=$(printf '%s' "$EXPECTED" | sed 's/[.]/[.]/g')
+        if [ "$VERSION" != "$EXPECTED" ] && ! echo "$VERSION" | grep -qE "^${EXPECTED_ESCAPED}-"; then
           echo "::error::Tag version '$VERSION' does not match VersionPrefix '$EXPECTED' in Directory.Build.props. Update Directory.Build.props before tagging."
           exit 1
         fi

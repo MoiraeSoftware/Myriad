@@ -50,7 +50,7 @@ jobs:
           cd docs
           hugo \
             --minify \
-            --baseURL "${{ steps.pages.outputs.base_url }}/"
+            --baseURL "${{ steps.pages.outputs.base_url || 'https://moiraesoftware.github.io/Myriad' }}/"
         env:
           HUGO_ENVIRONMENT: production
           HUGO_ENV: production

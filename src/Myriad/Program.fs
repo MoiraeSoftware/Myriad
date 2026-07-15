@@ -13,8 +13,8 @@ open Tomlyn.Model
 open McMaster.NETCore.Plugins
 
 module Implementation =
-    let findPlugins (path: string) =
-        
+    let findPlugins (isVerbose: bool) (path: string) =
+
         let loader = PluginLoader.CreateFromAssemblyFile(path, [|typeof<MyriadGeneratorAttribute>; typeof<IMyriadGenerator> |], fun config -> config.PreferSharedTypes <- true)
         let assembly = loader.LoadDefaultAssembly()
         let types =
@@ -22,6 +22,11 @@ module Implementation =
                 assembly.GetTypes()
             with
             | :? Reflection.ReflectionTypeLoadException as ex ->
+                if isVerbose then
+                    eprintfn "ReflectionTypeLoadException loading '%s':" path
+                    for loaderEx in ex.LoaderExceptions do
+                        if loaderEx <> null then
+                            eprintfn "  - %s" (loaderEx.Message)
                 ex.Types |> Array.filter (fun t -> t <> null)
         let gens =
             [ for t in types do
@@ -140,7 +145,7 @@ module Main =
 
             let generators =
                 plugins
-                |> List.collect findPlugins
+                |> List.collect (findPlugins verbose)
 
             if verbose then
                 printfn "Generators found:"

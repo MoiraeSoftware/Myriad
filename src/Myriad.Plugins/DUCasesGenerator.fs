@@ -9,10 +9,7 @@ module internal CreateDUModule =
     open Fantomas.FCS.Text.Range
 
     let createDuInputPattern (varIdent: SynLongIdent) (duType: SynType) : SynPat =
-        let inputIdent = "x"
-        let ident = Ident(inputIdent, range0)
-        let name = SynPat.CreateNamed(ident)
-        let args = SynPat.CreateTyped(name, duType) |> SynPat.CreateParen
+        let args = GeneratorHelpers.createTypedNamedParen (Ident.Create "x") duType
         SynPat.CreateLongIdent(varIdent, [args])
 
     let createMatchOnIdent (inputIdent: string) : SynExpr =
@@ -122,8 +119,7 @@ module internal CreateDUModule =
             let info = SynComponentInfo.Create recordId
 
             let mdl = SynModuleDecl.CreateNestedModule(info,  declarations)
-            let dusNamespace = GeneratorConfig.getOrDefault "namespace" "UnknownNamespace" config
-            SynModuleOrNamespace.CreateNamespace(Ident.CreateLong dusNamespace, isRecursive = true, decls = [mdl])
+            GeneratorHelpers.createNamespacedModule config mdl
         | _ -> failwithf "Not a record type"
 
 [<MyriadGenerator("dus")>]

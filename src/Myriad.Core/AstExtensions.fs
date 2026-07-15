@@ -14,6 +14,18 @@ module AstExtensions =
       | [] -> []
       | xs -> [ for _ in 1..xs.Length - 1 do range0 ]
 
+    /// Builds a generic SynType.App node. Use hasAngles=false only for postfix array syntax.
+    let private mkGenericType (typeName: SynType) (typeArgs: SynType list) (isPostfix: bool) (hasAngles: bool) =
+        SynType.App(
+            typeName = typeName,
+            typeArgs = typeArgs,
+            commaRanges = [],
+            isPostfix = isPostfix,
+            range = range0,
+            greaterRange = (if hasAngles then Some range0 else None),
+            lessRange  = (if hasAngles then Some range0 else None)
+        )
+
     type ParsedImplFileInputTrivia with
         static member Zero =
             { ParsedImplFileInputTrivia.ConditionalDirectives = []
@@ -210,117 +222,37 @@ module AstExtensions =
 
         static member Option(inner: SynType, ?isPostfix : bool) =
             let isPostfix = defaultArg isPostfix false
-            SynType.App(
-                typeName=SynType.CreateLongIdent (if isPostfix then "option" else "Option"),
-                typeArgs=[ inner ],
-                commaRanges = [ ],
-                isPostfix = isPostfix,
-                range = range0,
-                greaterRange = Some range0,
-                lessRange = Some range0
-            )
+            mkGenericType (SynType.CreateLongIdent (if isPostfix then "option" else "Option")) [ inner ] isPostfix true
 
         static member ResizeArray(inner: SynType) =
-            SynType.App(
-                typeName=SynType.CreateLongIdent "ResizeArray",
-                typeArgs=[ inner ],
-                commaRanges = [ ],
-                isPostfix = false,
-                range = range0,
-                greaterRange = Some range0,
-                lessRange = Some range0
-            )
+            mkGenericType (SynType.CreateLongIdent "ResizeArray") [ inner ] false true
 
         static member Set(inner: SynType) =
-            SynType.App(
-                typeName=SynType.CreateLongIdent "Set",
-                typeArgs=[ inner ],
-                commaRanges = [ ],
-                isPostfix = false,
-                range = range0,
-                greaterRange = Some range0,
-                lessRange = Some range0
-            )
+            mkGenericType (SynType.CreateLongIdent "Set") [ inner ] false true
 
         static member NativePointer(inner: SynType, ?isPostfix : bool) =
-            SynType.App(
-                typeName=SynType.CreateLongIdent "nativeptr",
-                typeArgs=[ inner ],
-                commaRanges = [ ],
-                isPostfix = defaultArg isPostfix false,
-                range = range0,
-                greaterRange = Some range0,
-                lessRange = Some range0
-            )
+            mkGenericType (SynType.CreateLongIdent "nativeptr") [ inner ] (defaultArg isPostfix false) true
 
         static member Option(inner: string, ?isPostfix : bool) =
             let isPostfix = defaultArg isPostfix false
-            SynType.App(
-                typeName=SynType.CreateLongIdent (if isPostfix then "option" else "Option"),
-                typeArgs=[ SynType.Create inner ],
-                commaRanges = [ ],
-                isPostfix = isPostfix,
-                range = range0,
-                greaterRange = Some range0,
-                lessRange = Some range0
-            )
+            mkGenericType (SynType.CreateLongIdent (if isPostfix then "option" else "Option")) [ SynType.Create inner ] isPostfix true
 
         static member Dictionary(key, value) =
-            SynType.App(
-                typeName=SynType.LongIdent(SynLongIdent.Create [ "System"; "Collections"; "Generic"; "Dictionary" ]),
-                typeArgs=[ key; value ],
-                commaRanges = [ ],
-                isPostfix = false,
-                range = range0,
-                greaterRange = Some range0,
-                lessRange = Some range0
-            )
+            mkGenericType (SynType.LongIdent(SynLongIdent.Create [ "System"; "Collections"; "Generic"; "Dictionary" ])) [ key; value ] false true
 
         static member Map(key, value) =
-            SynType.App(
-                typeName=SynType.CreateLongIdent "Map",
-                typeArgs=[ key; value ],
-                commaRanges = [ ],
-                isPostfix = false,
-                range = range0,
-                greaterRange = Some range0,
-                lessRange = Some range0
-            )
+            mkGenericType (SynType.CreateLongIdent "Map") [ key; value ] false true
 
         static member List(inner: SynType, ?isPostfix : bool) =
             let isPostfix = defaultArg isPostfix false
-            SynType.App(
-                typeName=SynType.CreateLongIdent (if isPostfix then "list" else "List"),
-                typeArgs=[ inner ],
-                commaRanges = [ ],
-                isPostfix = isPostfix,
-                range = range0,
-                greaterRange = Some range0,
-                lessRange = Some range0
-            )
+            mkGenericType (SynType.CreateLongIdent (if isPostfix then "list" else "List")) [ inner ] isPostfix true
 
         static member Array(inner: SynType) =
-            SynType.App(
-                typeName=SynType.CreateLongIdent "array",
-                typeArgs=[ inner ],
-                commaRanges = [ ],
-                isPostfix = true,
-                range=range0,
-                greaterRange=None,
-                lessRange=None
-            )
+            mkGenericType (SynType.CreateLongIdent "array") [ inner ] true false
 
         static member List(inner: string, ?isPostfix : bool) =
             let isPostfix = defaultArg isPostfix false
-            SynType.App(
-                typeName=SynType.CreateLongIdent (if isPostfix then "list" else "List"),
-                typeArgs=[ SynType.Create inner ],
-                commaRanges = [ ],
-                isPostfix = isPostfix,
-                range = range0,
-                greaterRange = Some range0,
-                lessRange = Some range0
-            )
+            mkGenericType (SynType.CreateLongIdent (if isPostfix then "list" else "List")) [ SynType.Create inner ] isPostfix true
 
         static member DateTimeOffset() =
             SynType.LongIdent(SynLongIdent.Create [ "System"; "DateTimeOffset" ])
