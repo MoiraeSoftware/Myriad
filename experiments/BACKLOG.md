@@ -175,6 +175,20 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
    splitting Myriad's real generators (`Fields`, `Lenses`) into discrete cacheable stages actually
    shrink measured regeneration work on a body-only edit, or does attribute-decl-level granularity
    already capture most of the win MSBuild's own file-level cache leaves on the table?
+   **External confirmation, 2026-07-16, worth recording since it bears on whether this whole file's
+   architecture-improvement premise is even the right target:** `fsharp/fslang-suggestions#864` ("Support
+   Source Generators," open since ~2020, 131 comments, still OPEN, estimated cost **XXXXL**) is the F#
+   team's own tracker for "give F# a Roslyn-style source-generator hook." FCS/compiler team member
+   `vzarytovskii`, in that thread: "There is no runtime contract for source generators, the CLR itself
+   doesn't know they exist. They're purely compiler-level hooks implemented in csc" — i.e. there is no
+   shared substrate to plug F# into even in principle, only a from-scratch `fsc`/FCS equivalent, which is
+   exactly the XXXXL estimate. Same team member, asked why F# lacks this: "F# has Myriad, which is a
+   community-driven sourcegen solution" — offered as the team's actual answer, not a stopgap. This item's
+   *caching design* (structural per-stage memoization) is fully portable regardless — it needs nothing
+   from Roslyn's compiler internals. What is **not** portable, confirmed by an authoritative external
+   source rather than only this repo's own quartet evidence: the live-in-IDE mechanism itself, since it
+   depends on a compiler-hosted hook FCS has no equivalent of and the F# team has no near-term plan to
+   build. See memory note `project_fsharp_no_source_generators` for the full citation.
 
 10. **Multi-pass generation for cross-generator visibility (new, extends Q005).** No mechanism today
     lets `[<Generator2>]` see what `[<Generator1>]` already generated in the same build — Q006 proved
@@ -253,8 +267,30 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     instrument one structural-echo and one cross-file generator, compare fingerprint churn to file-hash
     churn under a body-only edit.
 
-14. **Erased, self-parsing design-time-only provider (new, revives the type-provider route to Q006's
-    IDE-invisibility target, extends items 7-8).** Q006's port was *generative* (`isErased=false`) and
+14. **Erased, self-parsing design-time-only provider — PROMOTED TO Q019, CLOSED, SHIP (scoped, as of
+    2026-07-16).** See `Q019-erased-self-parsing-provider/03-review.md` for the full verdict; original
+    framing kept below for context on what changed. The design deviated from the original framing in
+    one respect worth flagging up front: this used its own `DefineStaticParameters`-based
+    `Fields<SourceFilePath, RecordName>` provider rather than `ApplyStaticArguments`-on-a-single-type,
+    and called `Myriad.Core.Ast.fromFilename`/`Ast.extractRecords` (Myriad's own real parsing code, a
+    direct library reference to the built `Myriad.Core.dll`) rather than raw `Fantomas.FCS` calls —
+    both faithful to this item's actual intent, not a substitution. All three pre-registered rounds
+    shipped, independently reproduced by review: design-time member resolution with the target record
+    type provably absent from every reference path (0 diagnostics); a live on-disk field edit picked up
+    via `FileSystemWatcher`+`Invalidate()` with no rebuild (0 diagnostics, ~40ms); and runtime
+    correctness against a genuinely independent, separately-compiled consumer. This item's own open
+    question — real Ionide workspace test — remains untested (still `FSharpChecker`-as-library only,
+    the standing Q006-era caveat), and the review scoped the result hard: every member is `obj`-typed
+    (name completion, not typed IntelliSense), this is a parallel preview mechanism the user points at
+    a file path, not Myriad's own `[<Lenses>]`-on-the-record shape made live, and the review struck one
+    of the write-up's own "found by running" corrections (`assemblyReplacementMap` being load-bearing)
+    as a non-reproducing, post-hoc misattribution — a real miss worth remembering: this repo's own
+    "found by running, not assumed" discipline is not itself immune to being wrong, which is exactly
+    what the independent-review gate exists to catch. Top named follow-up: type the provided members
+    with the field's real declared type instead of `obj` — trivial for primitives, but a field typed by
+    another type from the same uncompiled file walks straight back toward Q006's wall, and is the
+    genuinely open question left after this quartet.
+    Original framing: Q006's port was *generative* (`isErased=false`) and
     hit the same-compilation wall. An **erased** provider (`isErased=true`,
     `FSharp.TypeProviders.SDK/src/ProvidedTypes.fsi:272,343`) sidesteps the wall differently: give it
     the source file path as a static parameter and have it **parse the file itself with Fantomas.FCS**
@@ -272,8 +308,58 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     and there's no collision with the build-generated file.
 
 15. **Type provider subsuming a Myriad-compiled satellite DLL — cross-project case — PROMOTED TO Q016,
-    RUNNING (as of 2026-07-16).** See `Q016-satellite-dll-type-provider/00-hypothesis.md` for the
-    pre-registered version; original framing kept below for context. Raised in conversation: instead
+    CLOSED, REVISE (as of 2026-07-16).** Round 1 (real reflection-forwarding into a Myriad-CLI-produced,
+    `checker.Compile`-built satellite DLL) passed. Round 2 (regeneration + live pickup via
+    `Invalidate()`/`FileSystemWatcher`) failed: the `Assembly.LoadFrom` that Round 1's identity match
+    requires holds a Windows file-lock that blocks the satellite DLL from being overwritten. The
+    adversarial review sharpened this past a simple pass/fail: the lock lands precisely on the *one
+    thing* that makes a type provider worth using here at all — this item's own caveat below already
+    conceded a TP barely earns its keep over a `<ProjectReference>` except for live re-exposure, and
+    live re-exposure is exactly what breaks. The review also flagged that this quartet's own attempts
+    already rule out the REVISE threshold's presumed workaround (`Assembly.Load(bytes)`, per Q011 —
+    shown here to break the same identity match Round 1 needs), and that generalization beyond one
+    record shape (`create`/`name`/`age`/`email`) is untested — the one available differently-shaped
+    member (`map`, function-typed parameters) was never tried. See
+    `Q016-satellite-dll-type-provider/03-review.md` for the full account and prioritized follow-ups.
+    **Follow-up spiked and closed: `Q017-satellite-function-typed-forwarding`, SHIP (as of 2026-07-16).**
+    The function-typed-shape gap named above was tested directly (Myriad's own real `map` function, two
+    `FSharpFunc<_,_>` parameters plus a record) and passed cleanly with no new scaffolding — the review
+    independently rebuilt and reran it, then went further and confirmed function values also flow *out*
+    of the provider (a genuine `FSharpFunc` return) and through record-typed function elements, not just
+    primitives. But the review reframes the win and flags a new, more important risk: the mechanism is
+    just opaque-reference forwarding (nothing "function-typed" is special-cased), and it is **brittle to
+    F#'s curried-arity flattening** — a source-level function-returning-function usually compiles to a
+    flat multi-arg method, not an `FSharpFunc` return, invisible from the source signature, and a forward
+    built against a mismatched real `MethodInfo` throws and poisons the *entire* provided type, not just
+    the offending member. **This is now a standing, concrete risk for item 15 itself and for any future
+    attempt to reflection-forward `Lenses`' own getter/setter-shaped output this way** (see the general
+    ideas section below) — compiled arity, not source arity, must be checked first. Round 2's file-lock
+    problem is untouched by Q017 and stands exactly as Q016 left it. See
+    `Q017-satellite-function-typed-forwarding/03-review.md`.
+    **Follow-up spiked and closed: `Q018-collectible-alc-round2-mitigation`, REVISE — materially weaker
+    than Q016's own, and effectively a dead end for this item's live-re-exposure goal (as of 2026-07-16).**
+    The exact mitigation named above was tested directly, in three staged rounds. The underlying OS
+    mechanism is real (an isolated collectible ALC does release the Windows file-lock), but only with
+    `TieredCompilation=false` — a JIT setting no real IDE host (Ionide/FSAC/MSBuild's own `dotnet.exe`)
+    runs with by default, and one this item cannot assume. Worse: the actual mitigation, integrated into
+    the real provider and triggered in its most favorable possible way (an explicit, pre-write eviction
+    call, sidestepping a chicken-and-egg flaw in the original `FileSystemWatcher`-triggered design), still
+    failed to release the lock. The review went further than the executor and closed off the one hopeful
+    escape left open — a fresh `FSharpChecker` per regeneration cycle *also* fails, because the retained
+    reference lives process-globally inside FCS's own type-provider hosting, not scoped to any one checker
+    instance. **There is now no demonstrated in-process fix for Round 2's lock.** See
+    `Q018-collectible-alc-round2-mitigation/03-review.md` for the full account, including two further
+    confirmations: FCS's own referenced-assembly reader isn't the culprit (ruled out directly), and a
+    narrower JIT-tuning attribute (`AggressiveOptimization`) doesn't substitute for the process-wide
+    setting either.
+    **Honest bottom line for this item, now settled rather than provisional: this is not a viable path to
+    live re-exposure for the cross-project case.** The generalization concern (Q017) is resolved, but the
+    file-lock problem (Q016 Round 2) has been tested against its most promising named mitigation and that
+    mitigation is exhausted in-process, not merely unproven. Use an ordinary `<ProjectReference>` for this
+    case. The only remaining in-principle escape — an out-of-process design-time host, torn down between
+    edits — is untested, a large lift, and may not earn its keep over a plain `<ProjectReference>` anyway;
+    don't queue another in-process ALC variant.
+    Original framing kept below for context. Raised in conversation: instead
     of a provider hand-building `ProvidedTypes` members from an untyped Myriad AST (item 14's own
     open problem — `ProvidedProperty`/`ProvidedMethod` need concrete CLR `Type`s, Myriad's
     `Fantomas.FCS.Syntax` AST has none without a full typecheck), let Myriad run its *real* generator
@@ -646,6 +732,166 @@ Q006 same-compilation wall at all** — the wall binds only the type-provider ro
 above blur this distinction; any idea needing same-compilation typed visibility is dead as a
 *provider* (Q006) but potentially alive in the *CLI* model, subject only to softer constraints like
 item 10's chicken-and-egg problem, not Q006's structural wall.
+
+### Round 4 — reversed information flow (a fourth brainstorming pass, run on a different model —
+Fable, not the model that wrote rounds 1-3 — briefed on `Q016`/`Q017`/`Q018` and `Q019`-in-progress,
+told explicitly to find a division of labor where Myriad and a type provider do genuinely different,
+complementary jobs rather than compete to produce the same type surface)
+
+Every combination tried so far, including `Q019` itself, has one thing in common: the type provider
+consumes something Myriad made, or stands entirely alone. This pass was asked to find the opposite
+shape — Myriad consuming something *about* the type provider — and produced one idea judged strong
+enough to record verbatim rather than paraphrased into the house style, not yet spiked:
+
+- **Tiered erasure: an erased-TP façade whose runtime fallback Myriad harvests and retires,
+  bound through a runtime registry.** The observation: an erased provider can give a use site a
+  correct typed surface at the first keystroke, computed purely from its own static arguments, with
+  zero dependence on build state — but per the Q006 wall it can only ever erase to already-compiled
+  *generic* machinery (an interpreter, reflection, a runtime-compiled delegate), never anything
+  specialized to that specific use site, because it cannot bind to code in the compilation currently
+  in progress. Myriad is the mirror image: it can put real, specialized, compiled, AOT-safe code
+  *into* the current compilation, but has no design-time surface and generates from declarations, not
+  from call sites. The proposed mechanism: an erased provider (`Codec<"schema-literal">`) has every
+  provided member erase to `Registry.Invoke(key, args)`, where `key` hashes the static-argument tuple
+  plus member name and `Registry` is an ordinary runtime dispatch table that falls back to a generic
+  interpreter on a cache miss. Separately, a new Myriad generator parses the project's own source
+  (the same `Fantomas.FCS` parse Myriad already does, no typechecking needed) looking for
+  `SynType.App`/`SynType.StaticConstant` nodes matching the provider's instantiations — TP static
+  arguments are always literals, so they're syntactically recoverable with no attribute needed on
+  anything — and for each distinct static-argument tuple found, emits a real, specialized,
+  reflection-free implementation into a generated `.fs` file tagged `[<SpecializationFor("key")>]`.
+  At runtime, `Registry`'s first miss triggers a one-time scan of loaded assemblies for that
+  attribute and self-populates. Binding happens through an attribute at run time, not through the
+  compiler at design time — the only direction the wall permits — so a specialization compiled in the
+  very same build as its use site still ends up executing in place of the interpreter, with no
+  staleness (the façade is a pure function of source text, always fresh) and no file-lock problem
+  (nothing is ever `Assembly.LoadFrom`'d at design time, unlike `Q016`/`Q018`). A harvest/use
+  mismatch (e.g. an `#if`-guarded instantiation Myriad's harvest pass never sees) degrades to the
+  interpreter, never a type error. **Why this isn't a rename of `Q016`-18 or `Q019`:** those all have
+  the TP consuming an artifact Myriad produced (or, for `Q019`, consuming nothing but also producing
+  nothing Myriad-specialized) — information flows from Myriad to the type surface, and the two fight
+  over freshness. Here information flows from source *instantiations* to Myriad, the TP never loads
+  anything Myriad made, and the only degradable thing is a performance tier, not correctness.
+  **The honest weak point, argued against itself:** erasure fixes the runtime *signature* before any
+  specialization exists, so `Registry.Invoke` traffics only in already-boxed/erased representations —
+  a specialization can improve the work done inside the call, never the types at the call boundary.
+  Worse, a competent interpreter would just compile and cache an expression-tree delegate on first
+  use, at which point the Myriad-specialized tier may be within noise of the fallback on an ordinary
+  desktop JIT — the whole mechanism may buy nothing there. It only earns its keep where the fallback
+  is *structurally* disqualified: Native AOT, trimmed, or no-JIT targets (iOS, WASM) where
+  reflection-emit is unavailable and reflection metadata gets trimmed away. It is explicitly not a
+  fix for `[<Lenses>]`-shaped generation, which has no internal per-call work to specialize in the
+  first place — if "AOT-safe erased providers" turns out to be a capability nobody actually needs,
+  the idea dies on relevance, not mechanism. **Cheapest falsifiers, in order, each cheap enough to
+  kill it before the next is built:** (1) a hand-written skeleton with no TP and no Myriad — one
+  `Registry.Invoke`, one hand-written `[<SpecializationFor>]` implementation, the attribute-scan
+  registration — published with Native AOT and trimming on; if the reflective/interpreted fallback
+  survives AOT/trimming fine on its own, the entire capability delta is gone and the idea is dead
+  before any provider code is written; (2) the same skeleton benchmarked, cached-compiled-delegate
+  interpreter vs. specialized code, both called through the same boxed `Registry.Invoke` signature —
+  if the delta is under roughly 2x on ordinary JIT and (1) already failed, close it; (3) a harvest
+  probe — parse a file containing a real `Codec<"...">` instantiation with `Fantomas.FCS` and confirm
+  the static constant is recoverable from the untyped AST in every position that matters (type
+  abbreviations, annotations, inherit clauses), the one genuinely new Myriad-side claim, checkable in
+  isolation from the rest. Only promote to a quartet if (1) and (3) both pass; (2) then only
+  calibrates how the results section is allowed to word the performance claim, it doesn't gate
+  whether the quartet gets built at all.
+
+### Round 5 — informed by an external finding (Fable again, briefed this time on `fsharp/fslang-suggestions#864`:
+F# has no Roslyn-source-generator equivalent and never will without a compiler-team-scale effort; the
+team's own stated answer is "use Myriad" — see `project_fsharp_no_source_generators` memory note. Asked
+what a type provider could borrow from source generators' *design* since it structurally can't borrow the
+*mechanism*, specifically the two things C# generators have that this lineage has already found type
+providers structurally lack: precise diagnostic anchoring, and a staged/incrementally-memoized pipeline)
+
+- **One shared analysis, two diagnostic channels — PROMOTED TO Q020, CLOSED, SHIP (scoped, as of
+  2026-07-16).** See `Q020-shared-analysis-diagnostic-channels/03-review.md` for the full verdict;
+  original framing kept below for context. All three pre-registered rounds shipped and were
+  independently reproduced by review, which then drove eight additional consumer shapes beyond the one
+  the executor tested: the obsolete-attribute use-site channel generalizes cleanly (anchors the
+  member-access node — receiver plus `.member` — never swallowing a containing pipe/lambda/conditional),
+  and is genuinely new to this lineage — the first non-fatal, use-site-anchored, severity-controlled
+  diagnostic a type provider has produced here (Q008/Q09/Q011 only ever threw at the static-argument
+  site). But the review struck the idea's own headline claim: "one shared analysis, two channels that
+  cannot disagree" is **tautological** — two callers of the identical pure function trivially agree, the
+  same mechanism/capability conflation Q019's own Round 3 hit — and found the two halves are
+  **un-entangled**, not one capability with two faces: the build-time diagnostics half needs *zero*
+  type-provider machinery, and it is the half the idea itself calls more broadly useful, yet it was only
+  ever demonstrated as a 25-line standalone format script, never wired into `IMyriadGenerator` for real.
+  The review also did the honest weighing this idea's own novelty gate asked for and left open: an
+  `FSharp.Analyzers.SDK` analyzer calling the identical shared function **strictly dominates** this
+  result in Ionide (true arbitrary-range anchoring at the actual problem, no obsolete-attribute
+  workaround, no synthetic fake members), leaving the type-provider channel's real niche narrow twice
+  over — Visual Studio specifically, and only for a developer who has adopted a `Q019`-style preview
+  provider and references its members; a VS user editing their own `[<Lenses>]` record directly gets
+  nothing from this channel. Top follow-up, needing none of this quartet's TP machinery: build the real
+  `IMyriadGenerator` diagnostics API the hypothesis itself named as the more valuable outcome.
+  Original framing: The repo's standing finding is purely negative: a type provider can only
+  signal an error by throwing, and FCS pins that message to the whole static-argument expression, never
+  an arbitrary range. This doesn't dispute that wall — it routes around it by giving Myriad and a
+  provider *the same analysis pass* (a function that parses a record's declaring file, exactly the
+  extraction `Q019`'s provider already does, but returns a typed diagnostic list — code, severity,
+  message, source range, and an "associated member" when one applies — not just a shape) and letting two
+  independent emitters consume it. Myriad's CLI renders each diagnostic as a canonical MSBuild line
+  (`path(line,col,line,col): warning MYR012: message`) anchored at the true declaration-site range —
+  a real, small, and currently entirely absent capability on its own: Myriad plugins today have no
+  diagnostics API at all, only "generate or throw." Separately, an *erased* provider (the `Q019` shape)
+  never throws on a member-level problem; instead it still provides the member, but stamps it with
+  `ObsoleteAttribute(message, isError)` (an API this SDK already exposes and shipping providers already
+  use informally) or, for a diagnostic with no natural member to hang off, a synthetic member whose
+  backtick-quoted name carries the message so it surfaces directly in the completion list. FCS then
+  places the *live* diagnostic at every place the user actually types that member — the one location a
+  provider genuinely controls, and arguably the more useful one, since that's where the user is looking
+  while typing, not at the record's own declaration. **Why this is new relative to everything above and
+  in `Q019`:** every prior combination in this lineage moved *code or types* between Myriad and a
+  provider (satellite-DLL forwarding, a harvested runtime registry, a parallel preview type); none moved
+  *diagnostics*, and no quartet has given Myriad plugins a diagnostics API of any kind. **Argued against
+  itself:** obsolete-attribute errors carry a fixed "This construct is deprecated" prefix, a generic
+  code, no quick-fix, and stay invisible until the user actually touches the poisoned member; the
+  informal precedent for message-bearing provided members means the real novelty is the *shared-analysis
+  contract* (one analysis, both channels can never disagree), not the poisoned-member trick itself — if a
+  future reviewer judges the contract to be packaging rather than capability, this scopes down to "Myriad
+  gets a diagnostics API," independently useful but much smaller than framed; and, the sharpest risk,
+  `FSharp.Analyzers.SDK` analyzers already run live inside FSAC today and *can* report a diagnostic at an
+  arbitrary range — an analyzer calling the identical shared analysis function gets true Roslyn-style
+  anchoring in Ionide specifically, with no type provider involved at all, and may simply dominate the
+  live channel for any Ionide user, leaving the provider path relevant mainly for hosts without analyzer
+  support (Visual Studio) or for use-site-specific anchoring. **Cheapest falsifier:** on top of the
+  `Q019` harness, add one member deliberately stamped `AddObsoleteAttribute("test message MYR012", true)`
+  and one backtick-named synthetic member; open in an editor, use the poisoned member, and check whether
+  the *custom* message renders (not just the generic obsolete text) and whether the squiggle lands at the
+  use site rather than the provider's own instantiation line. The Myriad-side MSBuild-line emitter is
+  separately and independently verifiable in minutes by hand-printing one canonical diagnostic line and
+  confirming an editor anchors it at the declaration range.
+- **Last-known-good staging for the erased provider (weaker, flagged high-null-risk by its own author).**
+  `Q019`'s provider does one flat parse-and-rebuild per instantiation with no memoized intermediate
+  stages, so its behavior while the watched file is mid-edit and briefly unparseable is unspecified —
+  either it throws or serves garbage. Roslyn generators survive exactly this because earlier pipeline
+  stages are memoized and carry the last good value forward when a later stage fails; that's arguably
+  the capability that makes them feel "alive," not their raw speed. Proposed borrow: split `Q019`'s
+  provider into content-hash-memoized stages (bytes → parse; parse → extracted shape, memoized by
+  structural equality of the *shape* so pure formatting edits don't invalidate; shape → provided
+  members), and on a parse failure, stage one returns the previous good value tagged stale (optionally
+  surfaced as a marker member saying so) instead of failing the whole type. **Why new:** `Q019`'s own
+  named follow-up was about member *typing* (real types vs. `obj`), not liveness robustness under a
+  broken intermediate file state — no prior round treated the provider's *evaluation shape* itself as
+  the thing worth borrowing from source generators. **Argued against itself, and likely fatal:** FCS's
+  own provider-invalidation granularity may already make this moot — if FCS simply doesn't re-instantiate
+  the provider at all while the watched file is syntactically broken, the previous provided type just
+  persists on its own with no staging machinery needed, and the whole idea collapses to a NULL that
+  mainly documents an FCS invalidation behavior nobody had pinned down (`Q019`'s own review left this
+  exact question open). **Cheapest falsifier, under an hour:** in the `Q019` harness, introduce a syntax
+  error into the watched file, trigger whatever re-check path was used for the live-edit round, and
+  observe directly whether completion collapses or silently persists unchanged. Persists → NULL, done,
+  the residue is only a documented FCS fact. Collapses → there's a real surface, and the next question
+  (does FCS re-enter the provider per keystroke or only per invalidation event) determines whether
+  staging has anything real to be incremental over.
+
+Between the two, the first is the one worth spiking if either is: its falsifier is equally cheap, and its
+downside residue (Myriad plugins gaining an actual diagnostics API) is independently worth having even if
+the type-provider half of the idea doesn't survive review. The second idea's most probable outcome is a
+NULL whose only real product is characterizing FCS's own provider-invalidation behavior — worth knowing,
+but not obviously worth a full quartet on its own first.
 
 ## Known engineering gaps in current Myriad (no spike needed — verified from source, not hypotheses)
 

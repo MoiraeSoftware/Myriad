@@ -28,27 +28,42 @@ adversarial-review discipline (adapted from an ML-training experiment convention
 pre-registration, or a spike whose result doesn't survive its own adversarial review, doesn't get
 oversold. Read a quartet's `03-review.md` for the honest verdict, not just `02-results.md`.
 
-**Status as of 2026-07-15 — thirteen quartets (Q001–Q013), ten closed, three planned. Full digest:
+**Status as of 2026-07-16 — twenty quartets (Q001–Q020), seventeen closed, three planned. Full digest:
 `experiments/FINDINGS.md`** — read that first, it synthesizes both lines without requiring all
-thirteen `03-review.md`s as context. One-line summary: Myriad's-own-architecture line has three SHIPs
-(Q002, Q003, Q010) and two REVISE/NULLs (Q001, Q006), and nothing has been built that would replace
-Myriad's current pipeline end to end; the general type-provider line shipped a provenance-enforcement
-mechanism (Q008, Q009, Q011) plus one hard structural wall (Q006 — generative type providers can never
-see a type from the compilation currently in progress, only already-compiled referenced code, which
-rules out Myriad's own dominant same-file usage pattern specifically) — **but Q012 then found a
-direct, reproducible contradiction with Q008's own claimed measurement (Q008 saved no source, so it
-can't defend itself), and Q013 closed off the cheapest reconciling explanation with a NULL result, so
-Q008/Q09's SHIP verdicts are now actively disputed, not just unverified.** Read `FINDINGS.md`'s "gap
-in this file's own credibility" section before citing any Thread 2 SHIP verdict.
+seventeen `03-review.md`s as context. One-line summary: **nothing has been merged into `src/`, and
+Myriad's real IDE-invisibility gap is still unsolved** — twenty quartets have mapped the space rather
+than closed it. Myriad's-own-architecture line has four scoped SHIPs (Q002, Q003, Q010, Q015) and
+proof that overclaiming is easy even inside this repo's own discipline (Q001 NULL, Q006 REVISE, Q014
+REVISE — each looked stronger before adversarial review). The general type-provider line shipped a
+provenance-enforcement mechanism (Q008/Q09/Q11, reconstructed and reconfirmed after a real
+credibility scare — read `FINDINGS.md`'s "gap in this file's own credibility" section before citing
+any Thread 2 SHIP verdict) and then spent five more quartets (Q016–Q020) probing routes around the one
+wall that keeps recurring: a type provider can never see a type from the compilation currently in
+progress, only already-compiled referenced code (Q006). Every route since has hit its own real, narrower
+ceiling: cross-project satellite-DLL forwarding into Myriad's own compiled output works but live
+re-exposure has no in-process fix on Windows (Q016–18, settled — use `<ProjectReference>` for that
+case); an erased provider that self-parses a source file sidesteps the wall entirely but only ever
+delivers `obj`-typed member *names* for a parallel preview type, not Myriad's actual `[<Lenses>]` shape
+made live (Q019, SHIP scoped); and a live diagnostics channel built on that same self-parsing trick had
+its headline "two channels that cannot disagree" claim struck as tautological, with an
+`FSharp.Analyzers.SDK` analyzer beating it outright in Ionide, the host most F# developers actually use
+(Q020, SHIP scoped). Separately confirmed from an authoritative external source
+(`fsharp/fslang-suggestions#864`, cited in `BACKLOG.md` item 9): F# has no Roslyn-source-generator
+equivalent and the F# team's own stated answer is "use Myriad" — this repo's IDE-invisibility gap is not
+a solved problem Myriad merely hasn't adopted, it's a real architectural gap the language itself has
+left open.
 
 **Next steps, prioritized, with why:** `experiments/BACKLOG.md`. Split into spike-shaped hypotheses
 (need a quartet — both Myriad-specific and general-type-provider ideas, kept in separate sections)
 and known engineering gaps in current Myriad that were verified from source along the way but don't
 need a spike to justify fixing (design-time/IDE invisibility being the biggest one — generated code
 doesn't appear in Ionide/FSAC until a real build, confirmed from
-`src/Myriad.Sdk/build/Myriad.Sdk.targets`; Q006 tested and REVISE'd the type-provider route to this
-same gap, so the untested MSBuild/DTB-hook route named in the backlog is now the more direct
-candidate).
+`src/Myriad.Sdk/build/Myriad.Sdk.targets`). Every type-provider route to that specific gap (Q006,
+Q016–18, Q019) has now been tried and each stops short of it; the untested MSBuild/DTB-hook route named
+in the backlog (item 8) remains the more direct candidate, and needs no type-provider machinery at all.
+Q020's own top follow-up — give `IMyriadGenerator` a real diagnostics API, independent of any of this
+session's type-provider work — is the other concrete, low-risk, currently-highest-value next
+engineering task named in the backlog, not gated on any further spike.
 
 **Starting a new session on this thread:** read `experiments/FINDINGS.md` for the synthesized
 digest, then `experiments/README.md`'s Index table for a one-line-per-quartet summary, then
