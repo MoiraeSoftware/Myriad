@@ -1,0 +1,14 @@
+{
+  "id": "Q021",
+  "status": "closed",
+  "verdict": "SHIP, scoped narrowly to the liveness/correctness claim. On one persistent FSharpChecker (useTransparentCompiler=true) reused across many sequential edit-then-recheck cycles, Q010's reentrant DocumentSource.Custom mechanism keeps producing correct, freshly-recomputed, zero-diagnostic results every cycle (Rounds 1-2, four cycles incl. a return to a prior value), no staleness, no hang - and, unanticipated, needing no version-bump discipline under ParseAndCheckProject. Reproduced independently end to end. That retires item 18's actual (correctness) premise. Struck from the ship: Round 5's headline conclusion that ParseAndCheckProject 'always fully re-checks every file on every call' - Round 5 only proves the callback is re-consulted every call, which is exactly what TransparentCompiler's content-hash snapshot model must do to detect change and is fully consistent with a cheap fetch-then-cache-hit that skips the recompute; the 8ms/4ms toy timings do not discriminate (b) from that (c). Consequently the '02-results materially downgrades item 18' framing is overstated: item 18 claimed correctness, not keystroke-time cost, and the cost worry it raises is both out of item 18's scope and unproven. Real in-scope contribution: Round 4 independently reproduces Q010's silent-bypass footgun (ParseAndCheckFileInProject with explicit source text bypasses DocumentSource.Custom, no error), which sharpens item 18's plumbing risk. Note the pre-registered SHIP bar's second conjunct (omitted-invalidation control must show staleness, proving version-bumping load-bearing) was NOT met - the control came back fresh, proving version-bumping is unnecessary here; it failed in the safe direction and is honestly reported, so scoped SHIP not REVISE. Two-file toy; scale untested, and scale is exactly where (b) vs (c) diverges.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": null
+}

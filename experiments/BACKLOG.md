@@ -155,8 +155,31 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
    loading the provider interactively) and confirm the same result holds. Cheap relative to Q006's
    own build cost, since nothing new needs to be built — just re-hosted.
 
-8. **Redirect the IDE-invisibility fix at the DTB/MSBuild path directly (supersedes trying to
-   route around Q006's structural wall).** Q006's review concluded the same-project boundary
+8. **Redirect the IDE-invisibility fix at the DTB/MSBuild path directly — PROMOTED TO Q022, CLOSED,
+   REVISE (as of 2026-07-17).** See `Q022-dtb-generation-hook/03-review.md` for the full verdict.
+   Original framing kept below for context. The mechanism half of this item's own question is fully
+   confirmed: removing `MyriadSdkGenerateCode`'s `Condition="'$(DesignTimeBuild)' != 'true'"` gate (on a
+   scoped local copy of `Myriad.Sdk.targets` — the real, shared file was never edited) makes Myriad's
+   real CLI run during a genuine design-time build (`SkipCompilerExecution=true`, the real F# compiler
+   confirmed never invoked), correctly regenerating a changed attributed type's output, with the
+   existing rebuild cache (`DEVNOTES.md`) still correctly no-op'ing an unchanged repeat DTB call. This
+   is the first quartet in this repo's history to also test the "gets FSAC to show generated members"
+   half against a literal `fsautocomplete` process over real LSP, not `FSharpChecker`-as-a-library — a
+   standing gap `FINDINGS.md` had flagged since Q006 and never closed. A fresh FSAC 0.83.0 session
+   picked up the newly-generated member with zero `dotnet build`, matching a gated negative control that
+   correctly failed the identical check. But within one already-*running* FSAC session, an ordinary
+   source-file save never re-triggers Myriad's codegen — only an actual change to the `.fsproj` itself
+   (even a bare mtime touch, no content change) followed by a project reload does, a real, demonstrated
+   in-session trigger that the quartet's own first-pass results write-up wrongly concluded didn't exist,
+   corrected by independent review. Net: **this item's own question is answered precisely — yes, hooking
+   the DTB path gets FSAC to show generated members without a real build, but only at project
+   load/reload time, not during live source editing**, since an ordinary edit to the attributed `.fs`
+   file never touches the `.fsproj` a reload is keyed on. Named follow-up, not yet spiked: confirm
+   whether a literal VS Code + Ionide session's own real project-file watcher reliably fires a reload on
+   an ordinary `.fsproj` save (this quartet only simulated the watcher via a hand-rolled LSP notification
+   plus a manual `fsharp/workspaceLoad` re-issue), which would turn this into a genuinely automatic (if
+   still reload-gated) experience for a real user rather than one requiring a manual trigger.
+   Original framing: Q006's review concluded the same-project boundary
    (type providers only ever see already-built referenced assemblies, never a type from the
    compilation currently in progress) is a hard wall for *any* type-provider-shaped fix to Myriad's
    actual same-file `[<Attribute>]` workflow — not worth re-attempting with a cleverer static
@@ -189,6 +212,24 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
    source rather than only this repo's own quartet evidence: the live-in-IDE mechanism itself, since it
    depends on a compiler-hosted hook FCS has no equivalent of and the F# team has no near-term plan to
    build. See memory note `project_fsharp_no_source_generators` for the full citation.
+   **Freshness re-check, 2026-07-16, verified directly via `gh issue view` rather than taken on
+   faith:** `fsharp/fslang-suggestions#1396` ("F# Own Source-generation/Meta-programming," opened
+   2024-12-14) is a materially more recent ask for the same thing #864 tracks — and it was closed
+   `NOT_PLANNED` the same day it was opened. This is stronger, more recent evidence for the same
+   conclusion, not just a repeat of the 2020 issue. `dotnet/fsharp#14300` (interop with C# libraries
+   that depend on source generators) is a different, narrower question — still `OPEN`, unassigned,
+   `Backlog` — and doesn't bear on whether F# gets its own generator hook. Separately, real, shipped
+   prior art for a *wrapper-compiler* approach exists outside this repo's own architecture space:
+   WebSharper 10's `ISourceGenerator`/`FSharpSourceGenerator` mechanism (confirmed from
+   `docs.websharper.com` and the closed implementation issue,
+   `dotnet-websharper/core#1476`) has `wsfsc.exe` scan the input file list for non-`.fs` files, locate
+   a generator by assembly attribute, replace each matched file with its generated `.fs` output, and
+   **repeat until no non-F# files remain**, before resuming normal compilation. That's a real,
+   production example of iterating generation-before-compile at the whole-project level — closer in
+   shape to item 10's multi-pass idea (and, more distantly, `Q010`'s prefix-stratified approach) than
+   anything in the Roslyn/type-provider comparison space, and worth a look if item 10 is ever picked
+   up: it settles that the "wrapper front-end iterates until fixpoint, then compiles" shape is viable
+   in practice, not just in theory.
 
 10. **Multi-pass generation for cross-generator visibility (new, extends Q005).** No mechanism today
     lets `[<Generator2>]` see what `[<Generator1>]` already generated in the same build — Q006 proved
@@ -385,6 +426,14 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     change without a stale-handle/file-lock problem (the satellite DLL will be rewritten by Myriad
     while a live `FsiEvaluationSession`-adjacent host may still hold it loaded — untested, and a
     real risk `Assembly.LoadFrom`'s file-locking behavior on Windows makes worth checking first).
+    **Guidance for any future use of Q017's forwarding kernel, added 2026-07-16 (including against
+    `Lenses`' own output, the standing risk this item's Q017 paragraph already names): check compiled
+    arity via `MethodInfo` reflection at the point of forwarding, per member, not via a separately-
+    authored manifest.** The `MethodInfo` being forwarded against is already in hand at generation
+    time — that's the same reflection Q016/Q017 already perform — so the arity/shape check is a
+    runtime assertion co-located with the forward itself, not a second artifact (e.g. a hand-maintained
+    JSON manifest) that can silently drift from the compiled reality it's supposed to describe. On a
+    mismatch, skip or fail that one provided member per Q017's own poisoning risk, never the whole type.
 
 16. **Pre-build scratch-DLL type provider for same-project IDE preview — real but strictly weaker than
     Q010 for the same target (new, extends Q006/Q010, the direct route to the named IDE-invisibility
@@ -410,6 +459,86 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     step with sensible timing, or does DTB run against a stale-or-missing scratch DLL on a cold
     checkout); `FileSystemWatcher` + `Invalidate()` correctness and cost under rapid successive edits,
     inherited from item 15's same open question.
+
+17. **Real-Ionide-session test of Q020's "analyzer dominates" claim (new, 2026-07-16, extends Q020,
+    cheap, closes a standing cross-cutting caveat).** `FINDINGS.md`'s own cross-cutting limitations
+    section already flags this generally: every "works live in the IDE" claim in this repo has only
+    ever been tested through `FSharpChecker` as a library, never a literal Ionide/FSAC session —
+    judged real-but-secondary for Q008/Q09's claims, never closed for any claim in either thread.
+    Q020's own review asserts an `FSharp.Analyzers.SDK` analyzer calling the identical shared analysis
+    function "strictly dominates" the type-provider diagnostic channel in Ionide, but that comparison
+    was argued from API shape (arbitrary-range anchoring vs. the TP channel's member-access-node
+    anchor), not run inside a real FSAC session. Cheapest falsifier: build the actual analyzer adapter
+    over Q020's already-written shared analysis function, open it alongside a `Q020`-style TP consumer
+    in a real Ionide workspace, and confirm three things the prose claim assumes rather than tests: the
+    analyzer's diagnostic actually renders (analyzer support requires SDK-version alignment and
+    sometimes explicit opt-in that can silently no-op), its live range is at least as tight as the TP
+    channel's anchor, and setup friction is genuinely lower for a real user than referencing a preview
+    provider. A NULL here — the analyzer fails to load, or Ionide's analyzer support lags the pinned
+    SDK version — would be a new finding in its own right, since nothing in this lineage has been run
+    against a real IDE host yet to find out.
+
+18. **FSAC-owned virtual generated file, modeled on rust-analyzer's out-of-process proc-macro
+    architecture — a distinct route from item 8, narrower than it first looks (new, 2026-07-16,
+    extends item 8 and Q010).** rust-analyzer solves Myriad's exact problem in a different language:
+    proc-macro expansion runs out-of-process (`proc-macro-srv`), and the *editor's own* language
+    server splices the result into the in-memory project model it already serves completions from —
+    live, with no real `cargo build`. The tempting analogy is "give FSAC the same sidecar," but the
+    analogy is imperfect in a way worth stating precisely before scoping any spike: rust-analyzer owns
+    its own HIR/name-resolution pipeline and macro expansion is a first-class stage inside it; FSAC
+    owns no equivalent semantic layer of its own — it is a thin LSP wrapper that hands source text and
+    `FSharpProjectOptions` to `FSharpChecker` and reports back what FCS says. So the right target for
+    an FSAC-side fix isn't "inject expanded ASTs into FSAC's model" (FSAC has no such model to inject
+    into) — it's "get FSAC to construct `FSharpProjectOptions` that include a virtual generated source
+    file, computed by running Myriad, and hand that to the *same* `FSharpChecker` instance FSAC already
+    drives for the live session." **This is materially cheaper than it first looks, because this repo
+    has already answered the hard part of that question.** `Q010-prefix-stratified-generation` proved,
+    independently reproduced, that a `DocumentSource.Custom` callback made reentrant can synthesize a
+    virtual file's content from the already-typechecked prefix of the same in-progress project, with
+    zero diagnostics and correct symbol resolution — inside Myriad's own CLI-hosted `FSharpChecker`,
+    not a standalone toy. Q010 also already found the one sharp footgun in this exact mechanism
+    (`ParseAndCheckFileInProject` with explicit source text silently bypasses `DocumentSource.Custom`
+    for that file, no error signal) — a trap any FSAC-side attempt would walk straight into without
+    that warning. So the open question is narrower than "does virtual-file injection work at all"
+    (settled: yes) — it's whether the *same* mechanism holds when the checker instance being driven is
+    FSAC's own, serving a live editing session, and whether FSAC can be made to trigger Myriad's
+    expansion on `didOpen`/`didChange`/project-reload and feed the result back into the project options
+    it already owns. **Named risk this repo's other quartets didn't have to face: every prior spike
+    was self-contained inside this repo's own checkouts; this one requires patching or forking FSAC
+    itself**, an external project with its own release cadence and no guarantee a patch would be
+    upstreamable — a different kind of cost than anything else in this backlog, and worth weighing
+    against item 8's DTB/MSBuild-hook route (which needs no fork, only a Myriad-side target change)
+    before committing to either. Cheapest falsifier, scoped down from the fork-FSAC version: before
+    touching FSAC at all, confirm Q010's reentrant-`DocumentSource.Custom` mechanism still produces
+    correct completion/typecheck results when the *outer* driving loop is an LSP `didChange`-shaped
+    edit sequence rather than Q010's own one-shot harness — if that holds, the remaining risk is purely
+    FSAC integration plumbing, not a new compiler-hosting mechanism to discover.
+    **That cheapest falsifier was run: `Q021-reentrant-generation-live-edit-loop`, CLOSED, SHIP
+    (scoped), as of 2026-07-16.** See `Q021-reentrant-generation-live-edit-loop/03-review.md` for the
+    full verdict, independently reproduced. **Confirmed, exactly as this item asked:** on one
+    persistent `FSharpChecker` (`useTransparentCompiler = true`) reused across a sequential
+    edit-then-recheck loop, the reentrant callback keeps producing correct, freshly-recomputed,
+    zero-diagnostic results every cycle — no staleness, no hang, across four cycles including a
+    deliberate return to a previously-seen value — and, unanticipated, needs no explicit version-bump
+    or invalidation discipline to do so under `ParseAndCheckProject`. **The correctness premise this
+    item's falsifier named is retired.** One genuine new plumbing constraint surfaced, sharpening
+    rather than dissolving the "purely FSAC integration plumbing" framing: the natural per-file
+    incremental API an LSP host actually has in hand on `didChange` —
+    `ParseAndCheckFileInProject` called with explicit current source text — silently bypasses
+    `DocumentSource.Custom` entirely (Q010's own footgun, independently reproduced in a fresh harness),
+    so an FSAC-hosted version cannot just call the per-file API the normal way; it would need to route
+    through a whole-project check or find an untested calling pattern that avoids the bypass. **One
+    claim from this quartet's own results write-up was struck by its adversarial review and must not
+    be cited:** an early conclusion that `ParseAndCheckProject` "always fully re-checks every file on
+    every call, unconditionally" is unsupported — the quartet's own Round 5 only shows the callback is
+    *re-consulted* every call, which is equally consistent with a cheap fetch feeding a cache hit under
+    `TransparentCompiler`'s content-hash model, and the two-file toy project tested cannot discriminate
+    the two at the scale that would matter. **Whether a real FSAC-hosted version of this mechanism
+    would be keystroke-cheap or pay a full-project-recheck cost on every edit is therefore still
+    genuinely open**, not settled in either direction — the single highest-priority named follow-up is
+    a scale test (a few hundred virtual files behind the same callback, one edited, cost on the
+    unchanged remainder measured) before committing to building the actual FSAC fork/patch this item
+    describes.
 
 ## General type-provider capability ideas (independent of Myriad, unverified brainstorming)
 
@@ -796,6 +925,36 @@ enough to record verbatim rather than paraphrased into the house style, not yet 
   isolation from the rest. Only promote to a quartet if (1) and (3) both pass; (2) then only
   calibrates how the results section is allowed to word the performance claim, it doesn't gate
   whether the quartet gets built at all.
+  **A sharper failure mode than anything above, added 2026-07-16, that should gate the design before
+  any falsifier is run: the provider and the Myriad generator are two independent compilers for the
+  same schema, and if they don't share one canonical lowering, a mismatch doesn't degrade to the
+  interpreter — it silently binds the typed façade to the wrong specialized implementation.** The
+  writeup above states a harvest miss degrades cleanly to the interpreter; it does not consider a
+  harvest *hit* where the provider's own idea of a member's shape (its erasure decision, made from the
+  static-argument literal) and the generator's own idea of that same member's shape (parsed
+  independently from the same literal) have quietly diverged — different null handling, field order, or
+  enum encoding, say, because the two lowerings were never actually forced to agree. The registry sees
+  a matching key and binds it; the call typechecks, because the façade's *type* came from the provider,
+  which never asked the generator anything; and the runtime result is wrong with no diagnostic anywhere.
+  That is strictly worse than the clean-degradation case the design already accounts for. Mitigation
+  needed before this is spike-shaped, not after: a single shared `Codec.Core` package (parse the schema
+  once, canonicalize it once, derive a `ShapeId` and a per-member ABI descriptor once) that *both* the
+  provider and the generator call — neither should contain its own schema-lowering logic — plus an
+  ABI hash embedded in the generated specialization's own attribute that the registry validates before
+  binding, refusing (falling back to the interpreter, or failing loudly under a strict mode) on
+  mismatch rather than trusting a bare key match. **This also reorders the falsifier sequence given
+  above:** run an AOT/trimming rooting probe *before* falsifier (1)'s reflective-fallback comparison,
+  since AOT/trimming survival is the entire reason this idea exists (per its own scoping, it is
+  explicitly not a fix for anything the fallback already handles adequately on ordinary JIT) — the test
+  must show the generated specialization is discoverable by the registry *without* preserving the whole
+  assembly's reflection metadata for the trimmer, since blanket preservation defeats the trimming
+  benefit the idea is supposed to buy. If that fails, nothing else about the design matters. The harvest
+  probe (3) above should also be stress-cased against aliasing, not just direct literals — a
+  `[<Literal>]`-bound schema string consumed as `Codec<Schema>` rather than `Codec<"...">` is exactly
+  the kind of thing real users alias, and if FCS accepts it as a valid provider static argument while
+  the syntax-only harvester only sees an identifier (not the literal it resolves to), the "syntax-only,
+  no typechecking needed" claim breaks for that case and needs either partial constant evaluation or a
+  documented restriction — worth finding out before, not after, building the rest of the mechanism.
 
 ### Round 5 — informed by an external finding (Fable again, briefed this time on `fsharp/fslang-suggestions#864`:
 F# has no Roslyn-source-generator equivalent and never will without a compiler-team-scale effort; the
@@ -899,16 +1058,18 @@ Surfaced as background findings while building the quartets above, not something
 needs to re-derive. Candidate real fixes, independent of whether the architecture-exploration
 track above goes anywhere:
 
-- **Generated code is invisible to the IDE until a real build.** `MyriadSdkGenerateCode` is gated
-  `Condition="'$(DesignTimeBuild)' != 'true'"` and `MyriadSdkIncludeCodegenOutputDuringDesignTimeBuild`
-  is an empty target (`src/Myriad.Sdk/build/Myriad.Sdk.targets`). This is the single biggest gap
-  relative to type providers, and the one Myriad's own README claims to have moved past
-  ("tooling to operate effectively") without yet fully delivering on. Not spiked — would need its
-  own hypothesis pass to scope (e.g. does hooking the same target during DTB actually get FSAC to
-  show generated members, or does FSAC need its own extension). Q006 tested the type-provider route
-  to this same gap and got REVISE: the mechanism works but structurally can't reach a same-project
-  attributed type, only one already compiled elsewhere — see backlog item 8 above. The DTB-hook
-  route scoped here remains untested and, per Q006's review, is now the more direct candidate.
+- **Generated code is invisible to the IDE until a real build — partially addressed, see item 8 /
+  Q022.** `MyriadSdkGenerateCode` is gated `Condition="'$(DesignTimeBuild)' != 'true'"` and
+  `MyriadSdkIncludeCodegenOutputDuringDesignTimeBuild` is an empty target
+  (`src/Myriad.Sdk/build/Myriad.Sdk.targets`). Both the type-provider route (Q006, REVISE — structurally
+  can't reach a same-project attributed type) and the direct DTB-hook route (`Q022`, REVISE — real
+  mechanism, real capability against a literal FSAC process, but only at project load/reload time, not
+  live source editing) have now been tried; see item 8 above for the full Q022 account. Removing the
+  gate in `src/` for real would be a genuine, well-understood, low-risk fix for the load/reload case
+  (Round 1 confirmed it never breaks DTB and the existing rebuild cache still governs cost correctly),
+  not yet applied to the shared `src/Myriad.Sdk/build/Myriad.Sdk.targets` itself — that remains a real
+  candidate change, separate from and cheaper than any further spike, worth doing regardless of whether
+  the live-source-edit half is ever solved.
 - **Codegen runs one cold process per input file.** `MyriadSdkGenerateCode`'s
   `Outputs="%(MyriadCodegen.OutputPath)"` triggers MSBuild's per-item batching, so the target (and
   its `<Exec>`) runs once per file, each paying full JIT + Fantomas-parse startup cost. Fixable
@@ -918,3 +1079,29 @@ track above goes anywhere:
 - **Config lives behind an indirection.** An attribute carries a string key, which is looked up
   against a `myriad.toml` section, rather than the attribute carrying typed config directly. Real
   authoring friction, smaller than the above three.
+- **Myriad diagnostics API — SHIPPED, 2026-07-17.** Q020's own top follow-up ("give `IMyriadGenerator` a
+  real diagnostics API") has now been built, not just designed. `DiagnosticSeverity`, `MyriadDiagnostic`,
+  and `IMyriadGeneratorWithDiagnostics` live in `src/Myriad.Core/Types.fs`; rendering as canonical
+  MSBuild lines (`path(line,col,line,col): severity CODE: message`, with a line-1 fallback when no range
+  is given) is a pure function, `Diagnostics.format`, in the new `src/Myriad.Core/Diagnostics.fs`;
+  `runGenerator` (`src/Myriad/Program.fs`) adds one `:? IMyriadGeneratorWithDiagnostics` branch that
+  prints each diagnostic and only fails the build (via the same `!CompilationError` path the old
+  exception-based failure already used) on an `Error`-severity diagnostic — `Warning`/`Info` diagnostics
+  print but let generation succeed. Every existing plugin (`Fields`, `Lenses`, `DUCases`) is untouched
+  through the old `IMyriadGenerator` interface path. Five new tests cover it in
+  `test/Myriad.IntegrationPluginTests`: three pure unit tests of `Diagnostics.format` (range-anchored,
+  no-range fallback, `Info` severity), one real end-to-end MSBuild round trip
+  (`DiagnosticsWarningGen`/`ArbitaryFile3.fs`, proving a Warning diagnostic doesn't fail a real build and
+  its output is used), and one CLI-subprocess test of the error path (`DiagnosticsErrorGen`, proving a
+  non-zero exit, the diagnostic's code/message printed, and no output file written) — all 58 tests in
+  the suite pass. This was engineering, not a hypothesis, exactly per this file's own carve-out; no
+  quartet was needed or run.
+- **Structure that diagnostics API, and any future `FSharp.Analyzers.SDK` adapter (item 17 above),
+  around one shared analysis function from the start, not two (added 2026-07-16).** Q020 found the
+  build-time and provider-side diagnostic halves are already un-entangled; the risk in building both
+  separately is re-deriving the same record-shape analysis logic twice and having the two drift once
+  either changes independently. Concrete shape worth committing to before either is built: a pure
+  `SharedAnalysis.analyze : ParsedInput -> MyriadDiagnostic list` function (reusing `Q019`'s own
+  self-parse-with-`Myriad.Core.Ast` approach, not a new parser), consumed by (a) the CLI-side emitter
+  above and (b) an analyzer adapter if item 17 ships. Neither consumer should contain analysis logic of
+  its own — this is a structural constraint on the two items above, not a new capability in itself.

@@ -28,13 +28,21 @@ adversarial-review discipline (adapted from an ML-training experiment convention
 pre-registration, or a spike whose result doesn't survive its own adversarial review, doesn't get
 oversold. Read a quartet's `03-review.md` for the honest verdict, not just `02-results.md`.
 
-**Status as of 2026-07-16 — twenty quartets (Q001–Q020), seventeen closed, three planned. Full digest:
-`experiments/FINDINGS.md`** — read that first, it synthesizes both lines without requiring all
-seventeen `03-review.md`s as context. One-line summary: **nothing has been merged into `src/`, and
-Myriad's real IDE-invisibility gap is still unsolved** — twenty quartets have mapped the space rather
-than closed it. Myriad's-own-architecture line has four scoped SHIPs (Q002, Q003, Q010, Q015) and
-proof that overclaiming is easy even inside this repo's own discipline (Q001 NULL, Q006 REVISE, Q014
-REVISE — each looked stronger before adversarial review). The general type-provider line shipped a
+**Status as of 2026-07-17 — twenty-two quartets (Q001–Q022), nineteen closed, three planned. Full
+digest: `experiments/FINDINGS.md`** — read that first, it synthesizes both lines without requiring all
+nineteen `03-review.md`s as context. One-line summary: **nothing has been merged into `src/` from the
+architecture-exploration track, and Myriad's real IDE-invisibility gap is narrowed but still not
+solved** — twenty-two quartets have mapped the space and, for the first time, actually closed part of
+it: `Q022` hooked Myriad's own MSBuild codegen target into the design-time-build path and confirmed,
+against a literal `fsautocomplete` process over real LSP (not `FSharpChecker`-as-library, a standing
+gap this file had flagged since Q006), that it makes a generated member appear with zero `dotnet build`
+— but only at project load/reload time, not during live source editing (REVISE; see below). Myriad's-
+own-architecture line has five scoped SHIPs (Q002, Q003, Q010, Q015, Q021) and proof that overclaiming
+is easy even inside this repo's own discipline, in both directions — not just claiming more than was
+shown (Q001 NULL, Q006 REVISE, Q014 REVISE — each looked stronger before adversarial review, and Q021's
+own results write-up had a secondary claim struck by review too) but also, new with Q022, claiming a
+negative more absolutely than the evidence supported (its own results doc concluded no in-session FSAC
+reload signal existed at all, until review found one). The general type-provider line shipped a
 provenance-enforcement mechanism (Q008/Q09/Q11, reconstructed and reconfirmed after a real
 credibility scare — read `FINDINGS.md`'s "gap in this file's own credibility" section before citing
 any Thread 2 SHIP verdict) and then spent five more quartets (Q016–Q020) probing routes around the one
@@ -56,14 +64,26 @@ left open.
 **Next steps, prioritized, with why:** `experiments/BACKLOG.md`. Split into spike-shaped hypotheses
 (need a quartet — both Myriad-specific and general-type-provider ideas, kept in separate sections)
 and known engineering gaps in current Myriad that were verified from source along the way but don't
-need a spike to justify fixing (design-time/IDE invisibility being the biggest one — generated code
-doesn't appear in Ionide/FSAC until a real build, confirmed from
-`src/Myriad.Sdk/build/Myriad.Sdk.targets`). Every type-provider route to that specific gap (Q006,
-Q016–18, Q019) has now been tried and each stops short of it; the untested MSBuild/DTB-hook route named
-in the backlog (item 8) remains the more direct candidate, and needs no type-provider machinery at all.
-Q020's own top follow-up — give `IMyriadGenerator` a real diagnostics API, independent of any of this
-session's type-provider work — is the other concrete, low-risk, currently-highest-value next
-engineering task named in the backlog, not gated on any further spike.
+need a spike to justify fixing. Design-time/IDE invisibility, long the biggest named gap, is now
+**partially** closed rather than only mapped: every type-provider route (Q006, Q016–18, Q019) stops
+short of it, and the direct MSBuild/DTB-hook route (item 8) has now been spiked as `Q022` — REVISE,
+closing the gap at project load/reload time (confirmed against a real `fsautocomplete`/LSP session, the
+first such test in this repo's history) but not during live source editing, since an ordinary edit to
+the attributed source file never touches the `.fsproj` a reload is keyed on. Applying the gate-removal
+to the real, shared `src/Myriad.Sdk/build/Myriad.Sdk.targets` (Q022 only ever edited a scoped local
+copy) remains a real, low-risk, not-yet-applied candidate change in its own right. A second,
+non-type-provider route was also opened in an earlier session: item 18 proposes FSAC itself hosting
+Myriad as a live-editing sidecar (modeled loosely on rust-analyzer's out-of-process proc-macro
+architecture), and its own cheapest-falsifier precursor question was spiked as `Q021`
+— **SHIP, scoped**: the underlying reentrant-generation mechanism (`Q010`) survives a real persistent-
+checker, multi-edit-cycle load pattern with no staleness, but whether an FSAC-hosted version would be
+keystroke-cheap or pay a full-project-recheck cost on every edit is still genuinely open, pending a
+scale test named as the single highest-priority next step in `BACKLOG.md` item 18 and `FINDINGS.md`.
+Q020's own top follow-up — give `IMyriadGenerator` a real diagnostics API — is **done**, not just
+designed: `IMyriadGeneratorWithDiagnostics`/`MyriadDiagnostic`/`DiagnosticSeverity` are built in
+`src/Myriad.Core`, wired into the CLI, and covered by five new tests (all 58 tests in
+`test/Myriad.IntegrationPluginTests` pass); see `experiments/BACKLOG.md`'s "Known engineering gaps"
+section for the shipped shape.
 
 **Starting a new session on this thread:** read `experiments/FINDINGS.md` for the synthesized
 digest, then `experiments/README.md`'s Index table for a one-line-per-quartet summary, then

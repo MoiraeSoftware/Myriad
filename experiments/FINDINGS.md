@@ -1,6 +1,7 @@
 # Findings so far — what's real, what's not
 
-Cross-quartet digest as of 2026-07-16, twenty quartets in (Q001–Q020, seventeen closed, three planned).
+Cross-quartet digest as of 2026-07-17, twenty-two quartets in (Q001–Q022, nineteen closed, three
+planned).
 Separately, on 2026-07-16, Q008 and Q009's missing artifacts were filled in by recovering
 and re-verifying their actual original source — see "A gap in this file's own credibility" below; this
 was a reconstruction of existing verdicts, not a new quartet, so it doesn't change the quartet count.
@@ -99,19 +100,62 @@ that actually buy real capability or just be novelty?
   exact shape. Composition with Myriad's real architecture (ALC-isolated plugin loading, config parsed
   from attributed source) remains untested; FSI's non-isolated dynamic assembly is the friendly slice of
   the dynamic-origin space, not the one Myriad would actually need (Q015).
+- Q010's reentrant `DocumentSource.Custom` mechanism was proven only for one check per checker
+  instance; `BACKLOG.md` item 18 (the FSAC-as-live-sidecar idea, itself modeled on rust-analyzer's
+  out-of-process proc-macro architecture) needed to know whether it survives the load pattern a real
+  editing session actually produces — one persistent checker serving many sequential checks, with the
+  watched file changing between them. **It does**, confirmed and independently reproduced: on a
+  persistent `FSharpChecker` (`useTransparentCompiler = true`), four sequential edit-then-recheck
+  cycles — including a deliberate return to a previously-seen value, to rule out a fixed one-cycle-lag
+  artifact — each produced correct, freshly-recomputed, zero-diagnostic results, with no staleness and,
+  unanticipated, no explicit version-bump or invalidation discipline required. That retires item 18's
+  actual correctness premise. One genuine new constraint surfaced alongside it: Q010's own footgun
+  (`ParseAndCheckFileInProject` with explicit source text silently bypasses `DocumentSource.Custom`)
+  reproduced independently in a fresh harness, confirming it isn't scenario-specific — the natural
+  per-file incremental API an LSP host has in hand on `didChange` cannot drive this mechanism at all,
+  only a whole-project check can. A secondary claim in the quartet's own results write-up — that the
+  whole-project check "always fully re-checks every file, unconditionally," implying a real
+  keystroke-cost problem — was struck by adversarial review as unsupported: the evidence shown is
+  equally consistent with a cheap cache hit under `TransparentCompiler`'s content-hash model, and the
+  two-file toy tested cannot discriminate the two. Whether an FSAC-hosted version of this mechanism
+  would be keystroke-cheap or expensive is therefore still genuinely open, pending a real scale test
+  (Q021).
+- `BACKLOG.md` item 8 — hooking Myriad's own `MyriadSdkGenerateCode` MSBuild target into the
+  design-time-build (DTB) path directly, rather than routing around Myriad's IDE-invisibility gap from
+  the type-provider side the way every prior attempt (Q006, Q016-21) did — was finally spiked as Q022,
+  and for the first time in this repo's history the "works live in the IDE" half of a claim was tested
+  against a literal `fsautocomplete` (FSAC) process over real LSP, not `FSharpChecker`-as-a-library.
+  Both halves of the mechanism hold, independently reproduced: removing the target's
+  `Condition="'$(DesignTimeBuild)' != 'true'"` gate makes Myriad's real CLI run during a genuine DTB
+  (`SkipCompilerExecution=true`, the real compiler never invoked, confirmed by a frozen `bin/*.dll`
+  mtime under a moved canary) and correctly regenerate a changed attributed type's output; a fresh FSAC
+  0.83.0 session then genuinely shows the new member with zero `dotnet build`, matching a gated negative
+  control that correctly fails the same check. But an already-*running* FSAC session does not pick up a
+  bare source-file save — codegen only re-runs when the `.fsproj` itself is touched (even a no-op mtime
+  bump) and the project is reloaded, a real, demonstrated in-session trigger the quartet's own first pass
+  wrongly concluded didn't exist until independent review found it. Net: **closes the IDE-invisibility
+  gap at project load/reload time, not during live source editing** (Q022, REVISE).
 
-**Honest net position:** four SHIPs (Q002 fully, Q003 narrowly, Q010 scoped, Q015 scoped) prove the
-mechanism is sometimes genuinely valuable — with Q015 now the second quartet, after Q010, to earn a SHIP
-only once heavily scoped, a pattern worth noticing on its own: this thread's positive results keep
-shrinking on inspection, not just its negative ones. Three REVISE/NULL results (Q001, Q006, Q014) prove
+**Honest net position:** five SHIPs (Q002 fully, Q003 narrowly, Q010 scoped, Q015 scoped, Q021 scoped)
+prove the mechanism is sometimes genuinely valuable — with Q015 and Q021 now the second and third
+quartets, after Q010, to earn a SHIP only once heavily scoped, a pattern worth noticing on its own: this
+thread's positive results keep shrinking on inspection, not just its negative ones. Four REVISE/NULL
+results (Q001, Q006, Q014, Q022) prove
 overclaiming is easy — Q014 in a distinct way: a spike can reproduce cleanly and still not be the thing
 its own pre-registration named, because the mechanism that made it into the harness quietly substituted
 for the mechanism in the hypothesis's title, and neither the design nor the results write-up caught the
 swap before adversarial review did; Q015 then showed that even the corrected follow-up, built specifically
 to close that exact gap, still smuggled in a second, subtler substitution (an inert FSI call standing in
-for real generation-time computation) that only surfaced under a review briefed to look for it. Combined
+for real generation-time computation) that only surfaced under a review briefed to look for it. Q022 then
+showed the overclaiming risk cuts the other way too: its results write-up's own sharpest claim was a
+*negative* one ("no in-session reload signal exists, short of a process restart"), stated more absolutely
+than the evidence supported — the executor had ruled out several specific signals but generalized to "no
+signal works," and review, by trying one the executor hadn't (an actual `.fsproj` mtime change, not just
+a notification claiming one happened), found a working in-session reload path and corrected the claim
+back down to what the design's own pre-registration had predicted. Combined
 with Q006's hard wall for type providers on Myriad's real usage pattern, this thread's overclaiming risk
-is now demonstrated across three structurally different mechanisms. **Nothing has been built that would
+is now demonstrated across four structurally different mechanisms, including at least one case of a
+negative claim overshooting its evidence, not just positive ones. **Nothing has been built that would
 replace Myriad's current pipeline end to end**, and nothing in `experiments/` has been merged into
 `src/`. Q010's own review holds back from the hypothesis's strongest framing: unresolved whether the
 reentrancy tested was genuinely mid-flight or landing on an already-idle checker, and it settles only the
@@ -374,11 +418,19 @@ optimum moves, fighting the point of a stable interface).
 - **Every timing number anywhere in this lineage is a single sample**, not a distribution. The
   margins involved (order-of-magnitude gaps between measured numbers and the pre-registered REVISE
   thresholds) mean this hasn't mattered for any verdict yet, but no quartet has run repeated trials.
-- **Every "works live in the IDE" claim has only ever been tested through `FSharpChecker` as a
-  library, never a literal Ionide/FSAC/VS session.** This was judged disqualifying for Q006's
-  specific claim (which was fundamentally about IDE-visible behavior) and judged real-but-secondary
-  for Q008/Q009's narrower claims (which are fundamentally about diagnostic generation, a layer FCS
-  owns directly). No quartet has closed this gap for any claim.
+- **Every "works live in the IDE" claim was tested through `FSharpChecker` as a library, never a
+  literal Ionide/FSAC/VS session, until Q022 — which partially, not fully, closes this gap.** This was
+  judged disqualifying for Q006's specific claim (which was fundamentally about IDE-visible behavior)
+  and judged real-but-secondary for Q008/Q009's narrower claims (which are fundamentally about
+  diagnostic generation, a layer FCS owns directly). Q022 is the first quartet in this lineage to drive
+  a real `fsautocomplete` process over genuine LSP rather than `FSharpChecker`-as-library, and the part
+  of its claim that held (a cold FSAC session showing a newly-generated member with zero `dotnet
+  build`) is now real, literal-process-tested evidence, not an inference from library behavior. But it
+  is `fsautocomplete` directly, not the literal VS Code + Ionide UI, and only the cold-load/reload half
+  of the claim was tested this way — the live-source-edit half failed, and Visual Studio/Rider (different
+  project systems) remain untouched. Treat future "works live in the IDE" claims the same way this one
+  was judged: real, literal-process evidence for the specific slice actually driven, not a license to
+  claim the whole gap is closed.
 - **`TransparentCompiler` — the mechanism underpinning the entire in-process-hosting foundation — is
   still labeled experimental by both FCS and FSAC** as of the pinned version (`43.9.101`). Every
   result in Thread 1 inherits this caveat; Q005, if it ships, would be the first quartet to give a
@@ -637,3 +689,73 @@ machinery and was never actually wired into `IMyriadGenerator`), and an `FSharp.
 calling the identical shared function would strictly dominate this result in Ionide, leaving the TP
 channel's genuine niche narrow to Visual Studio plus an adopted `Q019`-style preview provider. See the
 Thread 2 section above and `Q020-shared-analysis-diagnostic-channels/03-review.md`.
+
+**Update, 2026-07-16 (new session): `BACKLOG.md` item 18's own cheapest falsifier was promoted to
+`Q021` and closed the same session.** Item 18 (FSAC-owned virtual generated file, modeled loosely on
+rust-analyzer's out-of-process proc-macro architecture, itself informed by a second external model's
+research pass into rust-analyzer's `proc-macro-srv` design) named a narrow, cheap precursor question
+before committing to the large lift of forking FSAC: does Q010's reentrant `DocumentSource.Custom`
+mechanism, proven only for one check per checker instance, survive the load pattern a real editing
+session produces — one persistent checker serving many sequential checks as the watched file changes.
+`Q021: CLOSED, SHIP, scoped.` It does, independently reproduced: four sequential edit-then-recheck
+cycles on one persistent checker, including a deliberate return to a prior value, all produced correct,
+fresh, zero-diagnostic results, confirming item 18's actual correctness premise. Alongside that, Q010's
+own footgun reproduced independently in a new harness, sharpening rather than dissolving item 18's
+"purely plumbing" framing: the natural per-file incremental API an LSP host has on `didChange`
+(`ParseAndCheckFileInProject` with explicit current text) cannot drive this mechanism at all, only a
+whole-project check can. A secondary claim in the quartet's own results write-up — that the whole-project
+check "always fully re-checks, unconditionally" — was struck by adversarial review as unsupported (the
+evidence is equally consistent with a cheap cache hit under `TransparentCompiler`'s content-hash model,
+and the toy project tested cannot discriminate the two), leaving whether an FSAC-hosted version would be
+keystroke-cheap or expensive as the single most consequential open question this thread now has, resolvable
+only by a real scale test. See `Q021-reentrant-generation-live-edit-loop/03-review.md` and `BACKLOG.md`
+item 18's own updated entry.
+
+**Update, 2026-07-16/17 (new session): `BACKLOG.md` item 8 — the DTB/MSBuild-hook route named across
+three sessions as "the more direct candidate" and never spiked — was promoted to `Q022` and closed.**
+`Q022: CLOSED, REVISE.` This is the quartet that finally attempted to close this file's own standing
+cross-cutting caveat (immediately above) rather than merely naming it: a hand-rolled LSP client drove a
+real `fsautocomplete` 0.83.0 process, not `FSharpChecker`-as-library. Round 1 (removing
+`MyriadSdkGenerateCode`'s DTB gate on a scoped local copy of `Myriad.Sdk.targets`, the real shared file
+never touched) fully confirmed the mechanism: Myriad's real `<Exec>` runs during a genuine DTB with the
+compiler itself never invoked, and the existing rebuild cache still correctly no-ops an unchanged repeat
+DTB. Round 2a fully confirmed the capability against a literal LSP process both ways: a cold FSAC session
+shows a newly-generated field's lens with zero `dotnet build`, and a gated negative control correctly
+fails the identical check. But Round 2b (an already-*running* FSAC session, ordinary source save, no
+restart) failed — and independent review, dispatched specifically to press on this, caught that the
+executor's own sharpest negative claim ("no in-session reload signal exists short of a full restart") was
+itself an overclaim: an actual `.fsproj` mtime change (not just a notification claiming one) plus a
+reissued `workspaceLoad` does re-trigger codegen live, in the same running process. Corrected, the result
+lands exactly on the design's own pre-registered REVISE wording: **this closes the IDE-invisibility gap
+at project load/reload time, independently confirmed against a real editor-facing process for the first
+time in this repo's history, but not during live source editing** — an ordinary save to the attributed
+`.fs` file alone still never refreshes generated code, since it never touches the `.fsproj` a project
+reload is keyed on. See `Q022-dtb-generation-hook/03-review.md`.
+
+**Separately, the same session: the diagnostics-API design sketch named below (and in `BACKLOG.md`) was
+actually built, not just designed.** `IMyriadGeneratorWithDiagnostics`/`MyriadDiagnostic`/
+`DiagnosticSeverity` now exist in `src/Myriad.Core/Types.fs`, with rendering in the new
+`src/Myriad.Core/Diagnostics.fs` and CLI wiring in `src/Myriad/Program.fs`'s `runGenerator` — a
+Warning-severity diagnostic no longer fails the build, an Error-severity one still does (old exit
+behavior preserved), and existing `IMyriadGenerator` plugins (`Fields`, `Lenses`, `DUCases`) are
+untouched through the old interface path. Five new tests cover it, including a real end-to-end MSBuild
+round trip and a CLI-subprocess test of the error path; all 58 tests in
+`test/Myriad.IntegrationPluginTests` pass. This was engineering, not a hypothesis, per this file's own
+existing carve-out, and needed no quartet.
+
+## Starting the next session (updated)
+
+With Q022 closed, `BACKLOG.md` item 8 is resolved as far as this repo's own tooling can currently test
+it, and the diagnostics API is shipped. The most direct next steps, in rough priority order: (1) the
+scale test named above for `BACKLOG.md` item 18 (a few hundred virtual files behind the same reentrant
+callback, one edited, `ParseAndCheckProject` cost on the unchanged remainder measured) — still this
+repo's highest-priority open question for Thread 1, resolving whether an FSAC-sidecar fork would be
+keystroke-cheap or expensive, no prior quartet having scale-tested `TransparentCompiler` under this
+specific API; (2) Q022's own most direct follow-up, named by its review: test whether Ionide's real
+project-file watcher (not this quartet's hand-rolled `workspace/didChangeWatchedFiles` notification)
+actually fires reliably on an ordinary `.fsproj` save in a literal VS Code + Ionide session, which would
+turn Q022's in-session reload finding into a genuinely automatic (if still project-reload-gated, not
+live-source-edit) experience; (3) Q021's own two smaller named follow-ups: test whether any
+`ParseAndCheckFileInProject` calling pattern honors `DocumentSource.Custom` at all (Round 4 only ruled
+out the explicit-current-text path), and test concurrent/interleaved access (a real LSP host serves
+overlapping requests; this thread has only ever tested strictly sequential checks).
