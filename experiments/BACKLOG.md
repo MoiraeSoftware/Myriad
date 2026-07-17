@@ -1121,22 +1121,57 @@ Surfaced as background findings while building the quartets above, not something
 needs to re-derive. Candidate real fixes, independent of whether the architecture-exploration
 track above goes anywhere:
 
-- **Generated code is invisible to the IDE until a real build — partially addressed, see item 8 /
-  Q022.** `MyriadSdkGenerateCode` is gated `Condition="'$(DesignTimeBuild)' != 'true'"` and
-  `MyriadSdkIncludeCodegenOutputDuringDesignTimeBuild` is an empty target
-  (`src/Myriad.Sdk/build/Myriad.Sdk.targets`). Both the type-provider route (Q006, REVISE — structurally
-  can't reach a same-project attributed type) and the direct DTB-hook route (`Q022`, REVISE — real
-  mechanism, real capability against a literal FSAC process, but only at project load/reload time, not
-  live source editing) have now been tried; see item 8 above for the full Q022 account. Removing the
-  gate in `src/` for real would be a genuine, well-understood, low-risk fix for the load/reload case
-  (Round 1 confirmed it never breaks DTB and the existing rebuild cache still governs cost correctly),
-  not yet applied to the shared `src/Myriad.Sdk/build/Myriad.Sdk.targets` itself — that remains a real
-  candidate change, separate from and cheaper than any further spike, worth doing regardless of whether
-  the live-source-edit half is ever solved.
-- **Codegen runs one cold process per input file.** `MyriadSdkGenerateCode`'s
-  `Outputs="%(MyriadCodegen.OutputPath)"` triggers MSBuild's per-item batching, so the target (and
-  its `<Exec>`) runs once per file, each paying full JIT + Fantomas-parse startup cost. Fixable
-  without touching the plugin API: batch the CLI invocation, or publish it ReadyToRun/AOT.
+- **Generated code is invisible to the IDE until a real build — DTB gate removed for real,
+  2026-07-17 (see item 8 / Q022 for the full mechanism account).** `MyriadSdkGenerateCode`'s
+  `Condition="'$(DesignTimeBuild)' != 'true'"` gate and the empty
+  `MyriadSdkIncludeCodegenOutputDuringDesignTimeBuild` target are both gone from the real, shared
+  `src/Myriad.Sdk/build/Myriad.Sdk.targets` — not just the Q022 scratch copy. Re-verified directly
+  against this repo's own test project via a real `-p:DesignTimeBuild=true
+  -p:SkipCompilerExecution=true` invocation: codegen runs, the compiled `.dll`'s mtime never moves
+  (the real F# compiler is never invoked), and a repeat DTB call still correctly no-ops. Still only
+  closes the gap at project load/reload time, exactly as Q022 found — an ordinary source-file save
+  does not itself re-run codegen in an already-running IDE session; only a project reload does.
+- **Codegen runs one cold process per input file — SHIPPED, 2026-07-17.** `MyriadSdkGenerateCode` now
+  runs Myriad exactly once per project (not once per file) via a new `--manifest <file>.toml` CLI
+  mode: MSBuild writes one small TOML file (one `[[unit]]` table per attributed file, built in a new
+  `_MyriadSdkFlattenParams` target) and a single `<Exec>` processes all of them in one process,
+  loading plugins once. This was not a pure size-preserving refactor — the old per-item
+  `Outputs="%(MyriadCodegen.OutputPath)"` batching turned out to already be a false promise of
+  per-file incrementality: `_MyriadSdkCodeGenInputCache` is one combined hash over every codegen
+  input, so editing any single attributed file already forced every other generated file to
+  regenerate too (confirmed directly: editing one file caused four unrelated generated files to be
+  rewritten). Batching into one process therefore loses no real granularity, only removes N-1
+  redundant cold-process launches. Two non-obvious MSBuild traps found only by testing end-to-end,
+  not by reasoning about the XML: a `<Target>`'s own `Condition` is evaluated *before* its
+  `DependsOnTargets`/`BeforeTargets` chain runs, so a naive `Condition="'@(MyriadCodegen)' != ''"`
+  guard always saw an empty list and skipped the whole target, silently — the guard has to live on
+  the `<Exec>` task itself instead; and forcing MSBuild to batch a helper target per-item has to key
+  off `%(MyriadCodegen.OutputPath)` (guaranteed unique per `<Compile>` item), not
+  `%(MyriadCodegen.Identity)` (the *input* file, which several different `<Compile>` items can
+  legitimately share via `MyriadFile`) — keying on the wrong one silently merged multiple files'
+  `MyriadParams`/`Generators` together. Full account: `DEVNOTES.md`'s "Why one process, not one per
+  file" and "A target's `Condition` runs before its own dependencies" sections. All 58 existing tests
+  plus `samples/Example` verified passing; committed as `793bc98`.
+- **The project-context TOML writer no longer depends on MSBuild's implicit `;`-splitting of
+  `Include` attributes — SHIPPED, 2026-07-17.** `_MyriadContext`'s multi-line TOML arrays
+  (`referencePaths`, `compile`, etc.) used to be built as `[;$(_ReferencePaths);]`, relying on
+  MSBuild silently splitting that one string into three separate items at the unescaped `;`
+  characters so `WriteLinesToFile` would render them across multiple physical lines — the same class
+  of fragility this repo's own git history already shows repeated fixes for ("escape with a single
+  apostrophe," "try msbuild escaping targets," "fix for windows (again)"). Replaced with explicit
+  `%0a`-embedded construction. Verified: item counts round-trip exactly (11 compile items matching 9
+  explicit `<Compile>` entries plus MSBuild's 2 auto-generated assembly-info files), and a real
+  embedded comma inside a path (`...AssemblyAttributes.fs`) doesn't break parsing, since the
+  single-quoted TOML literal-string quoting (unchanged) protects it regardless of the outer
+  delimiter mechanism. Committed as `793bc98`.
+- **`Myriad.Sdk.targets`' `OutputPath` for `MyriadInlineGeneration` files had a stray trailing `)` —
+  FIXED, 2026-07-17.** Left over from a 2022 refactor (`c818a70`) that removed a
+  `[System.IO.Path]::GetFullPath(...)` wrapper but left its closing paren behind, producing an
+  `OutputPath` metadata value that could never exist on disk. Since that value fed directly into
+  MSBuild's own up-to-date check for the target, every build regenerated every
+  `MyriadInlineGeneration` file regardless of whether anything had changed — confirmed by a direct
+  before/after comparison (4 of 5 vs. 5 of 5 batched items correctly skipped on a no-op rebuild).
+  One-character fix; committed as `793bc98`.
 - **No `#line` pragmas in generated output.** Errors in generated code point at the generated
   file, not the source declaration that produced it. Cheap, mechanical fix.
 - **Config lives behind an indirection.** An attribute carries a string key, which is looked up

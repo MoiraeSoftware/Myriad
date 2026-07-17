@@ -79,9 +79,21 @@ need a spike to justify fixing. Design-time/IDE invisibility, long the biggest n
 short of it, and the direct MSBuild/DTB-hook route (item 8) has now been spiked as `Q022` — REVISE,
 closing the gap at project load/reload time (confirmed against a real `fsautocomplete`/LSP session, the
 first such test in this repo's history) but not during live source editing, since an ordinary edit to
-the attributed source file never touches the `.fsproj` a reload is keyed on. Applying the gate-removal
-to the real, shared `src/Myriad.Sdk/build/Myriad.Sdk.targets` (Q022 only ever edited a scoped local
-copy) remains a real, low-risk, not-yet-applied candidate change in its own right. A second,
+the attributed source file never touches the `.fsproj` a reload is keyed on. **The gate removal was
+applied for real on 2026-07-17** to the actual shared `src/Myriad.Sdk/build/Myriad.Sdk.targets` (Q022
+itself only ever edited a scoped local copy) — re-verified directly against this repo's own test
+project via a real DTB invocation (`-p:DesignTimeBuild=true -p:SkipCompilerExecution=true`): codegen
+runs, the compiled `.dll`'s mtime never moves, and a repeat DTB call still correctly no-ops. Same
+session, three more MSBuild/CLI engineering fixes shipped from `BACKLOG.md`'s known-gaps list, none of
+them quartet-shaped: Myriad now runs once per project instead of once per file (a new `--manifest`
+CLI mode, since the old per-file rebuild cache was already invalidating every file on any single
+change — no real incrementality lost); the project-context TOML writer no longer depends on MSBuild's
+implicit `;`-splitting of `Include` attributes to fake multi-line output (the same fragility class
+this repo's git history already shows repeated fixes for); and a stray trailing `)` in `Myriad.Sdk.
+targets`'s `OutputPath` (a 2022 refactor leftover) that had been silently defeating the up-to-date
+check for `MyriadInlineGeneration` files, forcing regeneration on every build, is fixed. All four are
+detailed in `BACKLOG.md`'s known-engineering-gaps section and `DEVNOTES.md`; committed as `793bc98`.
+A second,
 non-type-provider route was also opened in an earlier session: item 18 proposes FSAC itself hosting
 Myriad as a live-editing sidecar (modeled loosely on rust-analyzer's out-of-process proc-macro
 architecture), and its own cheapest-falsifier precursor question was spiked as `Q021`
