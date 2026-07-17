@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- `Myriad.Sdk.targets` `OutputPath` for `MyriadInlineGeneration` files had a stray trailing `)` (left over from a 2022 refactor), which made MSBuild's up-to-date check always fail and forced a full regeneration on every build regardless of whether anything had changed.
+- The `DesignTimeBuild` gate on `MyriadSdkGenerateCode` has been removed for real (previously only proven safe on a scratch copy in `experiments/`) — generated members now appear in a design-time build / IDE reload without a full `dotnet build`, with the existing rebuild cache still correctly no-op'ing unchanged repeats.
+
+### Changed
+- The project-context file (`myriad.context.toml`) is no longer built by exploiting MSBuild's implicit `;`-splitting of `Include` attributes to fake multi-line TOML arrays — a fragile trick that silently breaks if any path or define-constant ever contains a literal `;`. Replaced with explicit, self-documenting construction.
+- Myriad now runs once per project instead of once per attributed file: all files needing generation are passed to a single CLI invocation via a `--manifest <file>.toml` argument (loading plugins once), instead of one `dotnet Myriad.dll` process per file. The old rebuild cache already invalidated every file on any single change, so this removes redundant cold-process launches with no loss of incrementality. The single-file `--inputfile`/`--outputfile` CLI usage is unchanged for direct/non-MSBuild invocation.
 
 ## [0.8.6] - 2026-03-21
 ### Fixed

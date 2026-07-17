@@ -69,10 +69,65 @@ module Implementation =
             Some tomlTable
         else None
 
+    /// One file's worth of codegen work - either the single --inputfile/--outputfile pair from the
+    /// command line, or one [[unit]] entry from a --manifest file. Batching many of these into one
+    /// process (one MSBuild <Exec> per project instead of one per file) is the reason this is its own
+    /// type rather than reading each field off `results` inline, the way the single-file path used to.
+    type CodegenUnit =
+        { InputFile: string
+          OutputFile: string option
+          ConfigKey: string option
+          AdditionalParams: IDictionary<string, string>
+          InlineGeneration: bool
+          GeneratorFilters: string list }
+
+    /// Mirrors Argu's EqualsAssignment behaviour for `--additionalparams key=value`: split once on the
+    /// first '=' into a single (key, value) entry. The MSBuild-side manifest writer flattens a file's
+    /// possibly-multiple <MyriadParams> entries into one 'key=value|key2=value2'-shaped string (see
+    /// Myriad.Sdk.targets), but this matches the CLI's existing single-entry behaviour rather than
+    /// silently changing it - nothing in this repo reads AdditionalParameters today, so there's no
+    /// evidence multi-key was ever meant to work differently, and this isn't the place to guess.
+    let parseAdditionalParams (flattened: string) : IDictionary<string, string> =
+        if String.IsNullOrEmpty flattened then
+            dict []
+        else
+            match flattened.IndexOf '=' with
+            | -1 -> dict []
+            | idx -> dict [ flattened.Substring(0, idx), flattened.Substring(idx + 1) ]
+
+    let parseManifest (path: string) : CodegenUnit list =
+        let model = Toml.Parse(File.ReadAllText path, path).ToModel()
+        match model.TryGetValue "unit" with
+        | true, (:? Tomlyn.Model.TomlTableArray as units) ->
+            [ for unit in units do
+                let getStr key =
+                    match unit.TryGetValue key with
+                    | true, (v: obj) -> v :?> string
+                    | _ -> ""
+                let inputFile = getStr "inputfile"
+                let configKeyRaw = getStr "configkey"
+                let paramsRaw = getStr "params"
+                let generatorsRaw = getStr "generators"
+                let inlineGeneration =
+                    match unit.TryGetValue "inline" with
+                    | true, (v: obj) -> v :?> bool
+                    | _ -> false
+                { InputFile = inputFile
+                  OutputFile = Some(getStr "outputfile")
+                  ConfigKey = (if configKeyRaw = "" then None else Some configKeyRaw)
+                  AdditionalParams = parseAdditionalParams paramsRaw
+                  InlineGeneration = inlineGeneration
+                  GeneratorFilters =
+                    if generatorsRaw = "" then
+                        []
+                    else
+                        generatorsRaw.Split '|' |> Array.toList } ]
+        | _ -> []
+
 module Main =
     open Implementation
     type Arguments =
-        | [<Mandatory>] InputFile of string
+        | InputFile of string
         | OutputFile of string
         | ConfigFile of string
         | ConfigKey of string
@@ -83,6 +138,7 @@ module Main =
         | [<EqualsAssignment;CustomCommandLine("--additionalparams")>] AdditionalParams of key:string * value:string
         | InlineGeneration
         | [<CustomCommandLine("--generator-filter")>] GeneratorFilter of string list
+        | [<CustomCommandLine("--manifest")>] Manifest of string
     with
         interface IArgParserTemplate with
             member s.Usage =
@@ -98,8 +154,9 @@ module Main =
                 | AdditionalParams _ -> "Specify additional parameters."
                 | InlineGeneration -> "Generate code for the input file at the end of the input file."
                 | GeneratorFilter _-> "A list of generators to run, only the specifid generators will be run, all others will be ignored."
-                
-        
+                | Manifest _ -> "Process every codegen unit listed in this TOML manifest file in one process, instead of a single --inputfile/--outputfile pair."
+
+
 
     [<EntryPoint>]
     let main argv =
@@ -114,16 +171,10 @@ module Main =
                   Threading.Thread.Sleep(100)
                 Debugger.Break()
 
-            let inputFile = results.GetResult InputFile
-            let outputFile = results.TryGetResult OutputFile
-            let configKey = results.TryGetResult ConfigKey
             let config = getConfig(results.TryGetResult ConfigFile)
-            let additionalParams = results.GetResults AdditionalParams |> dict
-            let inlineGeneration = results.Contains InlineGeneration
             let plugins = results.GetResults Plugin
             let contextFile = results.TryGetResult ContextFile
-            let generatorsFilters = (results.GetResults GeneratorFilter) |> List.concat
-                        
+
             let projectContext =
                 match contextFile with
                 | Some file when File.Exists file ->
@@ -151,118 +202,139 @@ module Main =
                 printfn "Generators found:"
                 generators |> List.iter (fun t -> printfn $"- %s{t.FullName}")
 
-            let runGenerator (inputFile: string) (genType: Type) =
-                let rawInstance = Activator.CreateInstance(genType)
-                let instance = rawInstance :?> IMyriadGenerator
+            let units =
+                match results.TryGetResult Manifest with
+                | Some manifestFile -> parseManifest manifestFile
+                | None ->
+                    let inputFile =
+                        match results.TryGetResult InputFile with
+                        | Some f -> f
+                        | None -> failwith "Error: either --inputfile or --manifest must be specified."
+                    [ { InputFile = inputFile
+                        OutputFile = results.TryGetResult OutputFile
+                        ConfigKey = results.TryGetResult ConfigKey
+                        AdditionalParams = results.GetResults AdditionalParams |> dict
+                        InlineGeneration = results.Contains InlineGeneration
+                        GeneratorFilters = (results.GetResults GeneratorFilter) |> List.concat } ]
 
+            // One process, looped over every unit in `units`, instead of one process per file - the
+            // single-file CLI path above just builds a one-element list and falls through to the same
+            // loop, so its behaviour is unchanged.
+            let processUnit (unit: CodegenUnit) =
                 let configHandler = getConfigHandler verbose config
 
-                if verbose then
-                    printfn $"Executing Generator: %s{genType.FullName} for %s{inputFile}"
+                let runGenerator (genType: Type) =
+                    let rawInstance = Activator.CreateInstance(genType)
+                    let instance = rawInstance :?> IMyriadGenerator
 
-                let result, errors =
-                    try
-                        if instance.ValidInputExtensions |> Seq.contains (Path.GetExtension(inputFile))
-                        then
-                            let context = GeneratorContext.Create(configKey, configHandler, inputFile, projectContext, additionalParams)
+                    if verbose then
+                        printfn $"Executing Generator: %s{genType.FullName} for %s{unit.InputFile}"
 
-                            match rawInstance with
-                            | :? IMyriadGeneratorWithDiagnostics as diagnosticsInstance ->
-                                let output, diagnostics = diagnosticsInstance.GenerateWithDiagnostics(context)
+                    let result, errors =
+                        try
+                            if instance.ValidInputExtensions |> Seq.contains (Path.GetExtension(unit.InputFile))
+                            then
+                                let context = GeneratorContext.Create(unit.ConfigKey, configHandler, unit.InputFile, projectContext, unit.AdditionalParams)
 
-                                for diagnostic in diagnostics do
-                                    printfn "%s" (Diagnostics.format inputFile diagnostic)
+                                match rawInstance with
+                                | :? IMyriadGeneratorWithDiagnostics as diagnosticsInstance ->
+                                    let output, diagnostics = diagnosticsInstance.GenerateWithDiagnostics(context)
 
-                                match diagnostics |> List.tryFind (fun d -> d.Severity = DiagnosticSeverity.Error) with
-                                | Some errorDiagnostic ->
-                                    let info = $"%s{genType.Name} Failure"
-                                    None, Some ($"%s{info}%s{Environment.NewLine}!CompilationError%s{Environment.NewLine}%s{errorDiagnostic.Message}")
-                                | None -> output, None
-                            | _ -> Some (instance.Generate(context)), None
-                        else None, None
-                    with
-                    | exc ->
-                        let info = $"%s{genType.Name} Failure"
-                        let message = exc.ToString()
-                        None, Some ($"%s{info}%s{Environment.NewLine}!CompilationError%s{Environment.NewLine}%s{message}")
+                                    for diagnostic in diagnostics do
+                                        printfn "%s" (Diagnostics.format unit.InputFile diagnostic)
 
-                if verbose then printfn $"Result: %A{result}"
+                                    match diagnostics |> List.tryFind (fun d -> d.Severity = DiagnosticSeverity.Error) with
+                                    | Some errorDiagnostic ->
+                                        let info = $"%s{genType.Name} Failure"
+                                        None, Some ($"%s{info}%s{Environment.NewLine}!CompilationError%s{Environment.NewLine}%s{errorDiagnostic.Message}")
+                                    | None -> output, None
+                                | _ -> Some (instance.Generate(context)), None
+                            else None, None
+                        with
+                        | exc ->
+                            let info = $"%s{genType.Name} Failure"
+                            let message = exc.ToString()
+                            None, Some ($"%s{info}%s{Environment.NewLine}!CompilationError%s{Environment.NewLine}%s{message}")
 
-                genType, result, errors
+                    if verbose then printfn $"Result: %A{result}"
 
-            let generated =
-                if verbose then
-                    if generatorsFilters.IsEmpty then
-                        printfn "GeneratorFilters <No filters>"
-                    else printfn $"GeneratorFilters %A{generatorsFilters}"
-                generators
-                |> List.filter (fun g -> if generatorsFilters.IsEmpty then
-                                             if verbose then
-                                                printfn $"- %s{g.Name}: is included"
-                                             true
-                                         else
-                                             let isOk = generatorsFilters |> List.contains g.Name
-                                             if verbose then
-                                                 if isOk then
-                                                     printfn $"- %s{g.Name}: is included"
-                                                 else
-                                                     printfn $"- %s{g.Name}: is excluded"
-                                             isOk)
-                |> List.map (runGenerator inputFile)
+                    genType, result, errors
 
-            let formattedCode =
-                let outputCode =
-                    let filename =
-                        if inlineGeneration then inputFile
-                        else if outputFile.IsSome then outputFile.Value
-                        else failwith "Error: No OutputFile was included, and --selfgeneration was not specified."
+                let generated =
+                    if verbose then
+                        if unit.GeneratorFilters.IsEmpty then
+                            printfn "GeneratorFilters <No filters>"
+                        else printfn $"GeneratorFilters %A{unit.GeneratorFilters}"
+                    generators
+                    |> List.filter (fun g -> if unit.GeneratorFilters.IsEmpty then
+                                                 if verbose then
+                                                    printfn $"- %s{g.Name}: is included"
+                                                 true
+                                             else
+                                                 let isOk = unit.GeneratorFilters |> List.contains g.Name
+                                                 if verbose then
+                                                     if isOk then
+                                                         printfn $"- %s{g.Name}: is included"
+                                                     else
+                                                         printfn $"- %s{g.Name}: is excluded"
+                                                 isOk)
+                    |> List.map runGenerator
 
-                    let cfg = Myriad.Core.EditorConfig.readConfiguration filename
+                let formattedCode =
+                    let outputCode =
+                        let filename =
+                            if unit.InlineGeneration then unit.InputFile
+                            else if unit.OutputFile.IsSome then unit.OutputFile.Value
+                            else failwith "Error: No OutputFile was included, and --selfgeneration was not specified."
 
-                    generated
-                    |> List.map (fun (genType, output, errors) ->
-                        //if theres an error just fail here
-                        match errors with
-                        | Some error -> failwithf $"Error in %A{genType}: %s{error}"
-                        | None -> ()
+                        let cfg = Myriad.Core.EditorConfig.readConfiguration filename
 
-                        match output with
-                        | Some(Output.Ast ast) ->
-                            let parseTree = ParsedInput.ImplFile(ParsedImplFileInput.CreateFs(filename, modules = ast))
-                            if verbose then    
-                                printfn $"""
+                        generated
+                        |> List.map (fun (genType, output, errors) ->
+                            //if theres an error just fail here
+                            match errors with
+                            | Some error -> failwithf $"Error in %A{genType}: %s{error}"
+                            | None -> ()
+
+                            match output with
+                            | Some(Output.Ast ast) ->
+                                let parseTree = ParsedInput.ImplFile(ParsedImplFileInput.CreateFs(filename, modules = ast))
+                                if verbose then
+                                    printfn $"""
 Parsed Input :------------------------------------
 %A{parseTree}"
 --------------------------------------------------
 About to format generated ouptut from %A{genType}"""
 
-                            CodeFormatter.FormatASTAsync(parseTree, cfg) |> Async.RunSynchronously
-                        | Some (Output.Source source) -> source
-                        | None -> "")
+                                CodeFormatter.FormatASTAsync(parseTree, cfg) |> Async.RunSynchronously
+                            | Some (Output.Source source) -> source
+                            | None -> "")
 
-                outputCode |> String.concat Environment.NewLine
-            
-            let code =  Generation.getHeaderedCode formattedCode
-            if verbose then
-                printfn $"Generated Code:\n%A{code}"
+                    outputCode |> String.concat Environment.NewLine
 
-            if inlineGeneration then
-                let tempFile = Path.GetTempFileName()
-                let linesToKeep = Generation.linesToKeep inputFile
-
-                if verbose then printfn $"Inline generation: Writing to temp file: '%s{tempFile}'"
-                File.WriteAllLines(tempFile, seq{ yield! linesToKeep; yield! code} )
-                if verbose then printfn $"Inline generation: Removing input file: '%s{tempFile}'"
-                File.Delete(inputFile)
+                let code = Generation.getHeaderedCode formattedCode
                 if verbose then
-                    printfn $"Inline generation: Renaming temp file to input file: '%s{tempFile}' -> '%s{inputFile}'"
-                File.Move(tempFile, inputFile)
-            else
-                match outputFile with
-                | Some filename ->
-                    if verbose then printfn $"Code generation: Writing output file: '%s{filename}'"
-                    File.WriteAllLines(filename, code)
-                | None -> failwith "Error: No OutputFile was included, and --inlinegeneration was not specified."
+                    printfn $"Generated Code:\n%A{code}"
+
+                if unit.InlineGeneration then
+                    let tempFile = Path.GetTempFileName()
+                    let linesToKeep = Generation.linesToKeep unit.InputFile
+
+                    if verbose then printfn $"Inline generation: Writing to temp file: '%s{tempFile}'"
+                    File.WriteAllLines(tempFile, seq{ yield! linesToKeep; yield! code} )
+                    if verbose then printfn $"Inline generation: Removing input file: '%s{tempFile}'"
+                    File.Delete(unit.InputFile)
+                    if verbose then
+                        printfn $"Inline generation: Renaming temp file to input file: '%s{tempFile}' -> '%s{unit.InputFile}'"
+                    File.Move(tempFile, unit.InputFile)
+                else
+                    match unit.OutputFile with
+                    | Some filename ->
+                        if verbose then printfn $"Code generation: Writing output file: '%s{filename}'"
+                        File.WriteAllLines(filename, code)
+                    | None -> failwith "Error: No OutputFile was included, and --inlinegeneration was not specified."
+
+            units |> List.iter processUnit
 
             0 // return an integer exit code
 

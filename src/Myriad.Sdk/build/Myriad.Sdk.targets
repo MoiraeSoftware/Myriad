@@ -108,7 +108,7 @@
 
         <ItemGroup>
             <MyriadSource Include="%(Compile.Identity)" Condition=" ('%(Compile.MyriadFile)' == '' And '%(Compile.MyriadInlineGeneration)' == 'true') ">
-                <OutputPath>%(Compile.FullPath))</OutputPath>
+                <OutputPath>%(Compile.FullPath)</OutputPath>
                 <ConfigKey>%(Compile.MyriadConfigKey)</ConfigKey>
                 <MyriadParams>%(Compile.MyriadParams)</MyriadParams>
                 <Generators>%(Compile.Generators)</Generators>
@@ -126,8 +126,18 @@
             </MyriadCodegen>
         </ItemGroup>
 
+        <!-- _MyriadSdkManifestFile/_MyriadSdkGenerateStamp are defined here, not in a top-level
+             PropertyGroup, for the same reason _MyriadSdkCodeGenInputCache already was: $(IntermediateOutputPath)
+             isn't resolved to its real per-TargetFramework value yet at file-load time for a
+             .targets file imported from the middle of the consuming project's body (Microsoft.Common.
+             CurrentVersion.targets, which gives it that value, is only imported later via the SDK's
+             own Sdk.targets). Confirmed by a real, non-theoretical bug: putting these two properties
+             in a top-level PropertyGroup produced a manifest arg of "myriad.manifest.toml" with no
+             obj\... prefix at all, silently reading/writing the wrong file every time. -->
         <PropertyGroup>
             <_MyriadSdkCodeGenInputCache>$(IntermediateOutputPath)$(MSBuildProjectFile).MyriadSdkCodeGenInputs.cache</_MyriadSdkCodeGenInputCache>
+            <_MyriadSdkManifestFile>$(IntermediateOutputPath)myriad.manifest.toml</_MyriadSdkManifestFile>
+            <_MyriadSdkGenerateStamp>$(_MyriadSdkCodeGenInputCache).generated</_MyriadSdkGenerateStamp>
         </PropertyGroup>
     </Target>
 
@@ -159,74 +169,123 @@
         <MyriadSdkGenerateCodeDependsOn>$(MyriadSdkGenerateCodeDependsOn);ResolveReferences;MyriadSdkGenerateInputCache</MyriadSdkGenerateCodeDependsOn>
     </PropertyGroup>
 
-    <Target Name="MyriadSdkGenerateCode" DependsOnTargets="$(MyriadSdkGenerateCodeDependsOn)" BeforeTargets="CoreCompile" Condition=" '$(DesignTimeBuild)' != 'true' "
-            Inputs="@(MyriadCodegen);$(_MyriadSdkCodeGenInputCache);$(MyriadSdk_Generator_Exe)"
-            Outputs="%(MyriadCodegen.OutputPath)">
+    <!-- Computes each MyriadCodegen item's own flattened <MyriadParams> and its Generators list with
+         ';' swapped for '|', once per item. Batching here is forced via Inputs/Outputs referencing
+         %(MyriadCodegen.OutputPath) - two things were tried and rejected first, both confirmed wrong
+         by a real end-to-end test, not just reasoned about: (1) a plain %(...) reference inside a
+         PropertyGroup does not reliably batch the enclosing target at all - every file ended up with
+         every other file's params and generators concatenated together, because Flatten was handed
+         the full, unfiltered item list every time; (2) batching on %(MyriadCodegen.Identity) (the
+         input file) batches correctly but groups multiple distinct Compile items together whenever
+         they share the same MyriadFile - three files sharing MyriadFile="Test.txt" ended up all
+         showing the last one's Generators. OutputPath is the one metadata value guaranteed unique per
+         Compile item (also why the original per-item design below batched on it). This has to be
+         batched at all because Flatten's own algorithm concatenates every item it is handed into one
+         combined string - it must see one item at a time or two files' MyriadParams would merge
+         together. The synthetic, never-existing Outputs value means this always reruns (it's cheap,
+         in-memory work; there is no reason to cache it). The ';' -> '|' swap exists because the
+         manifest built below embeds each item's metadata inside an MSBuild Include attribute, which
+         silently re-splits unescaped ';' into separate items (the same class of bug the comment above
+         _MyriadContext already describes) - '|' never appears in either value so it survives that
+         step intact; the CLI splits back on '|' when reading the manifest. -->
+    <Target Name="_MyriadSdkFlattenParams" DependsOnTargets="_MyriadSdkFilesList" BeforeTargets="MyriadSdkGenerateCode"
+            Inputs="%(MyriadCodegen.OutputPath)" Outputs="%(MyriadCodegen.OutputPath).neverexists">
         <PropertyGroup>
-            <_MyriadSdk_InputFileName>%(MyriadCodegen.Identity)</_MyriadSdk_InputFileName>
-            <_MyriadSdk_OutputFileName>%(MyriadCodegen.OutputPath)</_MyriadSdk_OutputFileName>
-            <_MyriadSdk_ConfigKey>%(MyriadCodegen.ConfigKey)</_MyriadSdk_ConfigKey>
-            <_MyriadSdk_ConfigFile>$(MyriadConfigFile)</_MyriadSdk_ConfigFile>
-            <_MyriadSdk_MyriadParams>%(MyriadCodegen.MyriadParams)</_MyriadSdk_MyriadParams>
-            <_MyriadSdk_InlineGeneration>%(MyriadCodegen.InlineGeneration)</_MyriadSdk_InlineGeneration>
-            <_MyriadSdk_ContextFile>$(MSBuildProjectDirectory)/obj/myriad.context.toml</_MyriadSdk_ContextFile>
-            <_MyriadSdk_Generators>%(MyriadCodegen.Generators)</_MyriadSdk_Generators>
-            
+            <_MyriadSdkCurrentItemGenerators>%(MyriadCodegen.Generators)</_MyriadSdkCurrentItemGenerators>
         </PropertyGroup>
 
         <Flatten Items="@(MyriadCodegen)" Metadata="MyriadParams">
-            <Output TaskParameter="Result" PropertyName="_MyriadSdk_MyriadParams_Flattened" />
+            <Output TaskParameter="Result" PropertyName="_MyriadSdkCurrentItemFlattenedParams" />
         </Flatten>
 
-        <!-- Convert the property DefineConstants and _MyriadSdk_Generators to items so that it can be transfromed to separated list -->
+        <ItemGroup>
+            <MyriadCodegen>
+                <FlattenedParams>$(_MyriadSdkCurrentItemFlattenedParams.Replace(';', '|'))</FlattenedParams>
+                <GeneratorsPipeDelimited>$(_MyriadSdkCurrentItemGenerators.Replace(';', '|'))</GeneratorsPipeDelimited>
+            </MyriadCodegen>
+        </ItemGroup>
+    </Target>
+
+    <!-- Runs Myriad once for the whole project instead of once per file (the previous per-item
+         %(MyriadCodegen.OutputPath) batching here was already not a real per-file incremental check:
+         _MyriadSdkCodeGenInputCache is one combined hash over every codegen input, so any single
+         file's content change already invalidated every other item's batch too - confirmed by
+         actually editing one file and observing every generated file's output get rewritten, not
+         just the one that depended on it. Collapsing to a single Exec loses no real granularity and
+         removes N-1 redundant cold `dotnet` process launches. -->
+    <Target Name="MyriadSdkGenerateCode" DependsOnTargets="$(MyriadSdkGenerateCodeDependsOn)" BeforeTargets="CoreCompile"
+            Inputs="@(MyriadCodegen);$(_MyriadSdkCodeGenInputCache);$(MyriadSdk_Generator_Exe)"
+            Outputs="$(_MyriadSdkGenerateStamp)">
+        <PropertyGroup>
+            <_MyriadSdk_ConfigFile>$(MyriadConfigFile)</_MyriadSdk_ConfigFile>
+            <_MyriadSdk_ContextFile>$(MSBuildProjectDirectory)/obj/myriad.context.toml</_MyriadSdk_ContextFile>
+        </PropertyGroup>
+
+        <!-- Convert the property DefineConstants to an item so that it can be transformed to a separated list -->
         <ItemGroup>
             <_DefineConstants Include="$(DefineConstants)" />
-            <_GeneratorsOnly Include="$(_MyriadSdk_Generators)" />
         </ItemGroup>
 
+        <!-- Each array's elements are joined with ',%0a' (comma + newline) and the property is then
+             embedded directly between literal [%0a ... %0a] markers below. This produces one MSBuild
+             item per TOML key with the newlines already inside its own value, so WriteLinesToFile
+             renders each array on its own lines. Deliberately NOT relying on MSBuild's Include
+             attribute splitting on unescaped ';' to fake multi-line output (the previous approach) -
+             that trick breaks silently if any path or define-constant ever contains a literal ';'. -->
         <PropertyGroup>
             <_ProjectName>$(ProjectFileName)</_ProjectName>
             <_ProjectPath>$(ProjectPath)</_ProjectPath>
-            <_ReferencePaths>@(ReferencePath->'%27%(Identity)%27', ',')</_ReferencePaths>
-            <_CompileBefore>@(CompileBefore->'%27%(Identity)%27', ',')</_CompileBefore>
-            <_Compile>@(Compile->'%27%(Identity)%27', ',')</_Compile>
-            <_CompileAfter>@(CompileAfter->'%27%(Identity)%27', ',')</_CompileAfter>
-            <_DefineConstants>@(_DefineConstants->'%27%(Identity)%27', ',')</_DefineConstants>
+            <_ReferencePaths>@(ReferencePath->'%27%(Identity)%27', ',%0a')</_ReferencePaths>
+            <_CompileBefore>@(CompileBefore->'%27%(Identity)%27', ',%0a')</_CompileBefore>
+            <_Compile>@(Compile->'%27%(Identity)%27', ',%0a')</_Compile>
+            <_CompileAfter>@(CompileAfter->'%27%(Identity)%27', ',%0a')</_CompileAfter>
+            <_DefineConstants>@(_DefineConstants->'%27%(Identity)%27', ',%0a')</_DefineConstants>
         </PropertyGroup>
 
         <ItemGroup>
             <_MyriadContext Include='project="$(_ProjectName)"' />
             <_MyriadContext Include='projectPath=%27$(_ProjectPath)%27' />
-            <_MyriadContext Include='referencePaths=[;$(_ReferencePaths);]' />
-            <_MyriadContext Include='compileBefore=[;$(_CompileBefore);]' />
-            <_MyriadContext Include='compile=[;$(_Compile);]' />
-            <_MyriadContext Include='compileAfter=[;$(_CompileAfter);]' />
-            <_MyriadContext Include='defineConstants=[;$(_DefineConstants);]' />
+            <_MyriadContext Include="referencePaths=[%0a$(_ReferencePaths)%0a]" />
+            <_MyriadContext Include="compileBefore=[%0a$(_CompileBefore)%0a]" />
+            <_MyriadContext Include="compile=[%0a$(_Compile)%0a]" />
+            <_MyriadContext Include="compileAfter=[%0a$(_CompileAfter)%0a]" />
+            <_MyriadContext Include="defineConstants=[%0a$(_DefineConstants)%0a]" />
         </ItemGroup>
 
         <WriteLinesToFile File="$(_MyriadSdk_ContextFile)" Lines="@(_MyriadContext)" Overwrite="true" />
 
+        <!-- One [[unit]] block per file needing generation. @(MyriadCodegen->'...') is a plain item
+             transform, which already produces one result string per source item with no batching
+             tricks needed - unlike the Include-splitting hazard above, this result is assigned
+             straight into another item's Include, so anything embedded here must not contain a
+             literal ';' (see FlattenedParams/GeneratorsPipeDelimited above). -->
         <ItemGroup>
-            <MyriadSdk_Args Include='--inputfile "$(_MyriadSdk_InputFileName)"' />
-            <MyriadSdk_Args Include='--outputfile "$(_MyriadSdk_OutputFileName)"' />
-            <MyriadSdk_Args Include='--configkey "$(_MyriadSdk_ConfigKey)"' Condition=" '$(_MyriadSdk_ConfigKey)' != '' " />
+            <_MyriadManifestUnit Include="@(MyriadCodegen->'[[unit]]%0ainputfile = %27%(Identity)%27%0aoutputfile = %27%(OutputPath)%27%0aconfigkey = %27%(ConfigKey)%27%0ainline = %(InlineGeneration)%0aparams = %27%(FlattenedParams)%27%0agenerators = %27%(GeneratorsPipeDelimited)%27')" />
+        </ItemGroup>
+
+        <WriteLinesToFile File="$(_MyriadSdkManifestFile)" Lines="@(_MyriadManifestUnit)" Overwrite="true" />
+
+        <ItemGroup>
+            <MyriadSdk_Args Include='--manifest "$(_MyriadSdkManifestFile)"' />
             <MyriadSdk_Args Include='--configfile "$(_MyriadSdk_ConfigFile)"' Condition=" '$(_MyriadSdk_ConfigFile)' != '' " />
             <MyriadSdk_Args Include='--contextfile "$(_MyriadSdk_ContextFile)"' Condition=" '$(_MyriadSdk_ContextFile)' != '' " />
-            <MyriadSdk_Args Include='--additionalparams "$(_MyriadSdk_MyriadParams_Flattened)"' Condition=" '$(_MyriadSdk_MyriadParams_Flattened)' != '' " />
             <MyriadSdk_Args Include='--wait-for-debugger' Condition=" '$(MyriadSdkWaitForDebugger)' == 'true' " />
             <MyriadSdk_Args Include='--verbose' Condition=" '$(MyriadSdkVerboseOutput)' == 'true' " />
             <MyriadSdk_Args Include='--plugin "%(MyriadSdkGenerator.FullPath)"' Condition=" '@(MyriadSdkGenerator)' != '' " />
-            <MyriadSdk_Args Include='--inlinegeneration' Condition=" '$(_MyriadSdk_InlineGeneration)' == 'true' " />
-            <MyriadSdk_Args Include='--generator-filter "%(_GeneratorsOnly.Identity)"' Condition=" '%(_GeneratorsOnly.Identity)' != '' " />
         </ItemGroup>
 
         <!-- Uncomment to debug command line generation -->
         <!-- <Message Text="%0A$(MyriadSdk_Generator_ExeHost)&quot;$(MyriadSdk_Generator_Exe)&quot; @(MyriadSdk_Args -> '%(Identity)', ' ')%0A" Importance="high"/> -->
 
-        <!-- Use dotnet to execute the process. -->
-        <Exec Command="$(MyriadSdk_Generator_ExeHost)&quot;$(MyriadSdk_Generator_Exe)&quot; @(MyriadSdk_Args -> '%(Identity)', ' ')" />
-    </Target>
+        <!-- One process for the whole project's codegen instead of one per file. Gated here, not on
+             the target itself: a Target's own Condition is evaluated before its DependsOnTargets /
+             BeforeTargets chain runs, so '@(MyriadCodegen)' would always see an empty list at that
+             point and skip the whole target every time, generated code included - confirmed with a
+             -v:diag build showing MyriadSdkGenerateCode skip with "( '' != '' )" before
+             _MyriadSdkFilesList (which populates MyriadCodegen) had even run. -->
+        <Exec Condition=" '@(MyriadCodegen)' != '' " Command="$(MyriadSdk_Generator_ExeHost)&quot;$(MyriadSdk_Generator_Exe)&quot; @(MyriadSdk_Args -> '%(Identity)', ' ')" />
 
-    <Target Name="MyriadSdkIncludeCodegenOutputDuringDesignTimeBuild" BeforeTargets="CoreCompile" Condition=" '$(DesignTimeBuild)' == 'true' " />
+        <Touch Condition=" '@(MyriadCodegen)' != '' " Files="$(_MyriadSdkGenerateStamp)" AlwaysCreate="true" />
+    </Target>
 
 </Project>
