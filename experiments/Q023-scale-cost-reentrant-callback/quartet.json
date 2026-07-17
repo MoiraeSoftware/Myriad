@@ -1,0 +1,14 @@
+{
+  "id": "Q023",
+  "status": "closed",
+  "verdict": "REVISE. The reentrant callback fires N\u002B1 times every call with zero diagnostics at N up to 300, no hang. The no-op-repeat case shows real caching (~5x cheaper marginal per-file rate than cold). But the executor\u0027s headline claim - that editing one file costs nearly as much as a cold rebuild, so caching is \u0027largely absent once anything changes\u0027 - was an artifact of always editing file index 0, the compilation-order worst case. Independent review, then independently re-confirmed with a durable artifact (editIdx sweep at N=300), showed cost is linear in the number of compilation-order successors after the edited file: editing the last file is statistically indistinguishable from a no-op repeat, editing the first file costs close to cold. The real finding is (c)-with-positional-cost, not (b): FCS incrementally skips the compilation-order prefix before an edit and only re-checks the tail. Caveat that cuts the other way for Myriad specifically: attributed domain types often sit early in build order, which is close to the worst-case position measured.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": "2026-07-17"
+}

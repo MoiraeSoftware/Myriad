@@ -1,7 +1,7 @@
 {
   "id": "Q014",
   "status": "closed",
-  "verdict": "REVISE. A compiler-built quotation (via [<ReflectedDefinition>] + TryGetReflectedDefinition, avoiding hand-built Expr.Call) was specialized by a hand-matched rewrite of one recursive shape and rendered by Unquote's decompile into F# source that FCS reparsed, typechecked, and - verified by actually compiling and executing the text, not just the quotation - ran correctly with the recursion fully unrolled. Real: code, not just Q003's data, crosses the generation-time-to-source boundary. Not what was pre-registered: no FsiEvaluationSession ever ran (the SHIP threshold's own 'at FSI time' conjunct), both the general implementation and its static config were source-level literals in the same program (the dynamic-origin staging boundary Myriad needs was never crossed), and the partial evaluator is a bespoke transcription of power's own three node shapes, not the generic ExprShape expander the design's own recon named. See 03-review.md for the full adversarial review and named follow-ups.",
+  "verdict": "REVISE. A compiler-built quotation (via [\u003CReflectedDefinition\u003E] \u002B TryGetReflectedDefinition, avoiding hand-built Expr.Call) was specialized by a hand-matched rewrite of one recursive shape and rendered by Unquote\u0027s decompile into F# source that FCS reparsed, typechecked, and - verified by actually compiling and executing the text, not just the quotation - ran correctly with the recursion fully unrolled. Real: code, not just Q003\u0027s data, crosses the generation-time-to-source boundary. Not what was pre-registered: no FsiEvaluationSession ever ran (the SHIP threshold\u0027s own \u0027at FSI time\u0027 conjunct), both the general implementation and its static config were source-level literals in the same program (the dynamic-origin staging boundary Myriad needs was never crossed), and the partial evaluator is a bespoke transcription of power\u0027s own three node shapes, not the generic ExprShape expander the design\u0027s own recon named. See 03-review.md for the full adversarial review and named follow-ups.",
   "required_files": [
     "00-hypothesis.md",
     "01-design.md",
@@ -10,5 +10,5 @@
   ],
   "completion_check": "strict",
   "allow_partial_state": false,
-  "last_validated": null
+  "last_validated": "2026-07-17"
 }

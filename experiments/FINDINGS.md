@@ -1,6 +1,6 @@
 # Findings so far — what's real, what's not
 
-Cross-quartet digest as of 2026-07-17, twenty-two quartets in (Q001–Q022, nineteen closed, three
+Cross-quartet digest as of 2026-07-17, twenty-four quartets in (Q001–Q024, twenty-one closed, three
 planned).
 Separately, on 2026-07-16, Q008 and Q009's missing artifacts were filled in by recovering
 and re-verifying their actual original source — see "A gap in this file's own credibility" below; this
@@ -135,12 +135,49 @@ that actually buy real capability or just be novelty?
   bump) and the project is reloaded, a real, demonstrated in-session trigger the quartet's own first pass
   wrongly concluded didn't exist until independent review found it. Net: **closes the IDE-invisibility
   gap at project load/reload time, not during live source editing** (Q022, REVISE).
+- `BACKLOG.md` item 18's own named top-priority follow-up — a real scale test of Q010/Q021's reentrant
+  callback, "a few hundred files, edit one, measure `ParseAndCheckProject` cost on the unchanged
+  remainder" — was finally run as Q023, at N up to 300 with genuinely weighted files (not `let x = 5`
+  padding), and the honest finding only emerged after adversarial review corrected the executor's own
+  headline claim. The executor's write-up concluded editing one file costs close to a full cold rebuild
+  regardless of project size — apparent evidence for "no effective caching, unconditional full recheck."
+  Independent review found this was an artifact of always editing file index 0 (the *first* file, with
+  the maximum number of compilation-order successors) — a real methodological blind spot, not a
+  fabrication, but one that inverted the conclusion. A position sweep at N=300 (the review's own variant,
+  then independently re-confirmed with a durable, checked-in artifact) shows per-edit cost is linear in
+  the number of files *after* the edited one: editing the **last** file is statistically indistinguishable
+  from a no-op repeat (255ms vs. 258ms), editing the **first** costs close to cold (1339ms vs. 2640ms
+  cold). FCS's `TransparentCompiler` genuinely does skip the compilation-order prefix before an edit and
+  only re-checks the tail below it — real, working incremental caching, not the absence of it. The
+  caveat that keeps this from being unambiguously good news for Myriad specifically: attributed domain
+  types often sit early in build order precisely because other code depends on them, which is close to
+  the worst-case position actually measured, so the *expensive* case isn't a rare pathology for Myriad's
+  own real usage even though it isn't the universal case the executor's write-up first implied (Q023,
+  REVISE).
+- Q023's own review Follow-up 1 — does the linear-in-successors cost model hold at more than the one
+  N it was spot-checked at — was run for real as Q024: a full sweep of 5 edit positions at each of
+  N ∈ {10, 50, 150, 300} (20 runs, reusing Q023's own spike verbatim, no new code). **SHIP, scoped.**
+  The per-successor marginal cost fits a clean line at every N, and the fitted slope shows no
+  detectable systematic drift from N=10 to N=300 — independently reproduced, with the peak slope
+  landing at a *middle* N in both the executor's and the reviewer's own rerun, affirmatively refuting
+  the pre-registered "slope scales with N" REVISE trigger. The review scoped three framings down
+  without reversing the verdict: "essentially N-invariant" overstates what 5 points per fit can
+  support (95% CI ±76% at N=10, only N=150/300 tightly constrained — the honest claim is "no
+  *detectable* drift," not a proven invariant); "intercept tracks the repeat median" is mildly
+  circular, since the zero-successor point sits inside the same regression that produced the
+  intercept; and one N=50 data point the write-up itself flagged as anomalous was confirmed, on
+  rerun, to be a sampling outlier rather than a real plateau. The most consequential scoping for
+  citation purposes: **this measures a cost model (whole-project `ParseAndCheckProject`, independent
+  files), not a real FSAC live-editing session** — cite as "per-edit cost is a stable linear function
+  of compilation-order successors, slope constant across N≤300, on independent files," never as
+  "FSAC keystroke cost characterized." Myriad's real attributed types still tend to sit early in
+  build order, near the expensive end of the measured curve (Q024, SHIP scoped).
 
-**Honest net position:** five SHIPs (Q002 fully, Q003 narrowly, Q010 scoped, Q015 scoped, Q021 scoped)
-prove the mechanism is sometimes genuinely valuable — with Q015 and Q021 now the second and third
-quartets, after Q010, to earn a SHIP only once heavily scoped, a pattern worth noticing on its own: this
-thread's positive results keep shrinking on inspection, not just its negative ones. Four REVISE/NULL
-results (Q001, Q006, Q014, Q022) prove
+**Honest net position:** six SHIPs (Q002 fully, Q003 narrowly, Q010 scoped, Q015 scoped, Q021 scoped,
+Q024 scoped) prove the mechanism is sometimes genuinely valuable — with Q015, Q021, and now Q024 all
+earning a SHIP only once heavily scoped, a pattern worth noticing on its own: this thread's positive
+results keep shrinking on inspection, not just its negative ones. Five REVISE/NULL
+results (Q001, Q006, Q014, Q022, Q023) prove
 overclaiming is easy — Q014 in a distinct way: a spike can reproduce cleanly and still not be the thing
 its own pre-registration named, because the mechanism that made it into the harness quietly substituted
 for the mechanism in the hypothesis's title, and neither the design nor the results write-up caught the
@@ -152,10 +189,14 @@ showed the overclaiming risk cuts the other way too: its results write-up's own 
 than the evidence supported — the executor had ruled out several specific signals but generalized to "no
 signal works," and review, by trying one the executor hadn't (an actual `.fsproj` mtime change, not just
 a notification claiming one happened), found a working in-session reload path and corrected the claim
-back down to what the design's own pre-registration had predicted. Combined
+back down to what the design's own pre-registration had predicted. Q023 then added a fourth, more subtle
+shape to this same list: not a mechanism substitution and not an overreaching negative, but a
+**measurement of a single, unrepresentative worst-case condition (the first file's edit position)
+reported as the general case** — real data, real numbers, correct code, wrong scope, caught only when
+review swept the one variable (edit position) the design held fixed. Combined
 with Q006's hard wall for type providers on Myriad's real usage pattern, this thread's overclaiming risk
-is now demonstrated across four structurally different mechanisms, including at least one case of a
-negative claim overshooting its evidence, not just positive ones. **Nothing has been built that would
+is now demonstrated across five structurally different mechanisms, spanning mechanism substitution,
+negative-claim overreach, and narrow-condition-as-general-conclusion. **Nothing has been built that would
 replace Myriad's current pipeline end to end**, and nothing in `experiments/` has been merged into
 `src/`. Q010's own review holds back from the hypothesis's strongest framing: unresolved whether the
 reentrancy tested was genuinely mid-flight or landing on an already-idle checker, and it settles only the
@@ -743,19 +784,68 @@ round trip and a CLI-subprocess test of the error path; all 58 tests in
 `test/Myriad.IntegrationPluginTests` pass. This was engineering, not a hypothesis, per this file's own
 existing carve-out, and needed no quartet.
 
+**Update, 2026-07-17 (new session): `BACKLOG.md` item 18's own top-priority scale test was promoted to
+`Q023` and closed — with the corrected answer more favorable to item 18 than the quartet's own headline
+claim first suggested.** Q010/Q021's reentrant `DocumentSource.Custom` callback was scaled to N ∈
+{10, 50, 150, 300} genuinely-weighted files (generic records, `Map`/`List` pipelines, recursion — not
+Q001 Round 3's near-free padding), measuring cold vs. no-op-repeat vs. edit-one-unrelated-file cost.
+Two deviations were caught and honestly corrected before the results were trusted: a real bug in the
+*generated* F# source (an unbound identifier leaking from a `sprintf` template), and a violation of the
+design's own "fresh process per N" instruction that let JIT warm-up contaminate the N=10 baseline —
+both disclosed in `02-results.md` rather than silently patched. The corrected run showed both ratio
+columns growing monotonically with N, which the executor read as "editOne tracks cold, caching is
+largely absent once anything changes" — a REVISE against the pre-registered thresholds, on its face a
+materially pessimistic answer for item 18. **Independent review found this conclusion doesn't survive
+scrutiny of *which* file the design always edited.** The spike hardcoded `Prefix0000` — index 0, the
+*first* file, with the maximum possible number of compilation-order successors — as the sole edit
+target at every N. The reviewer ran a position sweep at N=300 and found cost is linear in the number of
+files *after* the edited one, collapsing to no-op-repeat cost for a tail edit (idx 299: 255ms, ≈ repeat's
+258ms) and rising toward cold only for a head edit (idx 0: 1339ms of a 2640ms cold check). This was then
+independently re-confirmed a third time with a durable, checked-in artifact (`run-n300-editidx{0,150,299}.txt`),
+closing a real gap this repo has been burned by before (Q006/Q008/Q09's missing-artifacts episode) —
+the reviewer's own finding didn't just get argued, it got hardened into re-runnable evidence before the
+quartet closed. **The corrected finding: FCS's `TransparentCompiler` genuinely does skip the
+compilation-order prefix before an edit and re-checks only the tail — real, working incremental caching,
+not its absence.** `Q023: CLOSED, REVISE` — REVISE not because the mechanism fails, but because the
+quartet's own headline interpretation was wrong and must not be cited as written. One caveat keeps this
+from being unambiguous good news for Myriad specifically, named by the review: attributed domain types
+often sit early in build order because other code depends on them, which is close to the worst-case
+position actually measured — the expensive case isn't a rare pathology for Myriad's real usage, even
+though it isn't the universal case first claimed. See `Q023-scale-cost-reentrant-callback/03-review.md`.
+
+**Update, 2026-07-17 (same session, continued): `Q023`'s review's own top follow-up — does the
+linear-in-successors cost model hold across scale, not just the single N=300 spot-check — was run
+immediately as `Q024` and closed the same session.** `Q024: CLOSED, SHIP, scoped.` A full sweep (5 edit
+positions × N ∈ {10, 50, 150, 300}, 20 runs, reusing Q023's own spike binary verbatim) found the
+per-successor marginal cost fits a clean line at every N with no detectable systematic drift in the
+slope from N=10 to N=300 — independently reproduced, with the peak slope landing at a *middle* N in
+both the executor's and the reviewer's own separate rerun, which affirmatively refutes the
+pre-registered "slope grows with N" REVISE trigger rather than merely failing to find it. The review
+scoped three specific framings down without touching the verdict: "essentially N-invariant" overstates
+what 5 points per fit can support statistically (only the two largest-N fits are tightly constrained);
+"intercept cross-validates the repeat median" is mildly circular, since the zero-successor point is
+itself one of the points inside that regression; and one N=50 data point the write-up itself flagged as
+an anomaly was confirmed, on independent rerun, to be a sampling outlier rather than a real plateau in
+the model. Most important for how this gets cited: **this measures a cost model — whole-project
+`ParseAndCheckProject` cost as a function of edit position, on independent files — not a real FSAC
+live-editing session**, and must not be described as "FSAC keystroke cost characterized." See
+`Q024-position-sweep-across-scale/03-review.md`.
+
 ## Starting the next session (updated)
 
-With Q022 closed, `BACKLOG.md` item 8 is resolved as far as this repo's own tooling can currently test
-it, and the diagnostics API is shipped. The most direct next steps, in rough priority order: (1) the
-scale test named above for `BACKLOG.md` item 18 (a few hundred virtual files behind the same reentrant
-callback, one edited, `ParseAndCheckProject` cost on the unchanged remainder measured) — still this
-repo's highest-priority open question for Thread 1, resolving whether an FSAC-sidecar fork would be
-keystroke-cheap or expensive, no prior quartet having scale-tested `TransparentCompiler` under this
-specific API; (2) Q022's own most direct follow-up, named by its review: test whether Ionide's real
-project-file watcher (not this quartet's hand-rolled `workspace/didChangeWatchedFiles` notification)
-actually fires reliably on an ordinary `.fsproj` save in a literal VS Code + Ionide session, which would
-turn Q022's in-session reload finding into a genuinely automatic (if still project-reload-gated, not
-live-source-edit) experience; (3) Q021's own two smaller named follow-ups: test whether any
-`ParseAndCheckFileInProject` calling pattern honors `DocumentSource.Custom` at all (Round 4 only ruled
-out the explicit-current-text path), and test concurrent/interleaved access (a real LSP host serves
-overlapping requests; this thread has only ever tested strictly sequential checks).
+With Q022, Q023, and Q024 all closed, `BACKLOG.md` items 8 and 18's own named cheapest-falsifier/
+scale-test questions are resolved as far as this repo's tooling can currently test them, and the
+diagnostics API is shipped. The most direct next steps, in rough priority order: (1) Q024's own review's
+top follow-up — test whether FSAC's own incremental per-file editing path actually reproduces this
+positional cost model, since everything measured so far (Q023, Q024) drives whole-project
+`ParseAndCheckProject` directly, not a live LSP session's actual per-edit call pattern — this is the
+real remaining gap between "the cost model is well-characterized" and "item 18's FSAC-hosted keystroke
+cost is known"; (2) Q023/Q024's shared follow-up — test the dependency-chained variant both quartets'
+own design deliberately deferred (real cross-file `open`s, closer to Myriad's actual `Q002`/
+`Q010`-shaped cross-generator visibility), to separate "conservative compilation-order invalidation"
+(what's been measured so far) from "genuine dependency-forced invalidation" (a different, and for
+Myriad's own multi-generator case, more realistic question); (3) Q022's own most direct follow-up,
+named by its review: test whether Ionide's real project-file watcher (not a hand-rolled LSP
+notification) actually fires reliably on an ordinary `.fsproj` save in a literal VS Code + Ionide
+session; (4) Q021's own two smaller named follow-ups: test whether any `ParseAndCheckFileInProject`
+calling pattern honors `DocumentSource.Custom` at all, and test concurrent/interleaved access.

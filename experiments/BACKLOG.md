@@ -130,6 +130,14 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
    from reading `IncrementalBuild.fs`, not measured) is real at scale. Redo with padding files that
    have genuine typecheck weight (opens, generics, real inference work) before trusting either
    compiler's scaling story past N=60 trivial files.
+   **Partially addressed as a side effect of `Q023`/`Q024` (2026-07-17), not closed.** Both quartets
+   used genuinely-weighted padding files (generic records, `Map`/`List` pipelines, recursion) up to
+   N=300, closing this item's specific "near-free padding files" methodology complaint for
+   `TransparentCompiler`. But neither quartet ever configured `useTransparentCompiler = false` — this
+   item's own actual comparison target, `BackgroundCompiler` vs `TransparentCompiler` scaling under
+   genuine typecheck weight, remains untested. Cheapest remaining step: rerun `Q023`'s or `Q024`'s own
+   spike (`experiments/Q023-scale-cost-reentrant-callback/artifacts/q023-spike/`) with
+   `useTransparentCompiler = false`, no new harness needed.
 
 5. **`open`-aware refinement of the Round C syntax resolver (small, low priority).** Q002's Round C
    found a naive resolver fails on same-named types in different modules. Does tracking the
@@ -539,6 +547,61 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     a scale test (a few hundred virtual files behind the same callback, one edited, cost on the
     unchanged remainder measured) before committing to building the actual FSAC fork/patch this item
     describes.
+    **That scale test was run: `Q023-scale-cost-reentrant-callback`, CLOSED, REVISE (as of
+    2026-07-17) — with the executor's own headline claim corrected by review, landing more favorably
+    for this item than the quartet's own first-pass conclusion.** N ∈ {10, 50, 150, 300}, genuinely
+    typecheck-weighted files (not `let x = 5` padding — this also incidentally closes item 4's
+    long-standing "padding files were near-free" gap). The executor's corrected numbers (two honestly
+    disclosed deviations along the way, see the quartet's own `02-results.md`) showed both no-op-repeat
+    and edit-one-file cost growing with N relative to cold, read at first as "editOne tracks cold,
+    caching is largely absent" — a pessimistic answer for this item's keystroke-cost question.
+    **Independent review found that reading doesn't survive scrutiny of which file the spike always
+    edited.** The design hardcoded the edit target as file index 0 — the compilation-order *first*
+    file, with the maximum possible number of order-successors — at every N, not a representative
+    "unrelated file." A position sweep at N=300, run by the reviewer and then independently
+    re-confirmed a third time with a durable, checked-in artifact
+    (`Q023-.../artifacts/q023-spike/run-n300-editidx{0,150,299}.txt`), found cost is linear in the
+    number of files *after* the edited one: editing the **last** file (zero successors) is
+    statistically indistinguishable from a no-op repeat (255ms vs. 258ms); editing the **first** file
+    (299 successors) costs close to cold (1339ms of a 2640ms cold check). **The corrected finding:
+    FCS's `TransparentCompiler` genuinely does skip the compilation-order prefix before an edit and
+    re-checks only the tail below it — real, working incremental caching under the reentrant callback,
+    not its absence.** This directly answers this item's own keystroke-cost question in the *favorable*
+    direction for most edits, with one caveat that keeps it from being unambiguous good news for Myriad
+    specifically: attributed domain types often sit early in build order precisely because other code
+    depends on them, which is close to the worst-case position actually measured — the expensive case
+    isn't a rare pathology for Myriad's own real usage, even though it isn't the universal case first
+    concluded. Two follow-ups named by the review, not yet spiked: rerun the position sweep across
+    multiple N (this session only spot-checked N=300) to get the actual per-edit-cost-vs-position curve
+    item 18 needs for a real estimate; and test the dependency-chained variant this quartet's own
+    design deliberately deferred (real cross-file `open`s, closer to Myriad's actual cross-generator
+    visibility shape) to separate conservative compilation-order invalidation from genuine
+    dependency-forced invalidation. See `Q023-scale-cost-reentrant-callback/03-review.md`.
+    **The first of those two follow-ups was run immediately: `Q024-position-sweep-across-scale`,
+    CLOSED, SHIP scoped (as of 2026-07-17).** A full sweep — 5 edit positions at each of N ∈
+    {10, 50, 150, 300}, 20 runs, reusing Q023's own spike binary verbatim — found the per-successor
+    marginal cost fits a clean line at every N, and the fitted slope shows no detectable systematic
+    drift from N=10 to N=300, independently reproduced (the peak slope lands at a *middle* N in both
+    the executor's and the reviewer's own separate rerun, directly refuting the pre-registered "slope
+    grows with N" REVISE trigger rather than merely failing to find it). **This confirms the linear-
+    in-successors model this item's cost estimate now rests on generalizes across the tested scale
+    range, not just the single N=300 point Q023 itself measured.** Review scoped three framings down
+    without reversing the verdict, worth citing correctly rather than the headline: "slope is
+    essentially N-invariant" overstates what 5 points per fit can support (95% CI is ±76% at N=10;
+    only the N=150/300 fits are tightly constrained — the defensible claim is "no *detectable*
+    systematic drift," not a proven invariant); "intercept cross-validates the repeat median" is
+    mildly circular, since the zero-successor point is itself one of the points feeding that same
+    regression; one N=50 data point the write-up itself flagged as anomalous was confirmed, on
+    independent rerun, to be a sampling outlier rather than a real plateau. **Most important for this
+    item specifically: Q024 measures a cost model (whole-project `ParseAndCheckProject`, independent
+    files), not a real FSAC live-editing session** — this item's own keystroke-cost question is
+    better characterized than before, but still not directly measured against the actual host path an
+    FSAC integration would use. The review's own top-priority follow-up, not yet spiked: test whether
+    FSAC's own incremental per-file editing path (not a direct whole-project
+    `ParseAndCheckProject` call) reproduces this same positional cost curve — the real remaining gap
+    between "the cost model is well-characterized" and "this item's actual keystroke cost is known."
+    Second follow-up, shared with Q023: test the dependency-chained variant both quartets' own designs
+    deliberately deferred. See `Q024-position-sweep-across-scale/03-review.md`.
 
 ## General type-provider capability ideas (independent of Myriad, unverified brainstorming)
 

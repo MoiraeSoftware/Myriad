@@ -1,7 +1,7 @@
 {
   "id": "Q013",
   "status": "closed",
-  "verdict": "NULL, exactly as pre-registered. A prior same-checker `checker.Compile` of a generative scenario does not warm a subsequent `ParseAndCheckFileInProject` of the identical scenario: PC fails with Q012's exact 'couldn't find type in tmpXXXXXX' diagnostic, deterministically across 3 in-process repeats and a second full process run, while every Compile resolves cleanly (exit 0). Verified against the raw logs cell-by-cell; each PC mints a fresh temp assembly and reuses nothing from the prior Compile (the mechanistic reason there is no warming). This falsifies the single cheapest reconciliation Q012's review named for the standing Q008-vs-Q012 contradiction (same-checker, same-scenario compile-then-PC ordering, toy ProbeSimple shape, .fsx-PC/.fs-Compile helper form) — but only that specific form; cross-instance/process-global warming, the stricter same-project-object PC form, and TransparentCompiler remain untested and are not logically excluded. Round 2/3 correctly not run (design's NULL-stop). Single most important consequence: retroactively reconstructing Q008/Q09's actual harness is now the clear top priority and no longer optional, and that reconstruction must vary the PC-over-a-real-.fs-project axis this whole lineage has never tested (both Q012 and Q013 exercise PC only via a .fsx script).",
+  "verdict": "NULL, exactly as pre-registered. A prior same-checker \u0060checker.Compile\u0060 of a generative scenario does not warm a subsequent \u0060ParseAndCheckFileInProject\u0060 of the identical scenario: PC fails with Q012\u0027s exact \u0027couldn\u0027t find type in tmpXXXXXX\u0027 diagnostic, deterministically across 3 in-process repeats and a second full process run, while every Compile resolves cleanly (exit 0). Verified against the raw logs cell-by-cell; each PC mints a fresh temp assembly and reuses nothing from the prior Compile (the mechanistic reason there is no warming). This falsifies the single cheapest reconciliation Q012\u0027s review named for the standing Q008-vs-Q012 contradiction (same-checker, same-scenario compile-then-PC ordering, toy ProbeSimple shape, .fsx-PC/.fs-Compile helper form) \u2014 but only that specific form; cross-instance/process-global warming, the stricter same-project-object PC form, and TransparentCompiler remain untested and are not logically excluded. Round 2/3 correctly not run (design\u0027s NULL-stop). Single most important consequence: retroactively reconstructing Q008/Q09\u0027s actual harness is now the clear top priority and no longer optional, and that reconstruction must vary the PC-over-a-real-.fs-project axis this whole lineage has never tested (both Q012 and Q013 exercise PC only via a .fsx script).",
   "required_files": [
     "00-hypothesis.md",
     "01-design.md",
@@ -10,5 +10,5 @@
   ],
   "completion_check": "strict",
   "allow_partial_state": false,
-  "last_validated": null
+  "last_validated": "2026-07-17"
 }

@@ -1,0 +1,14 @@
+{
+  "id": "Q024",
+  "status": "closed",
+  "verdict": "SHIP, scoped. Reused Q023\u0027s spike unchanged; swept 5 edit positions x 4 N values (20 runs). editOne cost is a clean linear function of compilation-order successors at every N, and the per-successor slope shows no detectable systematic drift from N=10 to N=300 (peak slope lands at a middle N in both the executor\u0027s and the independent reviewer\u0027s data, refuting the pre-registered REVISE trigger). KILL never fired. Scoped down by review: \u0027slope is essentially N-invariant\u0027 overstates what 5 points per fit can support (95% CI is \u002B/-76% at N=10, only N=150/300 are tight - correct claim is \u0027no detectable drift\u0027, not \u0027proven invariant\u0027); the \u0027intercept tracks repeat median\u0027 cross-validation is mildly circular since the zero-successor point is inside the regression; one N=50 data point (succ=25 approx succ=12) was a sampling outlier that did not reproduce. Most importantly: this is a cost model (whole-project ParseAndCheckProject, independent files) generalizing across N, not a measured FSAC live-editing session cost - must not be cited as \u0027FSAC keystroke cost characterized\u0027, and Myriad\u0027s real attributed types tend to sit early in build order, near the expensive end of this curve.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": "2026-07-17"
+}

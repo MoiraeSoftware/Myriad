@@ -28,21 +28,31 @@ adversarial-review discipline (adapted from an ML-training experiment convention
 pre-registration, or a spike whose result doesn't survive its own adversarial review, doesn't get
 oversold. Read a quartet's `03-review.md` for the honest verdict, not just `02-results.md`.
 
-**Status as of 2026-07-17 — twenty-two quartets (Q001–Q022), nineteen closed, three planned. Full
+**Status as of 2026-07-17 — twenty-four quartets (Q001–Q024), twenty-one closed, three planned. Full
 digest: `experiments/FINDINGS.md`** — read that first, it synthesizes both lines without requiring all
-nineteen `03-review.md`s as context. One-line summary: **nothing has been merged into `src/` from the
+twenty-one `03-review.md`s as context. One-line summary: **nothing has been merged into `src/` from the
 architecture-exploration track, and Myriad's real IDE-invisibility gap is narrowed but still not
-solved** — twenty-two quartets have mapped the space and, for the first time, actually closed part of
+solved** — twenty-four quartets have mapped the space and, for the first time, actually closed part of
 it: `Q022` hooked Myriad's own MSBuild codegen target into the design-time-build path and confirmed,
 against a literal `fsautocomplete` process over real LSP (not `FSharpChecker`-as-library, a standing
 gap this file had flagged since Q006), that it makes a generated member appear with zero `dotnet build`
 — but only at project load/reload time, not during live source editing (REVISE; see below). Myriad's-
-own-architecture line has five scoped SHIPs (Q002, Q003, Q010, Q015, Q021) and proof that overclaiming
-is easy even inside this repo's own discipline, in both directions — not just claiming more than was
-shown (Q001 NULL, Q006 REVISE, Q014 REVISE — each looked stronger before adversarial review, and Q021's
-own results write-up had a secondary claim struck by review too) but also, new with Q022, claiming a
-negative more absolutely than the evidence supported (its own results doc concluded no in-session FSAC
-reload signal existed at all, until review found one). The general type-provider line shipped a
+own-architecture line has six scoped SHIPs (Q002, Q003, Q010, Q015, Q021, Q024) and proof that
+overclaiming is easy even inside this repo's own discipline, in at least three distinct ways — not just
+claiming more than was shown (Q001 NULL, Q006 REVISE, Q014 REVISE — each looked stronger before
+adversarial review, and Q021's own results write-up had a secondary claim struck by review too) but also
+claiming a negative more absolutely than the evidence supported (Q022's own results doc concluded no
+in-session FSAC reload signal existed at all, until review found one) and reporting a single
+unrepresentative worst-case condition as the general conclusion (`Q023`'s scale test always edited the
+compilation-order *first* file — the maximum-successor, worst-case edit position — and its executor read
+the resulting near-cold cost as "caching is largely absent"; review found cost is actually linear in the
+number of files *after* the edit and collapses to a cache hit for a tail edit, REVISE). `Q024` then
+generalized `Q023`'s corrected finding across scale (a 20-run position × N sweep, N=10 to 300) and
+shipped it, scoped: the per-successor marginal cost shows no detectable drift with N, independently
+reproduced, though the review knocked down an over-precise "essentially N-invariant" framing to the
+better-supported "no detectable systematic drift" and flagged that this is a cost *model*
+(`ParseAndCheckProject` on independent files), not a measured FSAC live-editing session — don't cite it
+as "FSAC keystroke cost characterized." The general type-provider line shipped a
 provenance-enforcement mechanism (Q008/Q09/Q11, reconstructed and reconfirmed after a real
 credibility scare — read `FINDINGS.md`'s "gap in this file's own credibility" section before citing
 any Thread 2 SHIP verdict) and then spent five more quartets (Q016–Q020) probing routes around the one
@@ -77,8 +87,27 @@ Myriad as a live-editing sidecar (modeled loosely on rust-analyzer's out-of-proc
 architecture), and its own cheapest-falsifier precursor question was spiked as `Q021`
 — **SHIP, scoped**: the underlying reentrant-generation mechanism (`Q010`) survives a real persistent-
 checker, multi-edit-cycle load pattern with no staleness, but whether an FSAC-hosted version would be
-keystroke-cheap or pay a full-project-recheck cost on every edit is still genuinely open, pending a
-scale test named as the single highest-priority next step in `BACKLOG.md` item 18 and `FINDINGS.md`.
+keystroke-cheap or pay a full-project-recheck cost on every edit was left genuinely open, pending a
+scale test named as the then-single-highest-priority next step in `BACKLOG.md` item 18 and
+`FINDINGS.md`. **That scale test ran as `Q023` — REVISE, with the corrected answer landing more
+favorably for item 18 than the quartet's own first-pass conclusion:** the executor's own headline claim
+("editOne tracks cold, caching is largely absent once anything changes") didn't survive review, which
+found it was an artifact of the spike always editing the compilation-order *first* file — the
+worst-case edit position, not a representative one. A position sweep, independently re-confirmed with a
+durable checked-in artifact, showed cost is linear in the number of files *after* the edited one and
+collapses to a no-op-repeat cache hit for a tail edit. The corrected finding: `TransparentCompiler`
+genuinely skips the compilation-order prefix before an edit — real, working incremental caching, not
+its absence — with one caveat that cuts back the other way for Myriad specifically: attributed domain
+types often sit early in build order, close to the worst-case position actually measured. See
+`Q023-scale-cost-reentrant-callback/03-review.md`. **`Q023`'s own review then asked whether that
+positional model holds across scale, not just the one N=300 spot-check — spiked immediately as `Q024`,
+SHIP scoped:** a 20-run sweep (5 positions × N ∈ {10,50,150,300}) found the per-successor marginal
+cost is a clean line at every N with no detectable systematic drift in the slope as N grows,
+independently reproduced. Review trimmed an over-precise "essentially N-invariant" claim down to "no
+detectable drift" (5 points per fit can't support tighter than that) and flagged the more important
+scope limit: this characterizes a cost *model* (`ParseAndCheckProject` on independent files), not a
+real FSAC editing session — the review's own top follow-up is testing whether FSAC's actual incremental
+per-file path reproduces the same curve. See `Q024-position-sweep-across-scale/03-review.md`.
 Q020's own top follow-up — give `IMyriadGenerator` a real diagnostics API — is **done**, not just
 designed: `IMyriadGeneratorWithDiagnostics`/`MyriadDiagnostic`/`DiagnosticSeverity` are built in
 `src/Myriad.Core`, wired into the CLI, and covered by five new tests (all 58 tests in
