@@ -1,6 +1,7 @@
 module Tests
 
 open System
+open System.Diagnostics
 open System.IO
 open Expecto
 open Example
@@ -8,6 +9,8 @@ open Example.Lens
 open Input
 open UnknownNamespace
 open Fantomas.FCS.Syntax
+open Fantomas.FCS.Text.Range
+open Fantomas.FCS.Text.Position
 open Myriad.Core
 
 let private parseSource (source: string) =
@@ -15,6 +18,80 @@ let private parseSource (source: string) =
     |> Async.RunSynchronously
     |> Array.head
     |> fst
+
+/// Walks up from a directory looking for `paket.dependencies`, the repo root marker.
+let rec private findRepoRoot (dir: DirectoryInfo) =
+    if dir.GetFiles("paket.dependencies").Length > 0 then dir
+    elif isNull dir.Parent then failwith "Could not locate repo root (paket.dependencies not found)"
+    else findRepoRoot dir.Parent
+
+let private repoRoot = findRepoRoot (DirectoryInfo(AppContext.BaseDirectory))
+let private buildConfiguration = DirectoryInfo(AppContext.BaseDirectory).Parent.Name
+let private myriadCliDll = Path.Combine(repoRoot.FullName, "src", "Myriad", "bin", buildConfiguration, "net9.0", "Myriad.dll")
+let private example1PluginDll = Path.Combine(AppContext.BaseDirectory, "Myriad.Plugins.Example1.dll")
+let private testTxtPath = Path.Combine(repoRoot.FullName, "test", "Myriad.IntegrationPluginTests", "Test.txt")
+
+/// Runs the real Myriad CLI as a subprocess, the same way MSBuild's <Exec> does, and
+/// captures its exit code and combined stdout/stderr.
+let private runMyriadCli (args: string list) =
+    let psi = ProcessStartInfo("dotnet", RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false)
+    psi.ArgumentList.Add(myriadCliDll)
+    args |> List.iter psi.ArgumentList.Add
+    use proc = Process.Start(psi)
+    let stdout = proc.StandardOutput.ReadToEnd()
+    let stderr = proc.StandardError.ReadToEnd()
+    proc.WaitForExit()
+    proc.ExitCode, stdout + stderr
+
+let diagnosticsTests =
+    testList "IMyriadGeneratorWithDiagnostics" [
+        testList "Diagnostics.format" [
+            test "formats a diagnostic anchored at its own range, 1-based columns" {
+                let range = mkRange "Foo.fs" (mkPos 3 4) (mkPos 3 9)
+                let diagnostic = { Code = "MYR010"; Message = "boom"; Severity = DiagnosticSeverity.Warning; Range = Some range }
+                let line = Diagnostics.format "Fallback.fs" diagnostic
+                Expect.equal line "Foo.fs(3,5,3,10): warning MYR010: boom" "range-anchored line should use the range's own file/position, 1-based columns"
+            }
+
+            test "falls back to line 1 of the input file when no range is given" {
+                let diagnostic = { Code = "MYR011"; Message = "no range here"; Severity = DiagnosticSeverity.Error; Range = None }
+                let line = Diagnostics.format "Fallback.fs" diagnostic
+                Expect.equal line "Fallback.fs(1,1,1,1): error MYR011: no range here" "no-range diagnostics should anchor at line 1 of the input file"
+            }
+
+            test "renders Info severity" {
+                let diagnostic = { Code = "MYR012"; Message = "fyi"; Severity = DiagnosticSeverity.Info; Range = None }
+                let line = Diagnostics.format "Fallback.fs" diagnostic
+                Expect.stringContains line ": info MYR012: fyi" "info severity should render as 'info'"
+            }
+        ]
+
+        test "a Warning diagnostic does not fail the real MSBuild build and its output is used" {
+            // Exercised end-to-end by DiagnosticsWarningGen/ArbitaryFile3.fs, asserted in the
+            // "IMyriadGeneratorWithDiagnostics generator with a Warning diagnostic" test above:
+            // if that test's generated values are correct, this build already succeeded despite
+            // the Warning-severity diagnostic DiagnosticsWarningGen always reports.
+            ()
+        }
+
+        test "an Error diagnostic fails the CLI the same way a thrown exception does today" {
+            let outputFile = Path.Combine(Path.GetTempPath(), $"myriad_diag_error_test_{Guid.NewGuid()}.fs")
+            try
+                let exitCode, output =
+                    runMyriadCli [
+                        "--inputfile"; testTxtPath
+                        "--outputfile"; outputFile
+                        "--plugin"; example1PluginDll
+                        "--generator-filter"; "DiagnosticsErrorGen"
+                    ]
+                Expect.notEqual exitCode 0 "CLI should exit non-zero when a generator reports an Error diagnostic"
+                Expect.stringContains output "MYR002" "the Error diagnostic's code should be printed"
+                Expect.stringContains output "test error from DiagnosticsErrorGen" "the Error diagnostic's message should be printed"
+                Expect.isFalse (File.Exists outputFile) "no output file should be written when generation fails"
+            finally
+                if File.Exists outputFile then File.Delete outputFile
+        }
+    ]
 
 let literalBindingTests =
     testList "Literal binding tests" [
@@ -202,6 +279,15 @@ let tests =
             Expect.equal UnknownNamespace.Second.fourtyTwo 42 "generated value should be 42"
             Expect.equal UnknownNamespace.Third.fourtyTwo 42 "generated value should be 42"
             Expect.equal UnknownNamespace.Fourth.fourtyTwo 42 "generated value should be 42"
+        }
+
+        test "IMyriadGeneratorWithDiagnostics generator with a Warning diagnostic still produces output" {
+            // DiagnosticsWarningGen (Myriad.Plugins.Example1) reports a Warning diagnostic
+            // alongside its output; the build must not fail and the output must be used.
+            Expect.equal TestDiagnosticsWarning.First.fourtyTwo 42 "generated value should be 42"
+            Expect.equal TestDiagnosticsWarning.Second.fourtyTwo 42 "generated value should be 42"
+            Expect.equal TestDiagnosticsWarning.Third.fourtyTwo 42 "generated value should be 42"
+            Expect.equal TestDiagnosticsWarning.Fourth.fourtyTwo 42 "generated value should be 42"
         }
 
         test "Test1 create Test" {
@@ -432,4 +518,6 @@ let tests =
         ]
 
         literalBindingTests
+
+        diagnosticsTests
     ]

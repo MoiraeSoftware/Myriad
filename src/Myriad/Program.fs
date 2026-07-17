@@ -152,7 +152,8 @@ module Main =
                 generators |> List.iter (fun t -> printfn $"- %s{t.FullName}")
 
             let runGenerator (inputFile: string) (genType: Type) =
-                let instance = Activator.CreateInstance(genType) :?> IMyriadGenerator
+                let rawInstance = Activator.CreateInstance(genType)
+                let instance = rawInstance :?> IMyriadGenerator
 
                 let configHandler = getConfigHandler verbose config
 
@@ -164,7 +165,20 @@ module Main =
                         if instance.ValidInputExtensions |> Seq.contains (Path.GetExtension(inputFile))
                         then
                             let context = GeneratorContext.Create(configKey, configHandler, inputFile, projectContext, additionalParams)
-                            Some (instance.Generate(context)), None
+
+                            match rawInstance with
+                            | :? IMyriadGeneratorWithDiagnostics as diagnosticsInstance ->
+                                let output, diagnostics = diagnosticsInstance.GenerateWithDiagnostics(context)
+
+                                for diagnostic in diagnostics do
+                                    printfn "%s" (Diagnostics.format inputFile diagnostic)
+
+                                match diagnostics |> List.tryFind (fun d -> d.Severity = DiagnosticSeverity.Error) with
+                                | Some errorDiagnostic ->
+                                    let info = $"%s{genType.Name} Failure"
+                                    None, Some ($"%s{info}%s{Environment.NewLine}!CompilationError%s{Environment.NewLine}%s{errorDiagnostic.Message}")
+                                | None -> output, None
+                            | _ -> Some (instance.Generate(context)), None
                         else None, None
                     with
                     | exc ->

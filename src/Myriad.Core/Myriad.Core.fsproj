@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="Generation.fs" />
     <Compile Include="Types.fs" />
+    <Compile Include="Diagnostics.fs" />
     <Compile Include="AstExtensions.fs" />
     <Compile Include="Ast.fs" />
     <Compile Include="EditorConfig.fs" />

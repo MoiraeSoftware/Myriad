@@ -42,6 +42,7 @@
     <Compile Include="ArbitaryFile.fs">
       <MyriadFile>Test.txt</MyriadFile>
       <MyriadConfigKey>example1</MyriadConfigKey>
+      <Generators>Example1Gen</Generators>
       <MyriadParams>
         <MyriadParam1>5</MyriadParam1>
         <MyriadParam2>6</MyriadParam2>
@@ -52,6 +53,11 @@
       <MyriadFile>Test.txt</MyriadFile>
       <Generators>Example1Gen</Generators>
       <!-- <MyriadConfigKey>example1</MyriadConfigKey> -->
+    </Compile>
+
+    <Compile Include="ArbitaryFile3.fs">
+      <MyriadFile>Test.txt</MyriadFile>
+      <Generators>DiagnosticsWarningGen</Generators>
     </Compile>
 
     <Compile Include="Tests.fs" />
