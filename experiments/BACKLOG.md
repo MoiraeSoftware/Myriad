@@ -603,6 +603,102 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     Second follow-up, shared with Q023: test the dependency-chained variant both quartets' own designs
     deliberately deferred. See `Q024-position-sweep-across-scale/03-review.md`.
 
+19. **A `myriad-live` watcher daemon that drives Q022's own already-proven reload signal on every save
+    (new, 2026-07-17, extends Q022/item 8, composes only already-shipped pieces).** Prompted by
+    inspecting `FSharp.Compiler.PortaCode`'s `fslive` tool (dead since 2020, not reusable directly, but
+    its architecture is): a standalone process that watches project source files and reacts per-save,
+    no compiler or IDE fork required. Q022's own review already found the missing piece for item 18's
+    live-edit gap: an actual `.fsproj` mtime change (even a no-op touch) followed by a reissued
+    `fsharp/workspaceLoad` re-triggers Myriad's codegen inside an *already-running* FSAC session, no
+    restart. Nothing currently drives that signal on an ordinary source save. This item is exactly that
+    driver: watch the attributed `.fs` files, re-run codegen (now a single batched process per project
+    as of the `793bc98` fix, cheap enough to run on every save), then touch the `.fsproj`. Unlike item
+    18, this needs no FSAC fork — it only automates a trigger Q022 already proved works when done by
+    hand. Named risks, none yet checked: reload-storm behavior if saves arrive faster than a reload
+    completes (needs debouncing); whether an automated `.fsproj` touch could race a real concurrent edit
+    to the `.fsproj` itself; whether Ionide's own project-watch path (as opposed to Q022's raw FSAC/LSP
+    harness) reacts to a script-driven touch the same way — untested, and item 17's real-Ionide-session
+    harness would be the natural place to check it. Cheapest falsifier: extend Q022's own Round 2a/2b
+    FSAC harness with a `FileSystemWatcher` on the attributed source file that touches the `.fsproj` and
+    reissues `workspaceLoad` automatically, and confirm the reload signal still fires correctly when
+    driven by a script instead of manually — if it does, item 18's live-edit gap is closed for the FSAC
+    case without ever forking FSAC.
+
+20. **Interpret typed FCS expressions directly, instead of hosting FSI, for the real generation-time
+    computation Q014/Q015 never achieved — PROMOTED TO Q025, CLOSED, SHIP scoped (as of 2026-07-18).**
+    See `Q025-typed-expr-interpreter/03-review.md` for the full verdict. Original framing kept below for
+    context. A hand-written interpreter matching exactly six `FSharpExprPatterns` cases (`Const`,
+    `NewRecord`, `Call`, `Let`, `Value`, `IfThenElse`) against a real, checker-produced `FSharpExpr`
+    reflection-constructs records (including nested ones, a generalization review confirmed) and
+    reflection-invokes already-compiled reference functions across a `Let`/`Call`/`IfThenElse` chain,
+    driving a differing generated-member-name list, with zero `FsiEvaluationSession`/`Reflection.Emit`
+    anywhere — reaching Q015's unmet goal by never hosting FSI at all, rather than by fixing Q015's own
+    mechanism. Review found a real accuracy defect in the frozen docs: generic method calls were claimed
+    to fall through to the interpreter's `NotImplementedException` safety net but don't — they match the
+    ordinary `Call` arm and crash with a raw `InvalidOperationException` because `methodTypeArgs` is
+    discarded, never fed to `MakeGenericMethod`. Scope, unchanged by the correction: a mechanism proof
+    over six patterns and two fixtures, not general F# semantics — `Lambda`/`Application`, DU pattern
+    matching, recursion, and generic calls are all unsupported, exactly the pre-registered REVISE
+    ceiling. Named follow-ups, not yet spiked: interpret a function body (`Lambda`/`Application`) rather
+    than just a value binding that calls functions; a DU/pattern-match fixture, since Myriad's own
+    union-based generators are the obvious real target and none of the six implemented arms touch them.
+    Original framing below. Prompted by `FSharp.Compiler.PortaCode`'s `CodeModel.fs`/`FromCompilerService.fs`/
+    `Interpreter.fs`: it defines `DExpr`, a serializable form of FCS's resolved (post-typecheck)
+    `FSharpExpr`, and a tree-walking interpreter that reflection-invokes against already-compiled
+    reference assemblies with no `Reflection.Emit` needed by default. Q015's own review named the exact
+    gap this could close: FSI never actually executed the general implementation under test, it only
+    compiled a plugin and handed back a `MethodInfo` for host-compiled code via a one-line quotation
+    destructure. Interpreting a typed FCS expression tree directly would let a generator actually run
+    plugin-author logic against real data at generation time, with no `FsiEvaluationSession`, no dynamic
+    assembly, and no compiled backend needed for the code being interpreted — combined with Q010's
+    reentrant callback, a generator could check the compilation prefix and then *interpret* (not just
+    re-typecheck) an attributed declaration's typed body to derive the config another generator
+    consumes. Real costs, not glossed over: PortaCode itself is dead (2020-11-23, `FSharp.Compiler.
+    Service 38.0.0`, the old `FSharp.Compiler.SourceCodeServices` namespace) — nothing here is
+    vendorable, `FromCompilerService.fs`'s `FSharpExpr` walk would need porting to the current pin's
+    `FSharpExprPatterns` active patterns, mechanical but real work, not a copy-paste; the interpreter's
+    own semantics are explicitly approximate for exotic language features per its own `README.md`;
+    reflection-invoke needs the referenced assemblies actually loaded and resolvable, which brushes
+    against Q018's finding that FCS retains type-provider-hosting state process-globally — untested
+    whether plain reflection-invoke with no type provider involved has the same retention problem.
+    Cheapest falsifier: don't port the whole interpreter — hand-write the walk for one trivial
+    `FSharpExpr` shape (e.g. a record construction or a string-literal-returning function body) against
+    the current FCS pin, and confirm reflection-invoke against an already-compiled reference assembly
+    produces the correct runtime value with no `FsiEvaluationSession` anywhere in the harness.
+
+21. **Analyzer-driven preview of a generator's output at the attribute site, short of Q022's full
+    live-generation goal (new, 2026-07-17, extends Q019/Q020, distinct from item 17; ceiling confirmed,
+    not assumed, 2026-07-17 against PortaCode's `feature/analyzers` branch).** Item 17 tests whether
+    Q020's diagnostic-anchoring claim survives a real Ionide session; this is a different, smaller
+    capability. Run the plugin generator itself, in-memory, against the attributed type's parsed shape
+    inside an `FSharp.Analyzers.SDK` analyzer, and surface the generated member signatures as an
+    info-severity **diagnostic** at the attribute site (e.g. "will generate: `Lens<Person,string>
+    name`") — without ever splicing generated code anywhere. **Diagnostic text only, deliberately not
+    hover/tooltip content — checked directly, not assumed.** `FSharp.Compiler.PortaCode`'s
+    `origin/feature/analyzers` branch (dead since 2021-02-17) prototyped exactly the richer version —
+    an `OnCheckFile`/`TryAdditionalToolTip` analyzer hooked directly into FCS's own checking pipeline,
+    able to inject arbitrary hover content, not just diagnostics — for `FST-1033-analyzers.md`
+    (`fsharp/fslang-design`), Don Syme's own RFC for a compiler-service-level analyzer extension point.
+    It required a patched `fsc.exe` from a personal fork branch (`--compilertool:`, "Requires branch
+    feature/analyzers from dotnet/fsharp") and never shipped: confirmed directly against current
+    `dotnet/fsharp` source, `FSharpAnalyzer`/`AnalyzerAttribute` have zero occurrences anywhere in it,
+    and the RFC doc itself ends on an open TODO list, no implemented status. That closes the question
+    of whether this item could aim higher than plain diagnostics using only the stock, shippable
+    `FSharp.Analyzers.SDK` — it can't; the hover/tooltip-injection capability specifically needs the
+    FST-1033 hook, which doesn't exist outside a personal, five-years-dead compiler fork, and standing
+    one up is the same "materially bigger and riskier undertaking than anything else in this file" this
+    repo's own closed-door note on AST-injection already warned against. This deliberately gives up the
+    goal every other item in this list chases (making generated code itself live and usable) in exchange
+    for something cheap and buildable today: no DTB hook, no FSAC change, no reentrant checker, no
+    compiler fork, just an ordinary analyzer calling Myriad's own existing generator function and
+    formatting its result as diagnostic text. The ceiling is real, low, and now known to be structural
+    rather than a matter of not trying hard enough — a developer sees what would exist but can never
+    call it, no IntelliSense on the actual member — so this doesn't compete with item 8/Q022's actual
+    goal, it's a stopgap for the gap between "no signal at all" and "a real build." Cheapest falsifier:
+    wire one existing generator (`Fields` or `Lenses`) into a minimal analyzer that runs it on save and
+    formats the result as an info diagnostic at the attribute, confirmed rendering in a real Ionide
+    session (piggybacking on item 17's harness if that's built first).
+
 ## General type-provider capability ideas (independent of Myriad, unverified brainstorming)
 
 Not Myriad-specific — these are about `FSharp.TypeProviders.SDK` (`FSharp.TypeProviders.SDK/src/ProvidedTypes.fs`)

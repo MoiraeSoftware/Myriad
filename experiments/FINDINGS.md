@@ -1,6 +1,6 @@
 # Findings so far — what's real, what's not
 
-Cross-quartet digest as of 2026-07-17, twenty-four quartets in (Q001–Q024, twenty-one closed, three
+Cross-quartet digest as of 2026-07-18, twenty-five quartets in (Q001–Q025, twenty-three closed, two
 planned).
 Separately, on 2026-07-16, Q008 and Q009's missing artifacts were filled in by recovering
 and re-verifying their actual original source — see "A gap in this file's own credibility" below; this
@@ -134,7 +134,12 @@ that actually buy real capability or just be novelty?
   bare source-file save — codegen only re-runs when the `.fsproj` itself is touched (even a no-op mtime
   bump) and the project is reloaded, a real, demonstrated in-session trigger the quartet's own first pass
   wrongly concluded didn't exist until independent review found it. Net: **closes the IDE-invisibility
-  gap at project load/reload time, not during live source editing** (Q022, REVISE).
+  gap at project load/reload time, not during live source editing** (Q022, REVISE). *Since applied for
+  real*, 2026-07-17: the gate removal was carried from Q022's scratch copy into the actual shared
+  `src/Myriad.Sdk/build/Myriad.Sdk.targets` and re-verified against a real DTB invocation — this
+  confirms the mechanism outside the quartet's own harness but does not change the verdict above (the
+  live-edit gap it names is still open). See `BACKLOG.md`'s known-engineering-gaps section for the
+  applied-fix account.
 - `BACKLOG.md` item 18's own named top-priority follow-up — a real scale test of Q010/Q021's reentrant
   callback, "a few hundred files, edit one, measure `ParseAndCheckProject` cost on the unchanged
   remainder" — was finally run as Q023, at N up to 300 with genuinely weighted files (not `let x = 5`
@@ -173,10 +178,42 @@ that actually buy real capability or just be novelty?
   "FSAC keystroke cost characterized." Myriad's real attributed types still tend to sit early in
   build order, near the expensive end of the measured curve (Q024, SHIP scoped).
 
-**Honest net position:** six SHIPs (Q002 fully, Q003 narrowly, Q010 scoped, Q015 scoped, Q021 scoped,
-Q024 scoped) prove the mechanism is sometimes genuinely valuable — with Q015, Q021, and now Q024 all
-earning a SHIP only once heavily scoped, a pattern worth noticing on its own: this thread's positive
-results keep shrinking on inspection, not just its negative ones. Five REVISE/NULL
+- Q015's own review named the sharpest unmet goal in this whole sub-line: FSI never performed real
+  computation, only compiled a plugin and handed back a `MethodInfo`. Q025 attacks the same goal by a
+  different route — never host FSI at all, hand-walk FCS's own resolved `FSharpExpr` tree directly
+  (reflection-invoking already-compiled reference methods for the leaves), prompted by inspecting
+  `FSharp.Compiler.PortaCode`'s dead 2018-era interpreter (not ported; hand-built fresh against the
+  current `43.9.101` pin). **SHIP, scoped.** A hand-written interpreter matching exactly six
+  `FSharpExprPatterns` cases (`Const`, `NewRecord`, `Call`, `Let`, `Value`, `IfThenElse`) against a real,
+  checker-produced expression tree (`keepAssemblyContents = true`, never a hand-built expr or quotation)
+  correctly reflection-constructs records — including nested ones, a generalization the review confirmed
+  the executor never tried — and reflection-invokes already-compiled reference functions across a
+  `Let`/`Call`/`IfThenElse` chain, with the interpreted result driving a genuinely differing generated-
+  member-name list. Zero `FsiEvaluationSession`/`Reflection.Emit` anywhere, grep-confirmed by review, not
+  just self-reported — this is the first `FSharpExpr`-body interpretation in either research thread, and
+  it reaches Q015's unmet goal by construction rather than by adding FSI-usage discipline to Q015's own
+  mechanism. But the review, going past the two pre-registered fixtures, found a real accuracy defect in
+  the frozen docs: both `01-design.md` and `02-results.md` claim generic method calls fall through to the
+  interpreter's named `NotImplementedException` safety net. They don't — a generic call matches the
+  ordinary `Call` arm and dies with a raw, unspecific `InvalidOperationException` from `mi.Invoke` on an
+  open generic method, because the `Call` arm discards the resolved `methodTypeArgs` and never calls
+  `MakeGenericMethod`. That defeats the exact "fails loudly and specifically, never silently" guarantee
+  the design leaned on, for a case both docs explicitly listed as covered — a write-up-accuracy defect of
+  the class this whole review discipline exists to catch, not a result failure (it doesn't touch any SHIP
+  conjunct, since neither pre-registered round used a generic call). The scope that travels with the
+  SHIP, unchanged by the correction: this is a mechanism proof over six patterns and two hand-picked
+  fixtures, not "generation-time computation solved" — `Lambda`/`Application` (interpreting a function's
+  *body*, as opposed to a value binding that merely calls functions), DU pattern matching
+  (`NewUnionCase`/`UnionCaseGet` — i.e. any of Myriad's own union-based generators), recursion
+  (`LetRec`), and now confirmed generic calls are all unsupported, exactly the hypothesis's own
+  REVISE ceiling ("a production interpreter would need to reimplement a materially large fraction of F#'s
+  semantics"). Cite Q025 as "direct `FSharpExpr` interpretation is viable for a small closed set of
+  shapes with no FSI," never as "generators can now compute at generation time" (Q025, SHIP scoped).
+
+**Honest net position:** seven SHIPs (Q002 fully, Q003 narrowly, Q010 scoped, Q015 scoped, Q021 scoped,
+Q024 scoped, Q025 scoped) prove the mechanism is sometimes genuinely valuable — with Q015, Q021, Q024,
+and now Q025 all earning a SHIP only once heavily scoped, a pattern worth noticing on its own: this
+thread's positive results keep shrinking on inspection, not just its negative ones. Five REVISE/NULL
 results (Q001, Q006, Q014, Q022, Q023) prove
 overclaiming is easy — Q014 in a distinct way: a spike can reproduce cleanly and still not be the thing
 its own pre-registration named, because the mechanism that made it into the harness quietly substituted
@@ -280,13 +317,40 @@ same-checker/same-scenario/toy-shape reconciliation, not "warming" in general (c
 a stricter same-project-object PC form, and `TransparentCompiler` remain untested) — but it removes the
 cheapest charitable explanation for Q008's numbers. See Q013 in the credibility section below.
 
-**Still open, pre-registered but not run:** Q007 — can a provider host FSI *inside* its own
-static-parameter instantiation function, evaluating a string argument as real F# code to sidestep
-the literal-only static-argument restriction, and does that survive being invoked from inside the
-compiler's own live type-checking call stack (a nesting of compiler-service hosts no prior quartet
-tested)? This is the best-supported unrun hypothesis in the whole backlog — it composes two already-
-proven pillars (Q003's FSI hosting, Q006/Q008's working string-static-parameter pattern) rather than
-needing new infrastructure.
+**Q007 then ran the best-supported unrun hypothesis in the whole backlog — and came back REVISE, on
+cost and on capability, not on the mechanism.** Composing two already-proven pillars (Q003's FSI/
+`FSharpChecker` coexistence, Q006's working string-static-parameter provider) for the first time: a
+generative provider's `DefineStaticParameters` instantiation function hosts a fresh
+`FsiEvaluationSession` and evaluates its string static argument as real F# code, genuinely nested on
+`fsc.exe`'s own live compilation call stack. The cheapest falsifier passed cleanly (real `dotnet
+build`, 0 errors, independently-reflected members matching the FSI-evaluated value exactly) and a
+richer `string list` value drove a variable-count, named set of generated members with no
+`InvalidCastException` on the `FsiValue.ReflectionValue` downcast — both reproduced byte-for-byte by
+review. But SHIP requires all three conjuncts, and cost fails the one that matters in practice: the
+live-edit re-check (~185-231ms) lands ~4-5x Q006's 47ms baseline, and the review's own isolated
+`FsiEvaluationSession` create+eval+dispose benchmark (no type provider, no `FSharpChecker` in the
+process) found ~130-140ms of that is fixed per-instantiation session lifecycle, expression-independent
+(an arithmetic expression and a 3-element list cost the same) and therefore cacheable — turning REVISE's
+registered "should ship as an opt-in/cached feature" wording from a hedge into a specific, actionable
+finding, not a vague caveat. The review also separated mechanism from capability more sharply than the
+executor did: the richer-value case actually tested (one generated member per name in a string list) is
+byte-for-byte replicable by a CSV-splitting provider with zero FSI, which is precisely the hypothesis's
+own pre-registered NULL description — no case was built where FSI's arbitrary-code evaluation bought
+something a delimiter convention couldn't, and neither a record nor a function (the SHIP clause's own
+named payload) was ever evaluated. And the provider's failure path, never exercised by the executor and
+triggered directly by the review, turned out not to be low-risk in the way "inferred low-risk" implied:
+an invalid or unsupported static string hard-crashes `fsc.exe` (`0xE0434352`) under `dotnet build` and
+throws an escaping `AggregateException` out of `ParseAndCheckFileInProject` under a persistent checker —
+though the checker does recover cleanly on the next valid edit, so KILL's state-corruption arm never
+fires. Net: the nested-hosting mechanism is real, safe, and new; do not cite Q007 as "type providers can
+now take rich typed static arguments" as a capability, only as "the mechanism to do so safely exists, at
+a cost, on a case that didn't need it." One unplanned, valuable side effect: building this quartet's
+`artifacts/` in place (rather than an out-of-repo scratch dir, unlike every predecessor) surfaced a real
+bug in the repo's root `.gitignore` — an unanchored `artifacts/` rule silently matching every
+`experiments/Qxxx/artifacts/` folder, very likely the actual mechanical explanation for Q006's artifacts
+going missing outright and Q008/Q09 needing `RECONSTRUCTION.md` — now fixed (anchored to `/artifacts/`,
+root-only), verified by the review to correctly expose every quartet's evidence while leaving `bin/`/
+`obj/` still ignored (Q007, REVISE).
 
 **Q016 then took the lineage somewhere new: real data accessors forwarding into Myriad's own compiled
 output, not synthetic markers — and came back REVISE, with the mechanism win narrower than it looks and
@@ -513,6 +577,30 @@ optimum moves, fighting the point of a stable interface).
   quartet or future engineering effort that uses `DocumentSource.Custom` — guard against it explicitly
   (e.g. a sentinel only the callback would produce), don't assume the callback fired just because the
   check returned clean.
+- **External corroboration that the IDE-extension-point gap is real and long-standing, not just
+  unexplored by this repo.** `FSharp.Compiler.PortaCode` (Don Syme/Fabulous, added as an adjacent
+  working directory 2026-07-17) independently attacked the same problem this repo's IDE-invisibility
+  gap describes: its `LiveCheckEvaluation.fs` writes a `.fsharp/<file>.info` sidecar meant to feed
+  extra diagnostics/tooltips into Intellisense, but doing that required "an experimental FCS
+  modification" per the project's own `README.md` — i.e. patching the compiler, not using a stock
+  extension point. That modification never shipped; the repo's last commit is 2020-11-23. **A second,
+  more concrete data point, found the same day this note was first written:** `origin/feature/analyzers`
+  (also dead, last touched 2021-02-17) went further and actually prototyped a compiler-service-level
+  analyzer hook — `FSharpAnalyzer` with `OnCheckFile`/`TryAdditionalToolTip`, able to inject arbitrary
+  hover content from inside FCS's own checking pipeline, not just diagnostics — for
+  `FST-1033-analyzers.md` in `fsharp/fslang-design`, Don Syme's own RFC for exactly this capability. It
+  required a patched `fsc.exe` built from that personal fork branch (`--compilertool:`, the branch's own
+  README: "Requires branch feature/analyzers from dotnet/fsharp") and never shipped either — confirmed
+  directly against current `dotnet/fsharp` source (`FSharpAnalyzer`/`AnalyzerAttribute`: zero
+  occurrences), and the RFC doc itself ends on an open TODO list, no implemented status. Six years on,
+  independent of Myriad and this repo's own findings, the same wall (`fsharp/fslang-suggestions#864`,
+  "F# has no Roslyn-source-generator equivalent") stopped a more resourced team twice, at two different
+  levels of ambition. Treat any future idea premised on "get FCS/FSAC to read a side-channel file" *or*
+  "hook a compiler-internal analyzer extension point" as presumptively dead on arrival unless it routes
+  through what's actually shipped: a stock `FSharp.Analyzers.SDK` analyzer (diagnostics only, no
+  hover/tooltip injection — confirmed by the above, not assumed, as in Q020/Q019/item 21) or Myriad's
+  own MSBuild/DTB hook (as in Q022) — never a compiler fork. See `BACKLOG.md` items 19-21 for
+  spike-shaped ideas PortaCode's mechanism (not its dead sidecar/analyzer channels) suggested instead.
 
 ## A gap in this file's own credibility — found by user scrutiny, escalated by Q012 to "actively
 disputed," then RESOLVED on 2026-07-16 by recovering the missing evidence itself
