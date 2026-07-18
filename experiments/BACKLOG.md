@@ -699,6 +699,40 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     formats the result as an info diagnostic at the attribute, confirmed rendering in a real Ionide
     session (piggybacking on item 17's harness if that's built first).
 
+22. **The first cross-mechanism integration milestone: combine item 19's live-save watcher with Q010's
+    reentrant cross-generator composition, as the concrete test of whether Myriad's separately-proven
+    pieces compose into a persistent, typed, live codegen service, not three isolated demonstrations
+    (new, 2026-07-18, composes item 19 + Q010 + Q022, prompted directly by a user question about
+    Myriad's biggest meta-gap and how to re-imagine it).** Every mechanism this needs already has its
+    own narrow, closed proof, but none of the three has ever run together: Q010 showed a generator can
+    reentrantly typed-query an earlier generator's already-generated virtual output inside one
+    in-process check (real payoff demonstrated: a stand-in JSON serializer reusing a stand-in Lenses
+    generator's accessors instead of re-deriving field access) — but only inside a throwaway two/three-
+    file toy project via `FSharpChecker`-as-library, never against Myriad's own real MSBuild-invoked
+    codegen path. Q022 showed an already-running FSAC session picks up Myriad's regenerated output the
+    moment the `.fsproj` is touched and reloaded, no restart — but exercises Myriad's real codegen path
+    without any reentrant typed query. Item 19 (not yet spiked) proposes automating that `.fsproj` touch
+    on every source save, closing the trigger gap, but says nothing about cross-generator composition.
+    This item asks the composition question directly: can a `myriad-live` watcher, on every save, (a)
+    regenerate using Myriad's real per-project batched codegen (the `793bc98` fix), (b) during that
+    regeneration have one real generator reentrant-query another real generator's already-generated
+    output the way Q010 proved works in a toy, and (c) still correctly trigger FSAC's live reload — all
+    in one coherent, running system? **This is a materially bigger and riskier undertaking than any
+    single quartet run so far in this lineage — flagged as such deliberately, not understated.** It is
+    the first attempt to stand up Myriad's real plugin pipeline inside an in-process typed host at all,
+    rather than a hand-rolled two-file stand-in the way every Thread 1 quartet to date has used. Named
+    risks, none yet checked: whether Myriad's real MSBuild-invoked CLI (currently a short-lived,
+    per-invocation process, not a long-running host) can be adapted to run inside a persistent in-process
+    checker without a genuine architecture change; whether reentrant typed queries scale past Q010's
+    two/three-file toy once real generator output volume is involved; item 19's own already-named
+    reload-storm/debouncing risk. **Cheapest falsifier, deliberately narrower than the full three-piece
+    vision:** before attempting the live-watcher wiring at all, confirm the two-piece case first — one
+    real, unmodified Myriad generator (e.g. `Lenses`) reentrant-queried by a second real, unmodified
+    generator (e.g. a new small stand-in that reuses `Lenses`' output) inside Myriad's own actual
+    codegen invocation, not a fresh toy harness. If Myriad's current CLI architecture cannot host this at
+    all without a rewrite, that is itself the answer — a real, valuable KILL/REVISE for the "reimagined"
+    vision, not a reason to have skipped asking.
+
 ## General type-provider capability ideas (independent of Myriad, unverified brainstorming)
 
 Not Myriad-specific — these are about `FSharp.TypeProviders.SDK` (`FSharp.TypeProviders.SDK/src/ProvidedTypes.fs`)
