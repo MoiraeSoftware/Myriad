@@ -1,0 +1,32 @@
+runtimeDll = C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q007-fsi-static-parameters\artifacts\FsiParamTP.Runtime\bin\Release\net8.0\FsiParamTP.Runtime.dll
+runtimeDll exists = true
+
+===== ROUND 3a: int-expr ("1+2") cold vs live-edit =====
+-- step 1: cold check, Expr="1+2" --
+  (check took 1550ms)
+  [cold] 0 diagnostic(s)
+  T.P0 binding type: type Microsoft.FSharp.Core.int
+-- step 2: LIVE EDIT Expr "1+2" -> "2+2", SAME checker, no rebuild --
+  (re-check took 231ms)
+  [live-edit] 0 diagnostic(s)
+
+  TIMING (compare vs Q006: 1137ms cold / 47ms live re-check):
+    cold check        : 1550ms
+    live-edit re-check: 231ms
+
+===== ROUND 3b: string-list expr cold vs live-edit =====
+-- step 1: cold check, Expr=["Name"; "Age"; "Email"] --
+  (check took 187ms)
+  [cold] 0 diagnostic(s)
+-- step 2: LIVE EDIT last element "Email" -> "Phone", SAME checker, no rebuild --
+  (re-check took 185ms)
+  [live-edit] 0 diagnostic(s)
+
+  TIMING (compare vs Q006: 1137ms cold / 47ms live re-check):
+    cold check        : 187ms
+    live-edit re-check: 185ms
+
+===== SUMMARY =====
+Round 3a (int expr)  : ok=true cold=1550ms live-edit=231ms
+Round 3b (list expr) : ok=true cold=187ms live-edit=185ms
+Q006 baseline        : cold=1137ms live-edit=47ms

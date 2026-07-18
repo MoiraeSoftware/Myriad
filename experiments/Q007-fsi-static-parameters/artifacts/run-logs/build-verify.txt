@@ -1,0 +1,9 @@
+  Determining projects to restore...
+  Restored C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q007-fsi-static-parameters\artifacts\Verify\Verify.fsproj (in 113 ms).
+  Verify -> C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q007-fsi-static-parameters\artifacts\Verify\bin\Release\net8.0\Verify.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.43

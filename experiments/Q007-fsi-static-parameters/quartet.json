@@ -1,7 +1,7 @@
 {
   "id": "Q007",
-  "status": "planned",
-  "verdict": null,
+  "status": "closed",
+  "verdict": "REVISE, broader-based than the executor framed. The mechanism under test -- hosting a fresh FsiEvaluationSession inside a generative provider's DefineStaticParameters callback, itself nested on fsc/FSharpChecker's own live compilation call stack, to evaluate a string static argument as real F# code -- passed the cheapest falsifier cleanly (Round 1: Consumer builds 0 errors, Verify reflects P0/P1/P2=0/1/2 driven by FSI-evaluated 1+2=3) and Round 2 (string list drives member shape, ReflectionValue :?> string list downcast clean), all reproduced byte-for-byte. Composes Q003+Q006 for the first time and does not contradict Q006's same-compilation wall (FSI produces data, never sibling-source visibility). SHIP fails on cost: Round 3 live-edit re-check is ~185-225ms vs Q006's 47ms (~4-5x), and an independent isolation (FsiProbe, no TP/no FSharpChecker) shows ~130-140ms of it is fixed per-instantiation FSI session create+eval+dispose overhead, expression-independent (int 141ms vs list 136ms) and cacheable -- exactly REVISE's registered 'materially worse, ship as opt-in/cached' meaning. Two adverse findings the executor's clean successes hid: (1) the capability case tested is CSV-replicable and used neither a record nor a function, so it lands in the pre-registered NULL basin -- mechanism is proven and new, the beyond-literal capability is not positively established; (2) the failure path is crash-or-throw, not diagnose -- an invalid/unsupported static string hard-crashes fsc (0xE0434352) under dotnet build and throws an escaping AggregateException under a persistent FSharpChecker, though the checker recovers cleanly on subsequent valid edits (KILL's state-corruption arm does not fire). The .gitignore correction-6 fix was verified correct by git add --dry-run (all sources + run-logs committable, bin/obj still ignored). Top follow-ups: build the cached variant and re-measure; convert the provider exception into a static-argument-site diagnostic.",
   "required_files": [
     "00-hypothesis.md",
     "01-design.md",
@@ -10,5 +10,5 @@
   ],
   "completion_check": "strict",
   "allow_partial_state": false,
-  "last_validated": "2026-07-17"
+  "last_validated": "2026-07-18"
 }

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <DefineConstants>IS_DESIGNTIME</DefineConstants>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <NoWarn>NU1608</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\ProvidedTypes.fsi" />
+    <Compile Include="..\ProvidedTypes.fs" />
+    <Compile Include="..\FsiParamTP.Runtime\FsiParamTP.Runtime.fs" />
+    <Compile Include="FsiParamTP.Provider.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The mechanism under test: FsiEvaluationSession, hosted INSIDE this design-time
+         component's own DefineStaticParameters callback. Pinned to the same 43.9.101 every
+         prior quartet in this repo uses. Note this is a materially new dependency shape versus
+         Q006/Q008/Q016's design-time projects, none of which referenced FCS at all; those
+         providers only needed System.Reflection plus quotations. -->
+    <PackageReference Include="FSharp.Compiler.Service" Version="43.9.101" />
+  </ItemGroup>
+
+</Project>

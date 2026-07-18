@@ -1,0 +1,17 @@
+===== ROUND 1 VERIFY: C:/Users/Dave/Documents/GitHub/Myriad/experiments/Q007-fsi-static-parameters/artifacts/Consumer/bin/Release/net8.0/Consumer.dll =====
+  P0 = 0 (expect 0) : OK
+  P1 = 1 (expect 1) : OK
+  P2 = 2 (expect 2) : OK
+  P3 absent, as expected (negative control OK)
+  exact P* property count: 3 (expect 3)
+  EvaluatedTypeName = System.Int32
+ROUND 1 VERIFY verdict: PASS
+===== ROUND 2 VERIFY: C:/Users/Dave/Documents/GitHub/Myriad/experiments/Q007-fsi-static-parameters/artifacts/Consumer2/bin/Release/net8.0/Consumer2.dll =====
+  Name = Name (expect Name) : OK
+  Age = Age (expect Age) : OK
+  Email = Email (expect Email) : OK
+  Nickname absent, as expected (negative control OK)
+  EvaluatedTypeName = Microsoft.FSharp.Collections.FSharpList`1[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]
+ROUND 2 VERIFY verdict: PASS
+
+Summary: Round1=true Round2=true

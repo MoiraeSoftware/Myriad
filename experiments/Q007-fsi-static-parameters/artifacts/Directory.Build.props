@@ -1,0 +1,8 @@
+<Project>
+  <!-- Empty on purpose: stops MSBuild's upward search for Directory.Build.props here, so this
+       spike's projects don't inherit the repo root's TargetFrameworks=net9.0 setting
+       (Directory.Build.props line 11), which otherwise silently overrides each project's own
+       explicit TargetFramework=net8.0 (plural wins over singular in the SDK's multi-targeting
+       logic) and desyncs restore from build. Found the hard way while building this quartet's
+       artifacts in place under the repo tree; see 02-results.md's corrections section. -->
+</Project>
