@@ -1,0 +1,41 @@
+artifactsDir = C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q025-typed-expr-interpreter\artifacts
+refLibDll    = C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q025-typed-expr-interpreter\artifacts\Harness\bin\Release\net9.0\RefLib.dll (exists=true)
+refPackDir   = C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\9.0.12\ref\net9.0
+fsharpCore   = C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q025-typed-expr-interpreter\artifacts\Harness\bin\Release\net9.0\FSharp.Core.dll
+
+No FsiEvaluationSession is referenced or constructed anywhere in this file (grep-checkable).
+
+===== ROUND 1: NewRecord cheapest falsifier =====
+checking C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q025-typed-expr-interpreter\artifacts\Harness\Sample.fs
+  0 diagnostic(s)
+ImplementationFile populated. Declarations count (top level) = 1
+Found binding 'w'. Expr shape: NewRecord (as expected)
+interpreted value = { Name = "a"
+  Count = 1 }
+direct value      = { Name = "a"
+  Count = 1 }
+Object.Equals(interpreted, direct) = true
+ROUND 1: PASS
+
+===== ROUND 2: Let/Call/IfThenElse chain, result drives generated-shape stand-in =====
+checking C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q025-typed-expr-interpreter\artifacts\Harness\Sample2.fs
+  0 diagnostic(s)
+Found binding 'result'. Raw expr:
+Let
+  ((val n, Const (7, type Microsoft.FSharp.Core.int), Yes (4,4--4,13)),
+   Let
+  ((val bumped, Call (None, val bump, [], [], [], [Value val n]),
+    Yes (5,4--5,34)),
+   IfThenElse
+  (Call (None, val isBig, [], [], [], [Value val bumped]),
+   Const ("big", type Microsoft.FSharp.Core.string),
+   Const ("small", type Microsoft.FSharp.Core.string))))
+
+interpreted 'result' = "big"
+expected = big, actual = big, match = true
+mkMembers("big") = ["Detail"; "Summary"]  (interpreted result drives this shape)
+contrast — mkMembers(other branch) = ["Summary"]
+shapes differ between branches = true
+ROUND 2: PASS
+
+Summary: Round1=true Round2=true

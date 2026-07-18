@@ -1,0 +1,14 @@
+{
+  "id": "Q025",
+  "status": "closed",
+  "verdict": "SHIP, scoped — and correct a falsified claim in the frozen docs. A hand-written interpreter walking a real, checker-produced FSharpExpr tree (keepAssemblyContents=true, never a hand-built expr or quotation) reflection-constructs records and reflection-invokes already-compiled RefLib functions across a Let/Call/IfThenElse/Value chain, driving a differing generated-member-name list, with zero FsiEvaluationSession and zero Reflection.Emit — all three pre-registered SHIP conjuncts met and independently reproduced (exit 0, ROUND 1/2 PASS byte-for-byte), the first FSharpExpr-body interpretation in either research thread. KILL/NULL/REVISE did not fire on the two pre-registered rounds. Review went past reproduction with three shapes the executor never built: a nested NewRecord and a 3-arg call both generalize cleanly, but a generic call (Ops.identity 42) FALSIFIES both frozen docs' claim that generic calls 'fall through to a named NotImplementedException' — it matches the Call arm and dies with a raw InvalidOperationException from mi.Invoke on an open generic method, because the Call arm discards methodTypeArgs and never calls MakeGenericMethod. So the failure is loud but not specific, defeating the exact safety-net property the design leaned on, for a case it named. Scope: a mechanism proof over six patterns and two hand-picked fixtures, viable for a small closed set of shapes with no FSI — not 'generation-time computation solved' (Lambda/Application, DU matching, recursion, generic calls all unsupported, the hypothesis's own REVISE ceiling). The assembly-identity reordering the results doc flagged remains untested (reviewer's deliberate choice: infrastructural, not a SHIP conjunct); mkMembers is a legitimate but minimal Q007/Q014-bar stand-in. Detail: 03-review.md.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": "2026-07-18"
+}

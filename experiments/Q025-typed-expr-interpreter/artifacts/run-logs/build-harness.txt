@@ -1,0 +1,15 @@
+  Determining projects to restore...
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q025-typed-expr-interpreter\artifacts\Harness\Harness.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+  All projects are up-to-date for restore.
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q025-typed-expr-interpreter\artifacts\Harness\Harness.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+  RefLib -> C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q025-typed-expr-interpreter\artifacts\RefLib\bin\Release\net9.0\RefLib.dll
+  Harness -> C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q025-typed-expr-interpreter\artifacts\Harness\bin\Release\net9.0\Harness.dll
+
+Build succeeded.
+
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q025-typed-expr-interpreter\artifacts\Harness\Harness.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q025-typed-expr-interpreter\artifacts\Harness\Harness.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+    2 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.64

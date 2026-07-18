@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Compiler.Service" Version="43.9.101" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Compile-time reference so round1's "directly constructed" comparison value uses the
+         exact same RefLib.dll (copied into this project's own output dir) that Assembly.LoadFrom
+         loads below, avoiding a spurious type-identity mismatch between two different physical
+         copies of an assembly with the same name. -->
+    <ProjectReference Include="../RefLib/RefLib.fsproj" />
+  </ItemGroup>
+
+</Project>
