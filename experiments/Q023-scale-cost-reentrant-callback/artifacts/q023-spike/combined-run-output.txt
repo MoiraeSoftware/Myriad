@@ -1,0 +1,68 @@
+Q023 - scale cost of ParseAndCheckProject under a reentrant DocumentSource.Custom callback
+Testing whether unchanged-remainder cost stays flat (c) or tracks cold cost (b) as N grows.
+Single-N-per-process run: N=10
+
+=== N = 10 ===
+  cold:         1037ms  errs=0  callbackInvocations=11
+  repeat1:        13ms  errs=0  callbackInvocations=11
+  repeat2:         9ms  errs=0  callbackInvocations=11
+  repeat3:        10ms  errs=0  callbackInvocations=11
+  editOne1:       53ms  errs=0  callbackInvocations=11
+  editOne2:       56ms  errs=0  callbackInvocations=11
+  editOne3:       54ms  errs=0  callbackInvocations=11
+  Observer.fs generated text unchanged across value-only edit (type shape untouched): true
+  cold=1037ms  repeatMedian=10ms (ratio=0.010)  editOneMedian=54ms (ratio=0.052)
+
+=== Result (N=10) ===
+cold=1037ms repeatMedian=10ms (ratio=0.0096) editOneMedian=54ms (ratio=0.0521) observerStable=true
+Q023 - scale cost of ParseAndCheckProject under a reentrant DocumentSource.Custom callback
+Testing whether unchanged-remainder cost stays flat (c) or tracks cold cost (b) as N grows.
+Single-N-per-process run: N=50
+
+=== N = 50 ===
+  cold:         1270ms  errs=0  callbackInvocations=51
+  repeat1:        43ms  errs=0  callbackInvocations=51
+  repeat2:        44ms  errs=0  callbackInvocations=51
+  repeat3:        39ms  errs=0  callbackInvocations=51
+  editOne1:      274ms  errs=0  callbackInvocations=51
+  editOne2:      263ms  errs=0  callbackInvocations=51
+  editOne3:      292ms  errs=0  callbackInvocations=51
+  Observer.fs generated text unchanged across value-only edit (type shape untouched): true
+  cold=1270ms  repeatMedian=43ms (ratio=0.034)  editOneMedian=274ms (ratio=0.216)
+
+=== Result (N=50) ===
+cold=1270ms repeatMedian=43ms (ratio=0.0339) editOneMedian=274ms (ratio=0.2157) observerStable=true
+Q023 - scale cost of ParseAndCheckProject under a reentrant DocumentSource.Custom callback
+Testing whether unchanged-remainder cost stays flat (c) or tracks cold cost (b) as N grows.
+Single-N-per-process run: N=150
+
+=== N = 150 ===
+  cold:         1798ms  errs=0  callbackInvocations=151
+  repeat1:       147ms  errs=0  callbackInvocations=151
+  repeat2:       141ms  errs=0  callbackInvocations=151
+  repeat3:       137ms  errs=0  callbackInvocations=151
+  editOne1:      912ms  errs=0  callbackInvocations=151
+  editOne2:      736ms  errs=0  callbackInvocations=151
+  editOne3:      632ms  errs=0  callbackInvocations=151
+  Observer.fs generated text unchanged across value-only edit (type shape untouched): true
+  cold=1798ms  repeatMedian=141ms (ratio=0.078)  editOneMedian=736ms (ratio=0.409)
+
+=== Result (N=150) ===
+cold=1798ms repeatMedian=141ms (ratio=0.0784) editOneMedian=736ms (ratio=0.4093) observerStable=true
+Q023 - scale cost of ParseAndCheckProject under a reentrant DocumentSource.Custom callback
+Testing whether unchanged-remainder cost stays flat (c) or tracks cold cost (b) as N grows.
+Single-N-per-process run: N=300
+
+=== N = 300 ===
+  cold:         2674ms  errs=0  callbackInvocations=301
+  repeat1:       352ms  errs=0  callbackInvocations=301
+  repeat2:       328ms  errs=0  callbackInvocations=301
+  repeat3:       302ms  errs=0  callbackInvocations=301
+  editOne1:     1382ms  errs=0  callbackInvocations=301
+  editOne2:     1379ms  errs=0  callbackInvocations=301
+  editOne3:     1390ms  errs=0  callbackInvocations=301
+  Observer.fs generated text unchanged across value-only edit (type shape untouched): true
+  cold=2674ms  repeatMedian=328ms (ratio=0.123)  editOneMedian=1382ms (ratio=0.517)
+
+=== Result (N=300) ===
+cold=2674ms repeatMedian=328ms (ratio=0.1227) editOneMedian=1382ms (ratio=0.5168) observerStable=true

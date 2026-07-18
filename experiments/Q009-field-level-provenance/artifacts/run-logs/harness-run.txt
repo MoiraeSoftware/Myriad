@@ -1,0 +1,108 @@
+Round 1 (independent member-level reflection) validated separately by AttrCheck.
+schemaAsmPath = C:/Users/Dave/.claude/jobs/f0b85ddf/tmp/tp-field-provenance-spike/SchemaAsm/bin/Release/net8.0/SchemaAsm.dll
+
+===== ROUND 2: selective-enforcement gate, four scenarios =====
+-- scenario 1: schema Name:v1;Age:v2;Email:v3, client DependsOn Name:v1;Age:v2 (MATCH) --
+  (check took 1088ms)
+  [baseline] 0 diagnostic(s)
+  C.CheckedFieldCount binding type: type Microsoft.FSharp.Core.int
+
+-- scenario 2: schema Email v3->v4 (IRRELEVANT), client DependsOn Name:v1;Age:v2 (expect CLEAN) --
+  (check took 48ms)
+  [irrelevant-change] 0 diagnostic(s)
+
+-- scenario 3: schema Age v2->v3 (RELEVANT), client DependsOn Name:v1;Age:v2 (expect FAIL naming Age) --
+  (check took 48ms)
+  [relevant-change] 4 diagnostic(s)
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'Age': schema declares 'v3' but client expects 'v2'
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'Age': schema declares 'v3' but client expects 'v2'
+    Error (3,16): The type 'C' does not define the field, constructor or member 'CheckedFieldCount'.
+    Error (4,18): The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+  --- VERBATIM diagnostic messages (relevant-field change) ---
+  >>> The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'Age': schema declares 'v3' but client expects 'v2'
+  >>> The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'Age': schema declares 'v3' but client expects 'v2'
+  >>> The type 'C' does not define the field, constructor or member 'CheckedFieldCount'.
+  >>> The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+
+-- scenario 4: schema Name v1->v2 AND Age v2->v3, client DependsOn Name:v1;Age:v2 (expect FAIL naming BOTH) --
+  (check took 20ms)
+  [multi-change] 4 diagnostic(s)
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (2 field(s)): field 'Name': schema declares 'v2' but client expects 'v1'; field 'Age': schema declares 'v3' but client expects 'v2'
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (2 field(s)): field 'Name': schema declares 'v2' but client expects 'v1'; field 'Age': schema declares 'v3' but client expects 'v2'
+    Error (3,16): The type 'C' does not define the field, constructor or member 'CheckedFieldCount'.
+    Error (4,18): The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+  --- VERBATIM diagnostic messages (multiple relevant changes) ---
+  >>> The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (2 field(s)): field 'Name': schema declares 'v2' but client expects 'v1'; field 'Age': schema declares 'v3' but client expects 'v2'
+  >>> The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (2 field(s)): field 'Name': schema declares 'v2' but client expects 'v1'; field 'Age': schema declares 'v3' but client expects 'v2'
+  >>> The type 'C' does not define the field, constructor or member 'CheckedFieldCount'.
+  >>> The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+
+ROUND 2 verdict: PASS (s1-match=true s2-irrelevant-clean=true s3-relevant-fail=true s4-multi-fail=true)
+
+===== ROUND 3: live-edit precision, same FSharpChecker, growing field count =====
+
+----- ROUND 3 (SMALL 3-field, client deps 2): live-edit sequence, SAME checker, no rebuild -----
+-- step 1: cold check, baseline (MATCH) --
+  (check took 21ms)
+  [cold-match] 0 diagnostic(s)
+-- step 2: LIVE EDIT to schema variant with an IRRELEVANT field bumped, SAME checker (expect CLEAN) --
+  (re-check took 56ms)
+  [live-irrelevant] 0 diagnostic(s)
+-- step 3: LIVE EDIT to schema variant with a RELEVANT field bumped, SAME checker (expect FIELD-SPECIFIC FAIL) --
+  (re-check took 16ms)
+  [live-relevant] 4 diagnostic(s)
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'Age': schema declares 'v3' but client expects 'v2'
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'Age': schema declares 'v3' but client expects 'v2'
+    Error (3,16): The type 'C' does not define the field, constructor or member 'CheckedFieldCount'.
+    Error (4,18): The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+  >>> The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'Age': schema declares 'v3' but client expects 'v2'
+  >>> The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'Age': schema declares 'v3' but client expects 'v2'
+  >>> The type 'C' does not define the field, constructor or member 'CheckedFieldCount'.
+  >>> The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+-- step 4: LIVE EDIT back to baseline, SAME checker (diagnostics should clear) --
+  (re-check took 34ms)
+  [live-cleared] 0 diagnostic(s)
+
+  TIMING TABLE [SMALL 3-field, client deps 2] (compare vs Q008: 1161ms cold / 19-32ms live re-check):
+    step 1 cold match          : 21ms
+    step 2 live irrelevant     : 56ms
+    step 3 live relevant fail  : 16ms
+    step 4 live cleared        : 34ms
+  ROUND 3 [SMALL 3-field, client deps 2] verdict: PASS (cold=true irrelevant-clean=true relevant-fail=true cleared=true)
+
+----- ROUND 3 (WIDE 12-field, client deps 4): live-edit sequence, SAME checker, no rebuild -----
+-- step 1: cold check, baseline (MATCH) --
+  (check took 22ms)
+  [cold-match] 0 diagnostic(s)
+-- step 2: LIVE EDIT to schema variant with an IRRELEVANT field bumped, SAME checker (expect CLEAN) --
+  (re-check took 20ms)
+  [live-irrelevant] 0 diagnostic(s)
+-- step 3: LIVE EDIT to schema variant with a RELEVANT field bumped, SAME checker (expect FIELD-SPECIFIC FAIL) --
+  (re-check took 17ms)
+  [live-relevant] 4 diagnostic(s)
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'F3': schema declares 'v2' but client expects 'v1'
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'F3': schema declares 'v2' but client expects 'v1'
+    Error (3,16): The type 'C' does not define the field, constructor or member 'CheckedFieldCount'.
+    Error (4,18): The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+  >>> The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'F3': schema declares 'v2' but client expects 'v1'
+  >>> The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch (1 field(s)): field 'F3': schema declares 'v2' but client expects 'v1'
+  >>> The type 'C' does not define the field, constructor or member 'CheckedFieldCount'.
+  >>> The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+-- step 4: LIVE EDIT back to baseline, SAME checker (diagnostics should clear) --
+  (re-check took 22ms)
+  [live-cleared] 0 diagnostic(s)
+
+  TIMING TABLE [WIDE 12-field, client deps 4] (compare vs Q008: 1161ms cold / 19-32ms live re-check):
+    step 1 cold match          : 22ms
+    step 2 live irrelevant     : 20ms
+    step 3 live relevant fail  : 17ms
+    step 4 live cleared        : 22ms
+  ROUND 3 [WIDE 12-field, client deps 4] verdict: PASS (cold=true irrelevant-clean=true relevant-fail=true cleared=true)
+
+  SCALING COMPARISON (small 3-field vs wide 12-field, live re-check ms):
+    cold match        : small 21ms | wide 22ms
+    live irrelevant   : small 56ms | wide 20ms
+    live relevant fail: small 16ms | wide 17ms
+    live cleared      : small 34ms | wide 22ms
+
+Summary: R2=true R3=true

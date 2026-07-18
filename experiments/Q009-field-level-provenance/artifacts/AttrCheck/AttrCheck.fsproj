@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <!-- AttrCheck references ONLY the runtime DLL (so the attribute type identity resolves),
+       never the design-time assembly or ProvidedTypes.fs. -->
+  <ItemGroup>
+    <ProjectReference Include="..\SchemaTP.Runtime\SchemaTP.Runtime.fsproj" />
+  </ItemGroup>
+
+</Project>

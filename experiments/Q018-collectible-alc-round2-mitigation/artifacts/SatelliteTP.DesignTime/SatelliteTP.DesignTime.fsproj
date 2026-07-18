@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <!-- Q018: netstandard2.0 dropped for this spike. System.Runtime.Loader.AssemblyLoadContext (the
+         collectible ALC mechanism this quartet tests) isn't available on netstandard2.0. Whether FCS's
+         design time host still resolves a net8.0 only provider is itself part of what this changes,
+         reported honestly if it doesn't. -->
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <DefineConstants>IS_DESIGNTIME</DefineConstants>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\ProvidedTypes.fsi" />
+    <Compile Include="..\ProvidedTypes.fs" />
+    <Compile Include="..\SatelliteTP.Runtime\SatelliteTP.Runtime.fs" />
+    <Compile Include="SatelliteProvider.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.7.2" />
+  </ItemGroup>
+</Project>

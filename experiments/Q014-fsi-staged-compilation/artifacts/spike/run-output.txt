@@ -1,0 +1,46 @@
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q014-fsi-staged-compilation\artifacts\spike\spike.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q014-fsi-staged-compilation\artifacts\spike\spike.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+=== Round 1a: Unquote decompile of <@ 1 + 2 @> ===
+  decompile output: 1 + 2
+  spliced source:
+let trivialResult = 1 + 2
+
+  all diagnostics: [||]
+  REPARSED AND TYPECHECKED CLEANLY
+OK
+
+=== Round 1b: hand-rolled translator of <@ 1 + 2 @> ===
+  translated text: (1 + 2)
+  all diagnostics: [||]
+  REPARSED AND TYPECHECKED CLEANLY
+OK
+
+=== Round 2: power(4, x) specialized via partial evaluation over the quotation ===
+  raw reflected body: IfThenElse (Call (None, op_Equality, [n, Value (0)]), Value (1.0),
+            Call (None, op_Multiply,
+                  [x,
+                   Call (None, power,
+                         [Call (None, op_Subtraction, [n, Value (1)]), x])]))
+  unrolled Expr (in terms of x only): Call (None, op_Multiply,
+      [x,
+       Call (None, op_Multiply,
+             [x,
+              Call (None, op_Multiply,
+                    [x, Call (None, op_Multiply, [x, Value (1.0)])])])])
+  specialized source text: fun x -> x * (x * (x * (x * 1.0)))
+  all diagnostics: [||]
+  [Expr-eval check] x=2  Target.power 4 x=16  evaluated-unrolled-Expr=16  match=true
+  [Expr-eval check] x=3.5  Target.power 4 x=150.062  evaluated-unrolled-Expr=150.062  match=true
+  checker.Compile errors: [||]
+  [compiled-and-executed check] x=2  Target.power 4 x=16  compiled-power4(x)=16  match=true
+  [compiled-and-executed check] x=3.5  Target.power 4 x=150.062  compiled-power4(x)=150.062  match=true
+  specialized text mentions 'power'/'Target' (should be false): false
+OK
+
+Round 2 wall-clock: 652ms
+=== SUMMARY ===
+Round 1a (Unquote decompile, trivial case) reparsed+typechecked: true
+Round 1b (hand-rolled translator, trivial case) reparsed+typechecked: true
+Round 2 (power-4 specialization, full pipeline) succeeded: true
+Round 2 specialized text: fun x -> x * (x * (x * (x * 1.0)))
+Q014 spike run complete.

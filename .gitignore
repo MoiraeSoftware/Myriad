@@ -79,7 +79,14 @@ BenchmarkDotNet.Artifacts/
 # .NET Core
 project.lock.json
 project.fragment.lock.json
-artifacts/
+# Anchored to repo root only (not unqualified "artifacts/"): this repo has no root-level dotnet
+# publish/pack output directory (packing goes to bin/nupkg per Directory.Build.props), but an
+# unanchored "artifacts/" silently matches every experiments/Qxxx/artifacts/ folder anywhere in
+# the tree too -- which is exactly the durable-evidence directory this repo's own methodology
+# (experiments/README.md) requires for a closed quartet. Very likely the actual root cause of
+# Q006's artifacts going missing and Q008/Q09 needing reconstruction (see FINDINGS.md's
+# "gap in this file's own credibility" section) -- found while saving Q007's own artifacts.
+/artifacts/
 
 # StyleCop
 StyleCopReport.xml

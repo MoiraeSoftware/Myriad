@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Person.fs" />
+    <Compile Include="Person.Generated.fs">
+      <MyriadFile>Person.fs</MyriadFile>
+    </Compile>
+    <Compile Include="Consumer.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Myriad.Core">
+      <HintPath>../../../../src/Myriad.Core/bin/Debug/net9.0/Myriad.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Myriad.Plugins">
+      <HintPath>../../../../src/Myriad.Plugins/bin/Debug/net9.0/Myriad.Plugins.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <MyriadSdkGenerator Include="../../../../src/Myriad.Plugins/bin/Debug/net9.0/Myriad.Plugins.dll" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <MyriadSdk_Generator_ExeHost>dotnet </MyriadSdk_Generator_ExeHost>
+    <MyriadSdk_Generator_Exe>../../../../src/Myriad/bin/Debug/net9.0/Myriad.dll</MyriadSdk_Generator_Exe>
+  </PropertyGroup>
+
+  <!-- Q022 scratch-ungated: imports the LOCAL, MODIFIED copy of Myriad.Sdk.targets
+       (DesignTimeBuild gate removed), never the real, shared src/Myriad.Sdk/build/Myriad.Sdk.targets. -->
+  <Import Project="../Myriad.Sdk.NoGate.targets" />
+</Project>

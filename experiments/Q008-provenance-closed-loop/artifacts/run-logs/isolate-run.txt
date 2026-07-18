@@ -1,0 +1,24 @@
+Same checker instance, same real ClientTP/SchemaTP providers, identical consumer body.
+clientConsumerBody:
+type C = ClientTP.Provided.Client<SchemaAssemblyPath = "C:/Users/Dave/.claude/jobs/f0b85ddf/tmp/tp-provenance-spike/SchemaAsm/bin/Release/net8.0/SchemaAsm.dll", SchemaTypeName = "SchemaAsm.Schemas+SchemaV2", ExpectedVersion = "v2">
+let v : string = C.VerifiedVersion
+let ok : bool = C.ProvenanceOk
+
+
+===== ROUTE A: ParseAndCheckFileInProject over a .fsx SCRIPT (Q012/Q013's route) =====
+  [script-route] 4 diagnostic(s)
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: couldn't find type 'ClientTP.Provided.C' in assembly 'tmpodk5ii, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: couldn't find type 'ClientTP.Provided.C' in assembly 'tmpqcftqt, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+    Error (3,19): The type 'C' does not define the field, constructor or member 'VerifiedVersion'.
+    Error (4,18): The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+  ROUTE A resolved: false
+
+===== ROUTE B: ParseAndCheckFileInProject over a REAL FSharpProjectOptions (Q008's route) =====
+  [project-route] 0 diagnostic(s)
+  ROUTE B resolved: true
+
+===== ISOLATION VERDICT =====
+  Route A (.fsx script)              resolved=false
+  Route B (real FSharpProjectOptions) resolved=true
+  CONFIRMED: script-vs-real-project-options is the axis. Same checker, same provider,
+  only the project-options shape differs, and only Route B resolves.

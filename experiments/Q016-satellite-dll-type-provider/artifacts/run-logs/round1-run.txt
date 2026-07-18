@@ -1,0 +1,15 @@
+===== ROUND 1: cheapest falsifier - reflection-forwarding to Myriad's real compiled output =====
+consumer text:
+module Consumer1
+type P = SatelliteTP.Provided.MyriadSatellite<"C:/Users/Dave/.claude/jobs/f0b85ddf/tmp/q016-satellite-dll-spike/SampleLib/Satellite.dll", "SampleFields.Person", "SampleNs.Person">
+let person = P.Create("Ada", 42)
+let readName : string = P.GetName(person)
+let readAge : int = P.GetAge(person)
+
+--- Round 1 compile ---
+  compile: 1395ms exitCode=0 errors=0 outExists=true
+  readback via compiled consumer: name="Ada" age=42
+  direct reflection on Satellite.dll (outside provider): name="Ada" age=42
+  agreement: name true, age true
+  compile time: 1395ms
+ROUND 1 verdict: PASS

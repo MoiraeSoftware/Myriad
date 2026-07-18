@@ -1,0 +1,49 @@
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q020-shared-analysis-diagnostic-channels\artifacts\Harness\Harness.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q020-shared-analysis-diagnostic-channels\artifacts\Harness\Harness.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+===== ROUND 1: AddObsoleteAttribute use-site anchoring + severity =====
+consumer text:
+module Consumer1
+type S = DiagTP.Provided.Sample
+let s = S()
+let g = s.Good
+let b   =   s.Bad
+let e   =   s.BadError
+
+  [Round 1] 2 diagnostic(s)
+    Warning (5,12)-(5,17) FS0044: This construct is deprecated. Q020 test message
+    Error (6,12)-(6,22) FS0101: This construct is deprecated. Q020 test message
+  Good produced no diagnostic (negative control): true
+  Bad: found=true rangeOk=true (expected (5,12)-(5,17), got (5,12)-(5,17))
+  BadError: found=true rangeOk=true severity=Error confirmed=true
+ROUND 1 verdict: PASS
+
+===== ROUND 2: synthetic backtick-named member -- legal AND discoverable =====
+consumer text:
+module Consumer2
+type S = DiagTP.Provided.Sample
+let s = S()
+let x = s.``warning MYR099: synthetic diagnostic with no natural member``
+
+  [Round 2 (accessibility)] 0 diagnostic(s)
+  accessible via double-backtick reference (0 errors): true
+  synthetic member name appears in GetDeclarationListInfo completions: true
+ROUND 2 verdict: PASS
+
+===== ROUND 3: one shared analysis, two consistent emitters =====
+consumer text:
+module Consumer3
+type C = DiagTP.Provided.Fields<"C:/Users/Dave/Documents/GitHub/Myriad/experiments/Q020-shared-analysis-diagnostic-channels/artifacts/SampleLib/Company.fs", "SampleNs.Company">
+let describe (o: obj) : obj =
+    let c = C(o)
+    c.meta
+
+  [Round 3 (live channel)] 1 diagnostic(s)
+    Warning (5,4)-(5,10) FS0044: This construct is deprecated. field 'meta' has type 'Meta', which is declared in this same file and cannot be resolved without a real build; it will be exposed as 'obj'
+  live (use-site) diagnostic found: true
+  live message: This construct is deprecated. field 'meta' has type 'Meta', which is declared in this same file and cannot be resolved without a real build; it will be exposed as 'obj'
+  --- Emitter A (declaration-site, Myriad-CLI-style) ---
+  C:/Users/Dave/Documents/GitHub/Myriad/experiments/Q020-shared-analysis-diagnostic-channels/artifacts/SampleLib/Company.fs(5,39,5,43): warning MYR012: field 'meta' has type 'Meta', which is declared in this same file and cannot be resolved without a real build; it will be exposed as 'obj'
+  live channel message matches Emitter A's message (same underlying finding): true
+ROUND 3 verdict: PASS
+
+Summary: Round1=true Round2=true Round3=true

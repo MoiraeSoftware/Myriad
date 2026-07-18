@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <DefineConstants>IS_DESIGNTIME</DefineConstants>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\ProvidedTypes.fsi" />
+    <Compile Include="..\ProvidedTypes.fs" />
+    <Compile Include="..\MyriadPreview.Runtime\MyriadPreview.Runtime.fs" />
+    <Compile Include="MyriadPreviewProvider.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Fantomas.Core" Version="7.0.5" />
+    <Reference Include="Myriad.Core">
+      <HintPath>..\..\..\..\src\Myriad.Core\bin\Release\net9.0\Myriad.Core.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

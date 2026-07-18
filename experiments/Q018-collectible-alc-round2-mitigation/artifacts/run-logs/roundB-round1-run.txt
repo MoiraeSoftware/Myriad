@@ -1,0 +1,28 @@
+===== ROUND 1: cheapest falsifier - reflection-forwarding to Myriad's real compiled output =====
+consumer text:
+module Consumer1
+type P = SatelliteTP.Provided.MyriadSatellite<"C:/Users/Dave/.claude/jobs/f0b85ddf/tmp/q016-satellite-dll-spike/SampleLib/Satellite.dll", "SampleFields.Person", "SampleNs.Person">
+let person = P.Create("Ada", 42)
+let readName : string = P.GetName(person)
+let readAge : int = P.GetAge(person)
+
+[Q018-DIAG] reusing already-loaded assembly for C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\Harness\bin\Release\net8.0\FSharp.Core.dll (not collectible)
+[Q018-DIAG] loaded into a fresh collectible ALC for C:\Program Files\dotnet\shared\Microsoft.NETCore.App\8.0.23\System.ValueTuple.dll
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\netstandard.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Collections.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.Numerics.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Threading.dll (not collectible)
+[Q018-DIAG] loaded into a fresh collectible ALC for C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\SatelliteTP.Runtime\bin\Release\net8.0\SatelliteTP.Runtime.dll
+[Q018-DIAG] loaded into a fresh collectible ALC for C:/Users/Dave/.claude/jobs/f0b85ddf/tmp/q016-satellite-dll-spike/SampleLib/Satellite.dll
+[Q018-DIAG] SatelliteProvider CONSTRUCTED (instance #1)
+[Q018-DIAG] mapMi param0 type=Microsoft.FSharp.Core.FSharpFunc`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]] asm=FSharp.Core, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a location=C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\Harness\bin\Release\net8.0\FSharp.Core.dll hash=57899668
+[Q018-DIAG] host FSharpFunc<string,string> type=Microsoft.FSharp.Core.FSharpFunc`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]] asm=FSharp.Core, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a location=C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\Harness\bin\Release\net8.0\FSharp.Core.dll hash=57899668
+[Q018-DIAG] same assembly object=true
+--- Round 1 compile ---
+  compile: 2183ms exitCode=0 errors=0 outExists=true
+  readback via compiled consumer: name="Ada" age=42
+  direct reflection on Satellite.dll (outside provider): name="Ada" age=42
+  agreement: name true, age true
+  compile time: 2183ms
+ROUND 1 verdict: PASS

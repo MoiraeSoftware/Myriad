@@ -1,0 +1,8 @@
+Loading (plain reflection, no SDK): C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\tp-provenance-spike\SchemaAsm\bin\Release\net8.0\SchemaAsm.dll
+  type 'SchemaAsm.Schemas+SchemaV2'
+    attribute: SchemaTP.Runtime.SchemaVersionAttribute
+    attribute assembly: SchemaTP.Runtime
+    ctor arg [0] (Version) = "v2"
+
+SchemaVersionAttribute instances found: 1
+ROUND 1 (independent reflection) verdict: PASS

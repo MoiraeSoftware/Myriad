@@ -1,0 +1,1 @@
+C:/Users/Dave/Documents/GitHub/Myriad/experiments/Q020-shared-analysis-diagnostic-channels/artifacts/SampleLib/Company.fs(5,39,5,43): warning MYR012: field 'meta' has type 'Meta', which is declared in this same file and cannot be resolved without a real build; it will be exposed as 'obj'

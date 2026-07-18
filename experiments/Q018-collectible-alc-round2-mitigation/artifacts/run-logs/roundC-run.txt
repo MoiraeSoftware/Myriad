@@ -1,0 +1,56 @@
+
+===== ROUND C (Q018): ALC-based loading + explicit Harness-triggered eviction before overwrite =====
+-- step 1: cold check, v1 satellite (2 fields) already loaded from Round 1 in this process --
+[Q018-DIAG] reusing already-loaded assembly for C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\Harness\bin\Release\net8.0\FSharp.Core.dll (not collectible)
+[Q018-DIAG] loaded into a fresh collectible ALC for C:\Program Files\dotnet\shared\Microsoft.NETCore.App\8.0.23\System.ValueTuple.dll
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\netstandard.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Collections.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.Numerics.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Threading.dll (not collectible)
+[Q018-DIAG] loaded into a fresh collectible ALC for C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\SatelliteTP.Runtime\bin\Release\net8.0\SatelliteTP.Runtime.dll
+[Q018-DIAG] loaded into a fresh collectible ALC for C:/Users/Dave/.claude/jobs/f0b85ddf/tmp/q016-satellite-dll-spike/SampleLib/Satellite.dll
+[Q018-DIAG] SatelliteProvider CONSTRUCTED (instance #1)
+[Q018-DIAG] mapMi param0 type=Microsoft.FSharp.Core.FSharpFunc`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]] asm=FSharp.Core, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a location=C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\Harness\bin\Release\net8.0\FSharp.Core.dll hash=57899668
+[Q018-DIAG] host FSharpFunc<string,string> type=Microsoft.FSharp.Core.FSharpFunc`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]] asm=FSharp.Core, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a location=C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\Harness\bin\Release\net8.0\FSharp.Core.dll hash=57899668
+[Q018-DIAG] same assembly object=true
+--- Round C step1 (v1 sanity) ---
+  compile: 2202ms exitCode=0 errors=0 outExists=true
+  v1 sanity compile errors=0
+-- step 2: REAL EDIT to Person.fs (add email field), rerun Myriad's real CLI unmodified --
+  Myriad CLI rerun: exit=0 in 409ms
+  Generated.fs now contains an email getter: true
+-- step 2.5 (Q018): explicitly evict Satellite.dll's collectible ALC BEFORE the overwrite attempt --
+[Q018-DIAG] evictAndForceCollect(C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\SampleLib\Satellite.dll): released=false after 30 iterations
+  eviction hook result: Some false
+-- step 3: recompile satellite to the SAME path (overwrite) --
+  satellite rebuild subprocess: exit=1 in 1327ms
+  SATELLITEBUILDER STDOUT:
+Compiling: fsc.exe -o C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\SampleLib\Satellite.dll --target:library -r:C:\Users\Dave\Documents\GitHub\Myriad\src\Myriad.Plugins\bin\Release\net9.0\Myriad.Plugins.dll -r:C:\Users\Dave\Documents\GitHub\Myriad\src\Myriad.Core\bin\Release\net9.0\Myriad.Core.dll --nowarn:57 C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\SampleLib\Person.fs C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\SampleLib\Generated.fs
+  Error: A problem occurred writing the binary 'C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\SampleLib\Satellite.dll': Could not open file for writing (binary mode): C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\SampleLib\Satellite.dll
+exitCode=1 outExists=true
+
+  SATELLITEBUILDER STDERR:
+
+  file-lock exception observed: true
+-- step 4: wait briefly for FileSystemWatcher's async Invalidate() to fire --
+-- step 5: SAME checker instance, check a NEW consumer referencing GetEmail (expect 0 diagnostics) --
+[Q018-DIAG] reusing already-loaded assembly for C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\Harness\bin\Release\net8.0\FSharp.Core.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\mscorlib.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\netstandard.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Linq.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Linq.Expressions.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.Requests.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Collections.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.Numerics.dll (not collectible)
+[Q018-DIAG] reusing already-loaded assembly for C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Threading.dll (not collectible)
+[Q018-DIAG] SatelliteProvider CONSTRUCTED (instance #2)
+[Q018-DIAG] mapMi param0 type=Microsoft.FSharp.Core.FSharpFunc`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]] asm=FSharp.Core, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a location=C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\Harness\bin\Release\net8.0\FSharp.Core.dll hash=57899668
+[Q018-DIAG] host FSharpFunc<string,string> type=Microsoft.FSharp.Core.FSharpFunc`2[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]] asm=FSharp.Core, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a location=C:\Users\Dave\.claude\jobs\f0b85ddf\tmp\q016-satellite-dll-spike\Harness\bin\Release\net8.0\FSharp.Core.dll hash=57899668
+[Q018-DIAG] same assembly object=true
+--- Round C step5 (post-regen, GetEmail) ---
+  compile: 192ms exitCode=1 errors=2 outExists=false
+    Error: The member or object constructor 'Create' takes 2 argument(s) but is here given 3. The required signature is 'P.Create(name: string, age: int) : SampleNs.Person'.
+    Error: The type 'P' does not define the field, constructor or member 'GetEmail'. Maybe you want one of the following:     GetName
+ROUND C verdict: FAIL (email-getter-generated=true no-lock-exception=false post-regen-resolves=false)

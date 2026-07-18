@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <DefineConstants>IS_DESIGNTIME</DefineConstants>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\vendor\ProvidedTypes.fsi" />
+    <Compile Include="..\vendor\ProvidedTypes.fs" />
+    <Compile Include="..\ClientTP.Runtime\Consumes.fs" />
+    <Compile Include="ClientProvider.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="4.7.2" />
+  </ItemGroup>
+</Project>

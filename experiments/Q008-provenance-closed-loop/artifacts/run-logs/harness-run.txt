@@ -1,0 +1,45 @@
+Round 1 (independent-reflection falsifier) validated separately by AttrCheck: PASS.
+schemaAsmPath = C:/Users/Dave/.claude/jobs/f0b85ddf/tmp/tp-provenance-spike/SchemaAsm/bin/Release/net8.0/SchemaAsm.dll
+schemaTypeName = SchemaAsm.Schemas+SchemaV2
+
+===== ROUND 2: two-provider provenance gate, both directions =====
+-- direction 1: schema=v2, client expects v2 (MATCH, expect 0 diagnostics) --
+  (check took 1110ms)
+  [match] 0 diagnostic(s)
+  C.VerifiedVersion binding type: type Microsoft.FSharp.Core.string
+-- direction 2: schema=v2, client expects v3 (MISMATCH, expect real diagnostic) --
+  (check took 67ms)
+  [mismatch] 4 diagnostic(s)
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch: schema type 'SchemaAsm.Schemas+SchemaV2' declares SchemaVersion 'v2' but the client was told to expect 'v3'
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch: schema type 'SchemaAsm.Schemas+SchemaV2' declares SchemaVersion 'v2' but the client was told to expect 'v3'
+    Error (3,19): The type 'C' does not define the field, constructor or member 'VerifiedVersion'.
+    Error (4,18): The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+  --- verbatim diagnostic messages on mismatch ---
+  >>> The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch: schema type 'SchemaAsm.Schemas+SchemaV2' declares SchemaVersion 'v2' but the client was told to expect 'v3'
+  >>> The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch: schema type 'SchemaAsm.Schemas+SchemaV2' declares SchemaVersion 'v2' but the client was told to expect 'v3'
+  >>> The type 'C' does not define the field, constructor or member 'VerifiedVersion'.
+  >>> The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+ROUND 2 verdict: PASS (match=true mismatch-errors=true)
+
+===== ROUND 3: live-edit provenance violation, SAME checker, no rebuild =====
+-- step 1: cold check, expects v2 (MATCH) --
+  (check took 22ms)
+  [cold-match] 0 diagnostic(s)
+-- step 2: LIVE EDIT ExpectedVersion v2 -> v3, SAME checker, no rebuild (MISMATCH) --
+  (re-check took 21ms)
+  [live-mismatch] 4 diagnostic(s)
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch: schema type 'SchemaAsm.Schemas+SchemaV2' declares SchemaVersion 'v2' but the client was told to expect 'v3'
+    Error (2,9): The type provider 'ClientTPImplementation.ClientProvider' reported an error: ClientTP provenance mismatch: schema type 'SchemaAsm.Schemas+SchemaV2' declares SchemaVersion 'v2' but the client was told to expect 'v3'
+    Error (3,19): The type 'C' does not define the field, constructor or member 'VerifiedVersion'.
+    Error (4,18): The type 'C' does not define the field, constructor or member 'ProvenanceOk'.
+-- step 3: LIVE EDIT back v3 -> v2, SAME checker (diagnostics should clear) --
+  (re-check took 21ms)
+  [live-cleared] 0 diagnostic(s)
+
+  TIMING TABLE (compare vs Q006: 1137ms cold / 47ms live re-check):
+    step 1 cold match           : 22ms
+    step 2 live-edit mismatch   : 21ms
+    step 3 live-edit cleared    : 21ms
+ROUND 3 verdict: PASS (cold=true mismatch-caught=true cleared=true)
+
+Summary: R2=true R3=true

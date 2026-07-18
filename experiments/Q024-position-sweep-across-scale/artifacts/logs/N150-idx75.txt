@@ -1,0 +1,17 @@
+Q023 - scale cost of ParseAndCheckProject under a reentrant DocumentSource.Custom callback
+Testing whether unchanged-remainder cost stays flat (c) or tracks cold cost (b) as N grows.
+Single-N-per-process run: N=150 editIdx=75
+
+=== N = 150, editIdx = 75 ===
+  cold:         1750ms  errs=0  callbackInvocations=151
+  repeat1:       117ms  errs=0  callbackInvocations=151
+  repeat2:       114ms  errs=0  callbackInvocations=151
+  repeat3:       124ms  errs=0  callbackInvocations=151
+  editOne1:      467ms  errs=0  callbackInvocations=151
+  editOne2:      418ms  errs=0  callbackInvocations=151
+  editOne3:      461ms  errs=0  callbackInvocations=151
+  Observer.fs generated text unchanged across value-only edit (type shape untouched): true
+  cold=1750ms  repeatMedian=117ms (ratio=0.067)  editOneMedian=461ms (ratio=0.263)
+
+=== Result (N=150, editIdx=75) ===
+cold=1750ms repeatMedian=117ms (ratio=0.0669) editOneMedian=461ms (ratio=0.2634) observerStable=true

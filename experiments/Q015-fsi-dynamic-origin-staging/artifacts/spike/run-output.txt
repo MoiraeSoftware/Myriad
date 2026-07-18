@@ -1,0 +1,67 @@
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q015-fsi-dynamic-origin-staging\artifacts\spike\spike.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q015-fsi-dynamic-origin-staging\artifacts\spike\spike.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+Plugin source read from: C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q015-fsi-dynamic-origin-staging\artifacts\spike\plugin\PowerPlugin.fsx
+Plugin source text:
+// This file is the "general implementation" under test. It is never #load-ed, #r-ed, or referenced
+// by name anywhere in Program.fs - Program.fs reads this file's TEXT at runtime via File.ReadAllText
+// and hands that text to a live FsiEvaluationSession. The host program's own compiled code has no
+// knowledge of the identifier `power`, `Target`, or this function's shape at ITS compile time.
+module Target =
+    [<ReflectedDefinition>]
+    let rec power (n: int) (x: float) : float =
+        if n = 0 then 1.0 else x * power (n - 1) x
+
+Specializing config n = 6 (from Q015_POWER_N env var, default 5 if unset)
+=== Round 1: obtain powerMi from a live FSI session, never a host-compile-time reference ===
+  plugin eval diagnostics: [||]
+  plugin defined inside FSI session
+  quote-and-extract diagnostics: [||]
+  obtained MethodInfo: FSI_0001+Target.power
+  mi.Module.Assembly:      FSI-ASSEMBLY, Version=0.0.0.32767, Culture=neutral, PublicKeyToken=null
+  host entry assembly:     spike, Version=0.8.6.0, Culture=neutral, PublicKeyToken=null
+  CONFIRMED: MethodInfo originates from FSI's dynamic assembly, not the host's
+  TryGetReflectedDefinition SUCCEEDED on an FSI-sourced MethodInfo: Lambda (n,
+        Lambda (x,
+                IfThenElse (Call (None, op_Equality, [n, Value (0)]),
+                            Value (1.0),
+                            Call (None, op_Multiply,
+                                  [x,
+                                   Call (None, power,
+                                         [Call (None, op_Subtraction,
+                                                [n, Value (1)]), x])]))))
+OK
+
+=== Round 2: power(6, x) specialized, both origin AND config dynamic ===
+  raw reflected body (from FSI): IfThenElse (Call (None, op_Equality, [n, Value (0)]), Value (1.0),
+            Call (None, op_Multiply,
+                  [x,
+                   Call (None, power,
+                         [Call (None, op_Subtraction, [n, Value (1)]), x])]))
+  unrolled Expr (in terms of x only): Call (None, op_Multiply,
+      [x,
+       Call (None, op_Multiply,
+             [x,
+              Call (None, op_Multiply,
+                    [x,
+                     Call (None, op_Multiply,
+                           [x,
+                            Call (None, op_Multiply,
+                                  [x, Call (None, op_Multiply, [x, Value (1.0)])])])])])])
+  specialized source text: fun x -> x * (x * (x * (x * (x * (x * 1.0)))))
+  all diagnostics: [||]
+  [Expr-eval check] x=2  FSI-power(6,x)=64  evaluated-unrolled-Expr=64  match=true
+  [Expr-eval check] x=3.5  FSI-power(6,x)=1838.27  evaluated-unrolled-Expr=1838.27  match=true
+  checker.Compile errors: [||]
+  [compiled-and-executed check] x=2  FSI-power(6,x)=64  compiled-powerN(x)=64  match=true
+  [compiled-and-executed check] x=3.5  FSI-power(6,x)=1838.27  compiled-powerN(x)=1838.27  match=true
+  specialized text mentions 'power'/'Target' (should be false): false
+OK
+
+Round 1 wall-clock (FSI session create + define + extract + TryGetReflectedDefinition): 845ms
+Round 2 wall-clock (substitute/unroll/translate/splice/typecheck/compile/execute): 687ms
+Combined (Round 1 + Round 2): 1532ms
+=== SUMMARY ===
+Round 1 (FSI-sourced MethodInfo, confirmed non-host-assembly, TryGetReflectedDefinition works): true
+Round 2 (full pipeline, n=6 from env var, reference via FSI-obtained mi) succeeded: true
+Round 2 specialized text: fun x -> x * (x * (x * (x * (x * (x * 1.0)))))
+Q015 spike run complete.

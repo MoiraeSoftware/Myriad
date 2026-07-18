@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <Target Name="EchoDTB" BeforeTargets="CoreCompile">
+    <Message Text="##DTB_PROBE## DesignTimeBuild=[$(DesignTimeBuild)] BuildingProject=[$(BuildingProject)] SkipCompilerExecution=[$(SkipCompilerExecution)]" Importance="high" />
+  </Target>
+  <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+</Project>

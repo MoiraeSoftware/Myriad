@@ -1,0 +1,3 @@
+via provider (dynamic reflection): name="Ada" age=42
+direct field access (outside provider): name="Ada" age=42
+agreement: name=true age=true

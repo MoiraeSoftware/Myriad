@@ -1,0 +1,5 @@
+===== ROUND A (Q018): collectible ALC unload -- does it release the file lock? =====
+  loaded: Satellite, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  collected=true after 1 GC iterations, 61ms
+  write-open SUCCEEDED -- file lock released
+ROUND A verdict: PASS

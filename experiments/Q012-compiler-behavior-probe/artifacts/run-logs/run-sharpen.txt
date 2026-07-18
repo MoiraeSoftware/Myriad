@@ -1,0 +1,14 @@
+PROBE_LOG_DIR=C:\Users\Dave\tp-compiler-behavior-probe-spike\Harness\logs
+checker: keepAssemblyContents=true, default (TransparentCompiler off unless specified)
+
+Sharpening under ParseAndCheckFileInProject only (generative vs erased; defn vs expr):
+  [PC] gen-defn       -> 4 err  FAIL
+        The type provider 'ProbeSimpleImplementation.ProbeProvider' reported an error: couldn't find type 'ProbeSimple.Provided.T' in assembly 'tmpvpyvzx, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+        Invalid use of a type name
+  [PC] gen-expr       -> 2 err  FAIL
+        A direct reference to the generated type 'Probe' is not permitted. Instead, use a type definition, e.g. 'type TypeAlias = <path>'. This indicates that a type provider adds generated types to your assembly.
+        Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+  [PC] erased-defn    -> 0 err  RESOLVED
+  [PC] erased-expr    -> 2 err  FAIL
+        No constructors are available for the type 'ProbeSimple.Provided.ProbeErased'
+        Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.

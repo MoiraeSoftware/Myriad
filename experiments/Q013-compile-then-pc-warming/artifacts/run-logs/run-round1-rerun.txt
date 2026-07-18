@@ -1,0 +1,69 @@
+Q013 compile-then-PC warming harness
+ROOT=C:\Users\Dave\q013-warm-spike
+PROBE_LOG_DIR=C:\Users\Dave\q013-warm-spike\Harness\logs
+checker: keepAssemblyContents=true, default compiler (TransparentCompiler off), fresh per condition
+
+======================================================================
+ROUND 1 -- falsifier: same-checker compile-then-PC on ProbeSimple (generative)
+======================================================================
+
+### repeat r1a ###
+  -- cold control tag=cold-r1a (fresh checker, PC only, no prior Compile) --
+    ParseAndCheckFileInProject        1272ms aborted=false -> FAIL
+        PC: 4 error(s) (FAIL)
+          DIAG: The type provider 'ProbeSimpleImplementation.ProbeProvider' reported an error: couldn't find type 'ProbeSimple.Provided.T' in assembly 'tmpg2pqum, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+          DIAG: Invalid use of a type name
+          DIAG: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+  -- warm trial tag=warm-r1a (same checker instance for Compile then PC) --
+    [1] checker.Compile               681ms exit=0 outExists=true
+        Compile: 0 error(s) (CLEAN/RESOLVED)
+        design-time firings during Compile (file log): 1
+    [2] ParseAndCheckFileInProject    306ms aborted=false -> FAIL
+        PC: 4 error(s) (FAIL)
+          DIAG: The type provider 'ProbeSimpleImplementation.ProbeProvider' reported an error: couldn't find type 'ProbeSimple.Provided.T' in assembly 'tmphaftwd, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+          DIAG: Invalid use of a type name
+          DIAG: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+        design-time firings during PC (file log): 2
+
+### repeat r1b ###
+  -- cold control tag=cold-r1b (fresh checker, PC only, no prior Compile) --
+    ParseAndCheckFileInProject        145ms aborted=false -> FAIL
+        PC: 4 error(s) (FAIL)
+          DIAG: The type provider 'ProbeSimpleImplementation.ProbeProvider' reported an error: couldn't find type 'ProbeSimple.Provided.T' in assembly 'tmpdyxcw4, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+          DIAG: Invalid use of a type name
+          DIAG: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+  -- warm trial tag=warm-r1b (same checker instance for Compile then PC) --
+    [1] checker.Compile               328ms exit=0 outExists=true
+        Compile: 0 error(s) (CLEAN/RESOLVED)
+        design-time firings during Compile (file log): 1
+    [2] ParseAndCheckFileInProject    288ms aborted=false -> FAIL
+        PC: 4 error(s) (FAIL)
+          DIAG: The type provider 'ProbeSimpleImplementation.ProbeProvider' reported an error: couldn't find type 'ProbeSimple.Provided.T' in assembly 'tmpydti0v, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+          DIAG: Invalid use of a type name
+          DIAG: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+        design-time firings during PC (file log): 2
+
+### repeat r1c ###
+  -- cold control tag=cold-r1c (fresh checker, PC only, no prior Compile) --
+    ParseAndCheckFileInProject        205ms aborted=false -> FAIL
+        PC: 4 error(s) (FAIL)
+          DIAG: The type provider 'ProbeSimpleImplementation.ProbeProvider' reported an error: couldn't find type 'ProbeSimple.Provided.T' in assembly 'tmp1dpk3v, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+          DIAG: Invalid use of a type name
+          DIAG: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+  -- warm trial tag=warm-r1c (same checker instance for Compile then PC) --
+    [1] checker.Compile               269ms exit=0 outExists=true
+        Compile: 0 error(s) (CLEAN/RESOLVED)
+        design-time firings during Compile (file log): 1
+    [2] ParseAndCheckFileInProject    277ms aborted=false -> FAIL
+        PC: 4 error(s) (FAIL)
+          DIAG: The type provider 'ProbeSimpleImplementation.ProbeProvider' reported an error: couldn't find type 'ProbeSimple.Provided.T' in assembly 'tmpqo0ozv, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+          DIAG: Invalid use of a type name
+          DIAG: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+        design-time firings during PC (file log): 2
+
+----------------------------------------------------------------------
+ROUND 1 SUMMARY
+  cold PC (no prior Compile):  [false; false; false]  (all FAIL expected, reproducing Q012)
+  warm PC (Compile then PC):   [false; false; false]
+  VERDICT: NULL -- compile-then-PC makes no difference; PC still fails after prior Compile
+----------------------------------------------------------------------

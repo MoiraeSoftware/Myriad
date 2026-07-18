@@ -1,0 +1,27 @@
+PROBE_LOG_DIR=C:\Users\Dave\tp-compiler-behavior-probe-spike\Harness\logs
+checker: keepAssemblyContents=true, default (TransparentCompiler off unless specified)
+
+ROUND 3 - confirm against Q011's REAL providers (instrumented, source else verbatim).
+
+=== SchemaTP.Provided.Schema<"Name:v1;Age:v2", ""> (real Q011 provider) ===
+  [PC] schema-PC      -> 4 err  FAIL
+        The type provider 'SchemaTPImplementation.SchemaProvider' reported an error: couldn't find type 'SchemaTP.Provided.S' in assembly 'tmp3pnz1o, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+        Invalid use of a type name
+    design-time firings during ParseAndCheck: 2
+      LOG: 1|13:24:44.243|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+      LOG: 2|13:24:44.465|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+  [Compile] schema-Comp  -> 630ms exit=0 0 err  outExists=true
+    design-time firings during Compile: 1
+      LOG: 3|13:24:44.957|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+
+=== ClientTP.Provided.Client<schemaCarrier, "Name;Age"> (real Q011 provider) ===
+    (schemaCarrier.dll built above via Compile, exit=0, colocated with SchemaTP.Runtime.dll)
+  [PC] client-PC      -> 4 err  FAIL
+        The type provider 'ClientTPImplementation.ClientProvider' reported an error: couldn't find type 'ClientTP.Provided.Dep' in assembly 'tmp5svhbd, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+        Invalid use of a type name
+    design-time firings during ParseAndCheck: 2
+      LOG: 1|13:24:45.440|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+      LOG: 2|13:24:45.593|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+  [Compile] client-Comp  -> 221ms exit=0 0 err  outExists=true
+    design-time firings during Compile: 1
+      LOG: 3|13:24:45.685|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments

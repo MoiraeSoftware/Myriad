@@ -1,0 +1,33 @@
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q019-erased-self-parsing-provider\artifacts\Harness\Harness.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q019-erased-self-parsing-provider\artifacts\Harness\Harness.fsproj : warning NU1608: Detected package version outside of dependency constraint: FSharp.Compiler.Service 43.9.101 requires FSharp.Core (= 9.0.101) but version FSharp.Core 9.0.303 was resolved. [TargetFramework=net9.0]
+===== ROUND 1: design-time member resolution, target record NEVER compiled anywhere =====
+  runtimeDll = C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q019-erased-self-parsing-provider\artifacts\MyriadPreview.Runtime\bin\Debug\net9.0\MyriadPreview.Runtime.dll (exists=true)
+  Person.fs  = C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q019-erased-self-parsing-provider\artifacts\SampleLib\Person.fs (exists=true, target record compiled by nothing in this harness)
+  OtherOptions reference list (grep for anything that could define SampleNs.Person):
+    suspicious refs (should be empty): [||]
+consumer text:
+module Consumer1
+type P = MyriadPreview.Provided.Fields<"C:/Users/Dave/Documents/GitHub/Myriad/experiments/Q019-erased-self-parsing-provider/artifacts/SampleLib/Person.fs", "SampleNs.Person">
+let describe (instance: obj) : string =
+    let p = P(instance)
+    sprintf "%A / %A" (p.name) (p.age)
+
+  [Round 1 check] 0 diagnostic(s)
+  check time: 1202ms
+ROUND 1 verdict: PASS
+
+===== ROUND 2: live edit (add 'email' field) picked up via FileSystemWatcher + Invalidate(), no rebuild =====
+  edited Person.fs on disk (added 'email' field)
+consumer text:
+module Consumer2
+type P = MyriadPreview.Provided.Fields<"C:/Users/Dave/Documents/GitHub/Myriad/experiments/Q019-erased-self-parsing-provider/artifacts/SampleLib/Person.fs", "SampleNs.Person">
+let describe (instance: obj) : string =
+    let p = P(instance)
+    sprintf "%A / %A / %A" (p.name) (p.age) (p.email)
+
+  [Round 2 check (post-edit, no rebuild)] 0 diagnostic(s)
+  check time: 39ms
+ROUND 2 verdict: PASS
+  restored original Person.fs
+
+Summary: Round1=true Round2=true

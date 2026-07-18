@@ -1,0 +1,103 @@
+PROBE_LOG_DIR=C:\Users\Dave\tp-compiler-behavior-probe-spike\Harness\logs
+checker: keepAssemblyContents=true, default (TransparentCompiler off unless specified)
+
+======================================================================
+SHAPE: ProbeSimple (1 param, no I/O)
+======================================================================
+[ParseAndCheckFileInProject] 1280ms  aborted=false
+    ParseAndCheck: 4 error diagnostic(s)
+      DIAG: The type provider 'ProbeSimpleImplementation.ProbeProvider' reported an error: couldn't find type 'ProbeSimple.Provided.T' in assembly 'tmpotk1y3, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+      DIAG: Invalid use of a type name
+      DIAG: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+    design-time invocations during ParseAndCheck (file log): 2
+      LOG: 1|13:24:38.820|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+      LOG: 2|13:24:39.042|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+[checker.Compile] 649ms  exitCode=0  outDllExists=true
+    Compile: 0 error diagnostic(s) (CLEAN/RESOLVED)
+    design-time invocations during Compile (file log): 1
+      LOG: 1|13:24:39.521|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+    READBACK from compiled output: Tag="A" InvocationCount=1
+    READBACK CallLog:
+      1|13:24:39.521|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+
+[Round 1 falsifier] full stack captured inside the provider during the
+ParseAndCheckFileInProject run (the API under test):
+    ===== invocation 1 (13:24:38.820) label=createType firstFcsFrame=FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments =====
+       at ProbeSimpleImplementation.ProbeProvider.instrument(String label) in C:\Users\Dave\tp-compiler-behavior-probe-spike\ProbeSimple.DesignTime\ProbeProvider.fs:line 61
+       at ProbeSimpleImplementation.ProbeProvider.createType(String typeName, String tag) in C:\Users\Dave\tp-compiler-behavior-probe-spike\ProbeSimple.DesignTime\ProbeProvider.fs:line 96
+       at <StartupCode$ProbeSimple-DesignTime>.$ProbeProvider.probeType@109.Invoke(String typeName, Object[] args) in C:\Users\Dave\tp-compiler-behavior-probe-spike\ProbeSimple.DesignTime\ProbeProvider.fs:line 109
+       at <StartupCode$ProbeSimple-DesignTime>.$ProvidedTypes.applyStaticParameters@9676.Invoke(FSharpFunc`2 f, String s, Object[] p) in C:\Users\Dave\tp-compiler-behavior-probe-spike\vendor\ProvidedTypes.fs:line 9679
+       at ProviderImplementation.ProvidedTypes.TypeProviderForNamespaces.Microsoft.FSharp.Core.CompilerServices.ITypeProvider.ApplyStaticArguments(Type ty, String[] typePathAfterArguments, Object[] objs) in C:\Users\Dave\tp-compiler-behavior-probe-spike\vendor\ProvidedTypes.fs:line 16351
+       at FSharp.Compiler.TypeProviders.ProvidedType.ApplyStaticArguments(ITypeProvider provider, String[] fullTypePathAfterArguments, Object[] staticArgs) in D:\a\_work\1\s\src\Compiler\TypedTree\TypeProviders.fs:line 424
+       at FSharp.Compiler.TypeProviders.TryApplyProvidedType@1384-1.Invoke(Tuple`2 tupledArg) in D:\a\_work\1\s\src\Compiler\TypedTree\TypeProviders.fs:line 1384
+       at Internal.Utilities.Library.Lock`1.AcquireLock[a](FSharpFunc`2 f) in D:\a\_work\1\s\src\Compiler\Utilities\illib.fs:line 917
+       at FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, Range range) in D:\a\_work\1\s\src\Compiler\TypedTree\tainted.fs:line 98
+       at FSharp.Compiler.Tainted`1.PApplyWithProvider[U](FSharpFunc`2 f, Range range) in D:\a\_work\1\s\src\Compiler\TypedTree\tainted.fs:line 132
+       at FSharp.Compiler.TypeProviders.TryApplyProvidedType(Tainted`1 typeBeforeArguments, FSharpOption`1 optGeneratedTypePath, Object[] staticArgs, Range m) in D:\a\_work\1\s\src\Compiler\TypedTree\TypeProviders.fs:line 1384
+       at FSharp.Compiler.CheckExpressions.TcProvidedTypeAppToStaticConstantArgs(TcFileState cenv, TcEnv env, FSharpOption`1 generatedTypePathOpt, UnscopedTyparEnv tpenv, EntityRef tcref, FSharpList`1 args, Range m) in D:\a\_work\1\s\src\Compiler\Checking\Expressions\CheckExpressions.fs:line 4954
+       at FSharp.Compiler.CheckDeclarations.EstablishTypeDefinitionCores.TcTyconDefnCore_TryAsGenerateDeclaration$cont@2999(TcFileState cenv, TcEnv envinner, UnscopedTyparEnv tpenv, EntityRef tcref, FSharpOption`1 matchValue, Unit unitVar) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 3012
+       at FSharp.Compiler.CheckDeclarations.EstablishTypeDefinitionCores.TcTyconDefnCore_TryAsGenerateDeclaration(TcFileState cenv, TcEnv envinner, UnscopedTyparEnv tpenv, Entity tycon, SynType rhsType) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 2997
+       at FSharp.Compiler.CheckDeclarations.EstablishTypeDefinitionCores.TcTyconDefnCore_Phase1C_Phase1E_EstablishAbbreviations(TcFileState cenv, TcEnv envinner, Boolean inSig, UnscopedTyparEnv tpenv, TypeRealizationPass pass, MutRecDefnsPhase1DataForTycon _arg1, Entity tycon, FSharpList`1 attrs) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 3215
+       at FSharp.Compiler.CheckDeclarations.EstablishTypeDefinitionCores.TcMutRecDefns_Phase1@4047-5.Invoke(TcEnv envForDecls, Tuple`2 tupledArg) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 4049
+       at FSharp.Compiler.CheckDeclarations.MutRecShapes.iterWithEnv[a,b,c,d](FSharpFunc`2 f1, FSharpFunc`2 f2, FSharpFunc`2 f3, FSharpFunc`2 f4, a env, FSharpList`1 x) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 177
+       at FSharp.Compiler.CheckDeclarations.MutRecShapes.iterTyconsWithEnv[a,b,c,d](FSharpFunc`2 f1, a env, FSharpList`1 xs) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 183
+       at FSharp.Compiler.CheckDeclarations.EstablishTypeDefinitionCores.TcMutRecDefns_Phase1[LetInfo,a,MemberInfo](FSharpFunc`2 mkLetInfo, TcFileState cenv, TcEnv envInitial, ParentRef parent, FSharpSet`1 typeNames, Boolean inSig, UnscopedTyparEnv tpenv, Range m, Range scopem, FSharpOption`1 mutRecNSInfo, FSharpList`1 mutRecDefns) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 4047
+       at FSharp.Compiler.CheckDeclarations.TcDeclarations.TcMutRecDefinitions(TcFileState cenv, TcEnv envInitial, ParentRef parent, FSharpSet`1 typeNames, UnscopedTyparEnv tpenv, Range m, Range scopem, FSharpOption`1 mutRecNSInfo, FSharpList`1 mutRecDefns, Boolean isMutRec) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 4539
+       at FSharp.Compiler.CheckDeclarations.TcModuleOrNamespaceElementNonMutRec@5222-1.Invoke(CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 5241
+       at FSharp.Compiler.CheckDeclarations.TcModuleOrNamespaceElementNonMutRec@5222-16.Invoke(CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 5222
+       at FSharp.Compiler.DiagnosticsLogger.GuardCancellable@908-1.Invoke(Unit unitVar0) in D:\a\_work\1\s\src\Compiler\Facilities\DiagnosticsLogger.fs:line 908
+       at FSharp.Compiler.DiagnosticsLogger.StackGuard.Guard[T](FSharpFunc`2 f, String memberName, String path, Int32 line) in D:\a\_work\1\s\src\Compiler\Facilities\DiagnosticsLogger.fs:line 902
+       at FSharp.Compiler.DiagnosticsLogger.GuardCancellable@908.Invoke(CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Facilities\DiagnosticsLogger.fs:line 908
+       at FSharp.Compiler.CheckDeclarations.TcModuleOrNamespaceElementsNonMutRec(TcFileState cenv, ParentRef parent, FSharpSet`1 typeNames, Range endm, FSharpList`1 defsSoFar, TcEnv env, TcEnv envAtEnd, FSharpList`1 moreDefs, CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 5470
+       at FSharp.Compiler.CheckDeclarations.TcModuleOrNamespaceElements@5502-5.Invoke(CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 5503
+       at FSharp.Compiler.CheckDeclarations.TcModuleOrNamespaceElements@5482-8.Invoke(CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 5482
+       at FSharp.Compiler.DiagnosticsLogger.GuardCancellable@908-1.Invoke(Unit unitVar0) in D:\a\_work\1\s\src\Compiler\Facilities\DiagnosticsLogger.fs:line 908
+       at FSharp.Compiler.DiagnosticsLogger.StackGuard.Guard[T](FSharpFunc`2 f, String memberName, String path, Int32 line) in D:\a\_work\1\s\src\Compiler\Facilities\DiagnosticsLogger.fs:line 902
+       at FSharp.Compiler.DiagnosticsLogger.GuardCancellable@908.Invoke(CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Facilities\DiagnosticsLogger.fs:line 908
+       at FSharp.Compiler.CheckDeclarations.TcModuleOrNamespaceElementNonMutRec@5325-14.Invoke(CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 5325
+       at FSharp.Compiler.CheckDeclarations.TcModuleOrNamespaceElementNonMutRec@5222-16.Invoke(CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 5222
+       at FSharp.Compiler.DiagnosticsLogger.GuardCancellable@908-1.Invoke(Unit unitVar0) in D:\a\_work\1\s\src\Compiler\Facilities\DiagnosticsLogger.fs:line 908
+       at FSharp.Compiler.DiagnosticsLogger.StackGuard.Guard[T](FSharpFunc`2 f, String memberName, String path, Int32 line) in D:\a\_work\1\s\src\Compiler\Facilities\DiagnosticsLogger.fs:line 902
+       at FSharp.Compiler.DiagnosticsLogger.GuardCancellable@908.Invoke(CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Facilities\DiagnosticsLogger.fs:line 908
+       at FSharp.Compiler.CheckDeclarations.TcModuleOrNamespaceElementsNonMutRec(TcFileState cenv, ParentRef parent, FSharpSet`1 typeNames, Range endm, FSharpList`1 defsSoFar, TcEnv env, TcEnv envAtEnd, FSharpList`1 moreDefs, CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 5470
+       at FSharp.Compiler.CheckDeclarations.TcModuleOrNamespaceElements@5502-5.Invoke(CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 5503
+       at FSharp.Compiler.CheckDeclarations.TcModuleOrNamespaceElements@5482-8.Invoke(CancellationToken ct) in D:\a\_work\1\s\src\Compiler\Checking\CheckDeclarations.fs:line 5482
+
+======================================================================
+SHAPE: ProbeTwoParams (2 params, no I/O)
+======================================================================
+[ParseAndCheckFileInProject] 232ms  aborted=false
+    ParseAndCheck: 4 error diagnostic(s)
+      DIAG: The type provider 'ProbeTwoParamsImplementation.ProbeProvider' reported an error: couldn't find type 'ProbeTwoParams.Provided.T' in assembly 'tmpcusmtq, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+      DIAG: Invalid use of a type name
+      DIAG: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+    design-time invocations during ParseAndCheck (file log): 2
+      LOG: 1|13:24:40.017|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+      LOG: 2|13:24:40.154|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+[checker.Compile] 167ms  exitCode=0  outDllExists=true
+    Compile: 0 error diagnostic(s) (CLEAN/RESOLVED)
+    design-time invocations during Compile (file log): 1
+      LOG: 1|13:24:40.245|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+    READBACK from compiled output: Tag="A" InvocationCount=1
+    READBACK CallLog:
+      1|13:24:40.245|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+
+======================================================================
+SHAPE: ProbeTwoParamsIO (2 params, + I/O)
+======================================================================
+[ParseAndCheckFileInProject] 245ms  aborted=false
+    ParseAndCheck: 4 error diagnostic(s)
+      DIAG: The type provider 'ProbeTwoParamsIOImplementation.ProbeProvider' reported an error: couldn't find type 'ProbeTwoParamsIO.Provided.T' in assembly 'tmpi4c0cv, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'
+      DIAG: Invalid use of a type name
+      DIAG: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+    design-time invocations during ParseAndCheck (file log): 2
+      LOG: 1|13:24:40.439|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+      LOG: 2|13:24:40.583|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+[checker.Compile] 206ms  exitCode=0  outDllExists=true
+    Compile: 0 error diagnostic(s) (CLEAN/RESOLVED)
+    design-time invocations during Compile (file log): 1
+      LOG: 1|13:24:40.720|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+    READBACK from compiled output: Tag="A" InvocationCount=1
+    READBACK CallLog:
+      1|13:24:40.720|4|createType|FSharp.Compiler.TypeProviders+ProvidedType.ApplyStaticArguments
+

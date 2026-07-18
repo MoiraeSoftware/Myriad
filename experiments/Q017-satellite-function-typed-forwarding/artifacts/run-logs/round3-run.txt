@@ -1,0 +1,17 @@
+
+===== ROUND 3 (Q017): function-typed-parameter generalization -- Map(mapname, mapage, person) =====
+consumer text:
+module Consumer3Map
+type P = SatelliteTP.Provided.MyriadSatellite<"C:/Users/Dave/.claude/jobs/f0b85ddf/tmp/q016-satellite-dll-spike/SampleLib/Satellite.dll", "SampleFields.Person", "SampleNs.Person">
+let person = P.Create("Ada", 42)
+let mapped = P.Map((fun (s: string) -> s.ToUpperInvariant()), (fun (i: int) -> i + 1), person)
+let readMappedName : string = P.GetName(mapped)
+let readMappedAge : int = P.GetAge(mapped)
+
+--- Round 3 (Q017) compile ---
+  compile: 1515ms exitCode=0 errors=0 outExists=true
+  readback via provider-mediated Map: name="ADA" age=43
+  direct reflection call to real map (outside provider): name="ADA" age=43
+  agreement: name true, age true
+  compile time: 1515ms
+ROUND 3 (Q017) verdict: PASS

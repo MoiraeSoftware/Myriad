@@ -1,0 +1,235 @@
+<Project>
+
+    <PropertyGroup>
+        <MyriadConfigFile Condition=" '$(MyriadConfigFile)' == '' " >$(MSBuildProjectDirectory)\myriad.toml</MyriadConfigFile>
+    </PropertyGroup>
+    
+    <UsingTask TaskName="Flatten" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+
+        <ParameterGroup>
+            <Items ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+            <Metadata ParameterType="System.String[]" Required="false" />
+            <Result ParameterType="System.String" Output="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System" />
+            <Using Namespace="System.Collections.Generic" />
+            <Using Namespace="System.Xml" />
+            <Using Namespace="System.Xml.Linq" />
+            <Code Type="Class" Language="cs">
+                <![CDATA[
+                using System;
+                using System.Collections.Generic;
+                using System.Linq;
+                using System.Resources;
+                using System.Text;
+                using System.Xml.Linq;
+                using Microsoft.Build.Framework;
+                using Microsoft.Build.Utilities;
+                
+                    public class Flatten : Task
+                    {
+                        [Output] public string Result { get; set; }
+                        [Required] public ITaskItem[] Items { get; set; }
+                        public string[] Metadata { get; private set; }
+                
+                        private readonly HashSet<string> _reserved = new HashSet<string>
+                        {
+                            "AccessedTime",
+                            "CreatedTime",
+                            "DefiningProjectDirectory",
+                            "DefiningProjectExtension",
+                            "DefiningProjectFullPath",
+                            "DefiningProjectName",
+                            "Directory",
+                            "Extension",
+                            "Filename",
+                            "FullPath",
+                            "Identity",
+                            "ModifiedTime",
+                            "RecursiveDir",
+                            "RelativeDir",
+                            "RootDir",
+                        };
+                
+                        public Flatten(){}
+                        public Flatten(ResourceManager taskResources) : base(taskResources){}
+                        public Flatten(ResourceManager taskResources, string helpKeywordPrefix) : base(taskResources, helpKeywordPrefix){}
+                        public override bool Execute()
+                        {
+                            Result = "";
+                            Metadata ??= new string[0];
+                            var requestedNames = new HashSet<string>(Metadata.Where(x => !string.IsNullOrEmpty(x)));
+                            Result = "";
+                            var command = new StringBuilder();
+                            foreach (var item in Items)
+                            {
+                                var names = item.MetadataNames.Cast<string>().Where(x => !_reserved.Contains(x) && (!requestedNames.Any() || requestedNames.Contains(x)));
+                                foreach (var name in names)
+                                {
+                                    var values = item.GetMetadata(name);
+                                    var doc = XDocument.Parse($"<root>{values}</root>");
+                                    if (doc.Root != null)
+                                    {
+                                        var mapping = doc.Root.Elements().ToDictionary(a => a.Name.LocalName, a => a.Value);
+                                        foreach (var kvp in mapping)
+                                        {
+                                            command.Append($"{kvp.Key}={kvp.Value};");
+                                        }
+                                    }
+                                }
+                            }
+                            if (command.Length > 0)
+                            {
+                                Result = command.ToString(0, command.Length - 1);
+                            }
+                            return true;
+                        }
+                    }
+            ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+    
+    <Target Name="_MyriadSdkFilesList" BeforeTargets="MyriadSdkGenerateInputCache">
+
+        <Error Condition=" ( '%(Compile.MyriadInlineGeneration)' == 'true' And '%(Compile.MyriadFile)' != '' ) "
+               Text="Both %3CMyriadInlineGeneration%3E true and %3CMyriadFile%3E have been specified for %(Compile.Identity), these properties are mutually exclusive, please include one or the other." />
+        
+        <ItemGroup>
+            <MyriadSource Include="%(Compile.MyriadFile)" Condition=" '%(Compile.MyriadFile)' != '' And ('%(Compile.MyriadInlineGeneration)' == 'false' Or '%(Compile.MyriadInlineGeneration)' == '') ">
+                <OutputPath>%(Compile.FullPath)</OutputPath>
+                <ConfigKey>%(Compile.MyriadConfigKey)</ConfigKey>
+                <MyriadParams>%(Compile.MyriadParams)</MyriadParams>
+                <Generators>%(Compile.Generators)</Generators>
+                <MyriadInlineGeneration>false</MyriadInlineGeneration>
+            </MyriadSource>
+        </ItemGroup>
+
+        <ItemGroup>
+            <MyriadSource Include="%(Compile.Identity)" Condition=" ('%(Compile.MyriadFile)' == '' And '%(Compile.MyriadInlineGeneration)' == 'true') ">
+                <OutputPath>%(Compile.FullPath))</OutputPath>
+                <ConfigKey>%(Compile.MyriadConfigKey)</ConfigKey>
+                <MyriadParams>%(Compile.MyriadParams)</MyriadParams>
+                <Generators>%(Compile.Generators)</Generators>
+                <MyriadInlineGeneration>true</MyriadInlineGeneration>
+            </MyriadSource>
+        </ItemGroup>
+
+        <ItemGroup>
+            <MyriadCodegen Include="%(MyriadSource.FullPath)" Condition=" '%(MyriadSource.FullPath)' != '' And ('%(Compile.MyriadInlineGeneration)' == 'false' Or '%(Compile.MyriadInlineGeneration)' == '') ">
+                <OutputPath>%(MyriadSource.OutputPath)</OutputPath>
+                <ConfigKey>%(MyriadSource.ConfigKey)</ConfigKey>
+                <MyriadParams>%(MyriadSource.MyriadParams)</MyriadParams>
+                <Generators>%(MyriadSource.Generators)</Generators>
+                <InlineGeneration>%(MyriadSource.MyriadInlineGeneration)</InlineGeneration>
+            </MyriadCodegen>
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_MyriadSdkCodeGenInputCache>$(IntermediateOutputPath)$(MSBuildProjectFile).MyriadSdkCodeGenInputs.cache</_MyriadSdkCodeGenInputCache>
+        </PropertyGroup>
+    </Target>
+
+    <!-- Update the file which captures the total set of all inputs to the code generator.
+    This is based on the _GenerateCompileDependencyCache target from the .NET project system. -->
+    <Target Name="MyriadSdkGenerateInputCache" DependsOnTargets="ResolveAssemblyReferences;_MyriadSdkFilesList" BeforeTargets="MyriadSdkGenerateCode">
+
+        <Touch Condition="!Exists($(MyriadConfigFile))" Files="$(MyriadConfigFile)" AlwaysCreate="true" />
+        
+        <GetFileHash Files="%(MyriadCodegen.Identity);$(MyriadSdk_Generator_Exe);$(MyriadConfigFile)">
+            <Output TaskParameter="Items" ItemName="MyriadCodegenHash" />
+        </GetFileHash>
+
+        <ItemGroup>
+            <MyriadSdk_CodeGenInputs Include="@(MyriadCodegen)" />
+            <MyriadSdk_CodeGenInputs Include="@(MyriadCodegenHash->'%(FileHash)')" />
+            <MyriadSdk_CodeGenInputs Include="@(ReferencePath)" />
+        </ItemGroup>
+
+        <Hash ItemsToHash="@(MyriadSdk_CodeGenInputs)">
+            <Output TaskParameter="HashResult" PropertyName="MyriadSdk_UpdatedInputCacheContents" />
+        </Hash>
+
+        <WriteLinesToFile Overwrite="true" File="$(_MyriadSdkCodeGenInputCache)" Lines="$(MyriadSdk_UpdatedInputCacheContents)" WriteOnlyWhenDifferent="True" />
+
+    </Target>
+
+    <PropertyGroup>
+        <MyriadSdkGenerateCodeDependsOn>$(MyriadSdkGenerateCodeDependsOn);ResolveReferences;MyriadSdkGenerateInputCache</MyriadSdkGenerateCodeDependsOn>
+    </PropertyGroup>
+
+    <Target Name="MyriadSdkGenerateCode" DependsOnTargets="$(MyriadSdkGenerateCodeDependsOn)" BeforeTargets="CoreCompile"
+            Inputs="@(MyriadCodegen);$(_MyriadSdkCodeGenInputCache);$(MyriadSdk_Generator_Exe)"
+            Outputs="%(MyriadCodegen.OutputPath)">
+        <!-- Q022 scratch-only: canary so a regeneration attempt is observable independent of parsing Exec output. -->
+        <Touch Files="$(IntermediateOutputPath)generation.canary" AlwaysCreate="true" />
+        <PropertyGroup>
+            <_MyriadSdk_InputFileName>%(MyriadCodegen.Identity)</_MyriadSdk_InputFileName>
+            <_MyriadSdk_OutputFileName>%(MyriadCodegen.OutputPath)</_MyriadSdk_OutputFileName>
+            <_MyriadSdk_ConfigKey>%(MyriadCodegen.ConfigKey)</_MyriadSdk_ConfigKey>
+            <_MyriadSdk_ConfigFile>$(MyriadConfigFile)</_MyriadSdk_ConfigFile>
+            <_MyriadSdk_MyriadParams>%(MyriadCodegen.MyriadParams)</_MyriadSdk_MyriadParams>
+            <_MyriadSdk_InlineGeneration>%(MyriadCodegen.InlineGeneration)</_MyriadSdk_InlineGeneration>
+            <_MyriadSdk_ContextFile>$(MSBuildProjectDirectory)/obj/myriad.context.toml</_MyriadSdk_ContextFile>
+            <_MyriadSdk_Generators>%(MyriadCodegen.Generators)</_MyriadSdk_Generators>
+            
+        </PropertyGroup>
+
+        <Flatten Items="@(MyriadCodegen)" Metadata="MyriadParams">
+            <Output TaskParameter="Result" PropertyName="_MyriadSdk_MyriadParams_Flattened" />
+        </Flatten>
+
+        <!-- Convert the property DefineConstants and _MyriadSdk_Generators to items so that it can be transfromed to separated list -->
+        <ItemGroup>
+            <_DefineConstants Include="$(DefineConstants)" />
+            <_GeneratorsOnly Include="$(_MyriadSdk_Generators)" />
+        </ItemGroup>
+
+        <PropertyGroup>
+            <_ProjectName>$(ProjectFileName)</_ProjectName>
+            <_ProjectPath>$(ProjectPath)</_ProjectPath>
+            <_ReferencePaths>@(ReferencePath->'%27%(Identity)%27', ',')</_ReferencePaths>
+            <_CompileBefore>@(CompileBefore->'%27%(Identity)%27', ',')</_CompileBefore>
+            <_Compile>@(Compile->'%27%(Identity)%27', ',')</_Compile>
+            <_CompileAfter>@(CompileAfter->'%27%(Identity)%27', ',')</_CompileAfter>
+            <_DefineConstants>@(_DefineConstants->'%27%(Identity)%27', ',')</_DefineConstants>
+        </PropertyGroup>
+
+        <ItemGroup>
+            <_MyriadContext Include='project="$(_ProjectName)"' />
+            <_MyriadContext Include='projectPath=%27$(_ProjectPath)%27' />
+            <_MyriadContext Include='referencePaths=[;$(_ReferencePaths);]' />
+            <_MyriadContext Include='compileBefore=[;$(_CompileBefore);]' />
+            <_MyriadContext Include='compile=[;$(_Compile);]' />
+            <_MyriadContext Include='compileAfter=[;$(_CompileAfter);]' />
+            <_MyriadContext Include='defineConstants=[;$(_DefineConstants);]' />
+        </ItemGroup>
+
+        <WriteLinesToFile File="$(_MyriadSdk_ContextFile)" Lines="@(_MyriadContext)" Overwrite="true" />
+
+        <ItemGroup>
+            <MyriadSdk_Args Include='--inputfile "$(_MyriadSdk_InputFileName)"' />
+            <MyriadSdk_Args Include='--outputfile "$(_MyriadSdk_OutputFileName)"' />
+            <MyriadSdk_Args Include='--configkey "$(_MyriadSdk_ConfigKey)"' Condition=" '$(_MyriadSdk_ConfigKey)' != '' " />
+            <MyriadSdk_Args Include='--configfile "$(_MyriadSdk_ConfigFile)"' Condition=" '$(_MyriadSdk_ConfigFile)' != '' " />
+            <MyriadSdk_Args Include='--contextfile "$(_MyriadSdk_ContextFile)"' Condition=" '$(_MyriadSdk_ContextFile)' != '' " />
+            <MyriadSdk_Args Include='--additionalparams "$(_MyriadSdk_MyriadParams_Flattened)"' Condition=" '$(_MyriadSdk_MyriadParams_Flattened)' != '' " />
+            <MyriadSdk_Args Include='--wait-for-debugger' Condition=" '$(MyriadSdkWaitForDebugger)' == 'true' " />
+            <MyriadSdk_Args Include='--verbose' Condition=" '$(MyriadSdkVerboseOutput)' == 'true' " />
+            <MyriadSdk_Args Include='--plugin "%(MyriadSdkGenerator.FullPath)"' Condition=" '@(MyriadSdkGenerator)' != '' " />
+            <MyriadSdk_Args Include='--inlinegeneration' Condition=" '$(_MyriadSdk_InlineGeneration)' == 'true' " />
+            <MyriadSdk_Args Include='--generator-filter "%(_GeneratorsOnly.Identity)"' Condition=" '%(_GeneratorsOnly.Identity)' != '' " />
+        </ItemGroup>
+
+        <!-- Uncomment to debug command line generation -->
+        <!-- <Message Text="%0A$(MyriadSdk_Generator_ExeHost)&quot;$(MyriadSdk_Generator_Exe)&quot; @(MyriadSdk_Args -> '%(Identity)', ' ')%0A" Importance="high"/> -->
+
+        <!-- Use dotnet to execute the process. -->
+        <Exec Command="$(MyriadSdk_Generator_ExeHost)&quot;$(MyriadSdk_Generator_Exe)&quot; @(MyriadSdk_Args -> '%(Identity)', ' ')" />
+    </Target>
+
+    <!-- Q022 scratch-only: MyriadSdkIncludeCodegenOutputDuringDesignTimeBuild dropped, its only job
+         (being the empty DTB-time no-op) is superseded by removing the Condition above. -->
+
+</Project>
