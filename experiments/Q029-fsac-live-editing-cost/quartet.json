@@ -1,0 +1,14 @@
+{
+  "id": "Q029",
+  "status": "closed",
+  "verdict": "SHIP, scoped. H1 confirmed and independently reproduced (FSAC 0.83.0 tool re-restored and re-run: falsifier, full N=20 sweep, N=40 scale check all within run noise; executor's raw numbers not in question). A live fsautocomplete session's per-edit incremental re-analysis cost is a monotonic, ~linear function of the number of compilation-order successors after the edited file, reproducing Q023/Q024's ParseAndCheckProject cost model through FSAC's real LSP-driven per-file path (last file ~6-9ms, first file ~120ms at N=20 / ~243ms at N=40, ~6ms/successor). The load-bearing control is stronger than the executor argued: the raw LSP transcript shows the documentAnalyzed cascade is strictly position-gated (successors+1 files re-analyzed in compilation order, verified p=10/14/19), decisively ruling out a position-blind refresh or stale-cache false reading -- this is the best-controlled real-FSAC measurement in the lineage. Review trimmed one framing overshoot: 'per-successor rate is N-invariant' (headline + this verdict field, originally) overreaches on two N values and three shared successor points; the supported claim is 'no detectable drift across N=20 and N=40', the exact scoping Q024 took for the identical claim. Also confirmed: the JIT/FCS-init tax Q027/Q028 found does NOT contaminate these numbers (all measured edits happen after workspaceLoad + didOpen-all + a discarded warm-up, unlike Q023's cold baseline); and the value-only edit still re-checks the whole tail, showing FSAC invalidates on file content, not exported signature, which cuts toward the pessimistic Myriad reading. Scope: small N (<=40), small though genuinely-weighted files (curve SHAPE/scaling, not absolute large-project keystroke latency); single machine/session per size; ONE linear dependency-chain topology, which conflates compilation-order-successors with true dependents and cannot tell whether FSAC invalidates by order or by precise dependency (inherited from Q023/Q024). Myriad caveat inherited: attributed domain types sit early in build order, the expensive end. Detail: 03-review.md.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": null
+}

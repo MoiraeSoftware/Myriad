@@ -1,0 +1,52 @@
+Q027 Movement-4 review control runs. FCS 43.9.101, Release, each line = one fresh dotnet run process.
+Generated Sat Jul 18 19:33:33 GMTDT 2026
+
+### baseline
+mode=baseline fired=true  r1=514ms r2=72ms r3=-1ms
+mode=baseline fired=true  r1=519ms r2=82ms r3=-1ms
+mode=baseline fired=true  r1=515ms r2=84ms r3=-1ms
+mode=baseline fired=true  r1=515ms r2=89ms r3=-1ms
+mode=baseline fired=true  r1=528ms r2=86ms r3=-1ms
+
+### warmup-reentrant
+mode=warmup-reentrant fired=true  warmupProjectMs=1001  reentrantA=50ms reentrantB=18ms
+mode=warmup-reentrant fired=true  warmupProjectMs=1007  reentrantA=48ms reentrantB=17ms
+mode=warmup-reentrant fired=true  warmupProjectMs=1009  reentrantA=47ms reentrantB=17ms
+mode=warmup-reentrant fired=true  warmupProjectMs=1015  reentrantA=48ms reentrantB=17ms
+mode=warmup-reentrant fired=true  warmupProjectMs=1012  reentrantA=48ms reentrantB=18ms
+
+### direct-first
+mode=direct-first warmupProjectMs=-1  directA=954ms directB=77ms
+mode=direct-first warmupProjectMs=-1  directA=928ms directB=90ms
+mode=direct-first warmupProjectMs=-1  directA=928ms directB=77ms
+mode=direct-first warmupProjectMs=-1  directA=944ms directB=78ms
+mode=direct-first warmupProjectMs=-1  directA=929ms directB=75ms
+
+### direct-first-warm
+mode=direct-first-warm warmupProjectMs=1019  directA=154ms directB=20ms
+mode=direct-first-warm warmupProjectMs=1047  directA=148ms directB=21ms
+mode=direct-first-warm warmupProjectMs=1020  directA=149ms directB=18ms
+mode=direct-first-warm warmupProjectMs=1058  directA=148ms directB=18ms
+mode=direct-first-warm warmupProjectMs=1025  directA=145ms directB=18ms
+
+### cold-kac
+mode=cold-kac warmupProjectMs=1031  coldA_kacTrue=148ms coldA_kacFalse=122ms
+mode=cold-kac warmupProjectMs=1005  coldA_kacTrue=144ms coldA_kacFalse=120ms
+mode=cold-kac warmupProjectMs=1021  coldA_kacTrue=148ms coldA_kacFalse=132ms
+mode=cold-kac warmupProjectMs=1026  coldA_kacTrue=148ms coldA_kacFalse=121ms
+mode=cold-kac warmupProjectMs=1071  coldA_kacTrue=148ms coldA_kacFalse=129ms
+
+### reverse
+mode=reverse fired=true  r1=586ms r2=10ms r3=-1ms
+mode=reverse fired=true  r1=597ms r2=11ms r3=-1ms
+mode=reverse fired=true  r1=587ms r2=9ms r3=-1ms
+mode=reverse fired=true  r1=598ms r2=10ms r3=-1ms
+mode=reverse fired=true  r1=615ms r2=11ms r3=-1ms
+
+### third
+mode=third fired=true  r1=529ms r2=72ms r3=24ms
+mode=third fired=true  r1=528ms r2=85ms r3=26ms
+mode=third fired=true  r1=517ms r2=81ms r3=24ms
+mode=third fired=true  r1=519ms r2=82ms r3=22ms
+mode=third fired=true  r1=532ms r2=89ms r3=24ms
+

@@ -596,12 +596,37 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     item specifically: Q024 measures a cost model (whole-project `ParseAndCheckProject`, independent
     files), not a real FSAC live-editing session** — this item's own keystroke-cost question is
     better characterized than before, but still not directly measured against the actual host path an
-    FSAC integration would use. The review's own top-priority follow-up, not yet spiked: test whether
-    FSAC's own incremental per-file editing path (not a direct whole-project
-    `ParseAndCheckProject` call) reproduces this same positional cost curve — the real remaining gap
-    between "the cost model is well-characterized" and "this item's actual keystroke cost is known."
-    Second follow-up, shared with Q023: test the dependency-chained variant both quartets' own designs
-    deliberately deferred. See `Q024-position-sweep-across-scale/03-review.md`.
+    FSAC integration would use. The review's own top-priority follow-up — test whether FSAC's own
+    incremental per-file editing path reproduces this same positional cost curve — **was run:
+    PROMOTED TO Q029, CLOSED, SHIP (scoped, as of 2026-07-19).** See
+    `Q029-fsac-live-editing-cost/03-review.md` for the full verdict. **Answer: yes, it does.** A real
+    `fsautocomplete` 0.83.0 process driven over hand-rolled LSP, editing files in a genuinely-weighted
+    N-file project with a real compilation-order dependency chain, showed per-edit re-analysis cost
+    (wall-clock from `didChange`/`didSave` to the last file's `documentAnalyzed` settling) is a
+    monotonic, ~linear function of compilation-order successors after the edited file — matching
+    Q023/Q024's `ParseAndCheckProject`-based cost model, independently reproduced (last file ~6-9ms,
+    first file ~120ms at N=20 / ~243ms at N=40, ~6ms/successor). **This closes item 18's own
+    highest-priority named follow-up, on the favorable side: the cost model transfers to a real editor
+    session, not just a direct-API harness.** The load-bearing control is stronger than a simple
+    reproduction: the raw LSP transcript shows the `documentAnalyzed` cascade is strictly
+    position-gated (exactly `successors+1` files re-analyzed, in compilation order — verified by hand
+    at three edit positions), decisively ruling out a position-blind refresh or stale-cache false
+    reading, making this the best-controlled real-FSAC measurement in the lineage so far. One framing
+    the review trimmed (the same correction Q024's own review made for an identical claim): "N-invariant
+    per-successor rate" overreaches on two N values — the supported claim is "no detectable drift across
+    N=20 and N=40." One finding cuts toward the pessimistic Myriad reading: the tested edit was
+    value-only (exported signature byte-identical) yet FSAC still re-checked the whole tail — FSAC
+    invalidates on file content, not on whether the exported signature changed. Scoped: small N (≤40),
+    one linear dependency-chain topology that conflates compilation-order-successors with true
+    dependents (can't yet tell whether FSAC invalidates by order or by precise dependency), single
+    session per size — curve shape/scaling shown, not absolute large-project keystroke latency. The
+    review's own named next step, not yet spiked: a wide/shallow dependency shape (one early file only a
+    few later files actually reference) to test whether FSAC invalidates by true dependents or by the
+    whole compilation-order suffix regardless — the one test that would tell whether Myriad's
+    "attributed types sit early = expensive" caveat is as bad as this linear-chain result implies, or
+    softened by dependency-precise invalidation. Second follow-up, shared with Q023: test the
+    dependency-chained variant both quartets' own designs deliberately deferred. See
+    `Q024-position-sweep-across-scale/03-review.md`.
 
 19. **A `myriad-live` watcher daemon that drives Q022's own already-proven reload signal on every save
     (new, 2026-07-17, extends Q022/item 8, composes only already-shipped pieces).** Prompted by
@@ -703,7 +728,46 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     reentrant cross-generator composition, as the concrete test of whether Myriad's separately-proven
     pieces compose into a persistent, typed, live codegen service, not three isolated demonstrations
     (new, 2026-07-18, composes item 19 + Q010 + Q022, prompted directly by a user question about
-    Myriad's biggest meta-gap and how to re-imagine it).** Every mechanism this needs already has its
+    Myriad's biggest meta-gap and how to re-imagine it). Own cheapest falsifier PROMOTED TO Q026,
+    CLOSED, SHIP (scoped, as of 2026-07-18).** See `Q026-real-generator-reentrant-composition/
+    03-review.md` for the full verdict. This item's own two-piece precursor (before attempting the
+    full live-watcher wiring) asked: can one real, unmodified Myriad generator (`LensesGenerator`)
+    reentrant-queried by a second real, unmodified generator work inside Myriad's own actual codegen
+    invocation, not a fresh toy harness — since every prior reentrant-composition quartet (Q010, Q021,
+    Q023, Q024) used hand-typed stand-ins for both the first generator's output and the second
+    generator itself, never Myriad's real generator code. It does: the real `LensesGenerator`,
+    discovered via `MyriadGeneratorAttribute` reflection + `Activator.CreateInstance` exactly mirroring
+    `src/Myriad/Program.fs`'s own plugin-discovery code, formatted through the real Fantomas pipeline,
+    is reentrant-queried inside one in-process `FSharpChecker` by a second, real, similarly-discovered
+    `IMyriadGenerator`, verified at Q010's own evidentiary bar (sentinel-confirmed non-bypass, zero
+    diagnostics, two independent symbol-resolution checks) and reproduced 12/12 by independent review,
+    which also generalized it to a three-field, mixed-type shape the executor never tried. Two things
+    scope the SHIP down materially, both found by review, not the executor: (1) a nested non-primitive
+    field shape shows the reentrant *mechanism* still correctly surfaces the real nested type, but the
+    second generator's own toy type-sniffing then emits code that fails to typecheck — proven only as a
+    composition mechanism, not a working generator; (2) the static side-channel standing in for a
+    checker/options handle (since `IMyriadGenerator.Generate` has no parameter to carry one) races
+    roughly 50% of the time when reused for a second composition in one process, concretely
+    demonstrating that this item's own deeper live-watcher vision needs `GeneratorContext` itself
+    widened, not a global mutable, before a real persistent multi-composition host could be built on
+    this. Confirmed directly, again, from `src/Myriad/Program.fs`: Myriad's real CLI still has zero
+    `FSharpChecker` usage anywhere — this closes the two-piece precursor precisely, without showing
+    Myriad's actual CLI can host any of this today. **Named follow-ups, not yet spiked:** widen
+    `GeneratorContext` (or add a per-composition scope) to carry the checker/options handle for real,
+    the minimum change before any persistent host could compose more than one generation; give a
+    composed generator real type-directed emission so a nested-type shape typechecks. The
+    inherited-from-Q010 in-flight-vs-warm reentrancy timing question named here **has since been run,
+    as `Q027-reentrant-call-timing`, CLOSED, REVISE (as of 2026-07-18)** — see that quartet's own
+    entry in `README.md`'s Index and `FINDINGS.md` for the full account; net effect for this item: the
+    "reentrant query does real, non-cached work" premise is confirmed and strengthened (robust to
+    process-warming, call order, and a third call), but any future write-up citing reentrant-call cost
+    for item 18/19's live-host vision must use the *warmed* per-call cost (~17-48ms in Q027's toy, sat
+    between warm and cold) not a raw first-in-process number, which carries an unrelated ~400-500ms
+    one-time JIT/FCS-init tax that Q027's own review found dominates any single first `dotnet run`
+    timing in this whole lineage. Only once the `GeneratorContext`-widening and real-emission
+    follow-ups above are addressed does attempting item 19's actual live-save-watcher wiring (the
+    fuller vision this item originally named) become worthwhile.
+    Original framing kept below for context. Every mechanism this needs already has its
     own narrow, closed proof, but none of the three has ever run together: Q010 showed a generator can
     reentrantly typed-query an earlier generator's already-generated virtual output inside one
     in-process check (real payoff demonstrated: a stand-in JSON serializer reusing a stand-in Lenses
@@ -732,6 +796,44 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     codegen invocation, not a fresh toy harness. If Myriad's current CLI architecture cannot host this at
     all without a rewrite, that is itself the answer — a real, valuable KILL/REVISE for the "reimagined"
     vision, not a reason to have skipped asking.
+
+23. **Spot-check whether `Q023`/`Q024`'s own cost-model numbers ate the same first-in-process JIT/FCS-
+    init tax `Q027`'s review found — PROMOTED TO Q028, CLOSED, REVISE (as of 2026-07-19).** See
+    `Q028-jit-tax-spotcheck/03-review.md` for the full verdict; original framing (the falsifier this
+    item named) kept below for context. **Answer: yes, `Q023`'s own `cold` measurement carries the same
+    tax, confirmed independently on a clean rebuild of `Q023`'s actual spike code** (not just Q027's
+    separate toy) — a roughly fixed ~570-577ms one-time cost at both N=10 and N=300 (not proportional to
+    N), inflating `cold` enough to shift `Q023`'s own published `cold`-denominated ratios materially
+    (`editOneRatio` at N=10 rises ~2.7x under a warmup control that isolates the tax; at N=300 the
+    direction reproduces but the magnitude is single-sample-noisy, +29% independently vs. +65%
+    originally claimed). The corrected direction is conservative, not alarming: `editOne` is a *larger*
+    fraction of a tax-corrected `cold` than `Q023` published, not smaller, so neither `Q023` nor `Q024`'s
+    qualitative verdict (real incremental caching under `TransparentCompiler`; cost linear in
+    compilation-order successors) is disturbed. **One scope correction the review insisted on, gating
+    REVISE rather than SHIP:** the pre-registered hypothesis wrongly claimed this touches "`editOneRatio`
+    values feeding `Q024`'s regression" — `Q024`'s own fitted slope is ms/successor, not ratio-based, and
+    `Q024` publishes no ratio column at all, so it's cold-independent and its SHIP verdict is untouched.
+    The correction lands only on `Q023`'s own ratio/percentage prose ("51% of cold"); any future citation
+    of a `Q023` cold-denominated percentage should carry this caveat, `Q024`'s numbers need none.
+    Original framing (new, 2026-07-18, extends Q023/Q024, cheap, a credibility check not
+    a new mechanism question): `Q027-reentrant-call-timing`'s review, built to settle a narrower
+    question (is a reentrant call a cache hit or real work), found as a byproduct that the *first*
+    `ParseAndCheckFileInProject` call in any fresh process carries a large (~400-500ms in that
+    quartet's own toy), unrelated one-time cost — JIT warmup, FCS static initialization, referenced-
+    assembly metadata reads — that has nothing to do with whatever is actually being measured, and
+    that a "cold" baseline run later in the *same* process never pays. `Q023`/`Q024`'s own scale-cost
+    numbers (N ∈ {10,50,150,300}, position sweeps) were each measured as fresh-process-per-N runs
+    (their own disclosed methodology, correcting an earlier same-process mistake) — meaning every one
+    of those quartets' *first* data points per process could, in principle, carry this same tax
+    without it being distinguishable from genuine cost-vs-N or cost-vs-position signal, unless their
+    own cold/repeat/editOne calls were already ordered so the tax lands equally across compared
+    conditions. Cheapest falsifier: rerun one of `Q023`'s or `Q024`'s own already-checked-in spike
+    binaries (`experiments/Q023-scale-cost-reentrant-callback/artifacts/q023-spike/`) with a single
+    added throwaway warmup check before the first timed measurement, and confirm whether the reported
+    cold/repeat/editOne numbers shift — if they don't (most likely, since those quartets' own designs
+    already time a *sequence* of calls per process rather than reporting a single first call in
+    isolation), this closes as a NULL-but-good-news credibility check; if they do shift materially,
+    it would call for reopening those quartets' own numeric claims, not just their framing.
 
 ## General type-provider capability ideas (independent of Myriad, unverified brainstorming)
 
@@ -1302,6 +1404,19 @@ track above goes anywhere:
   `MyriadInlineGeneration` file regardless of whether anything had changed — confirmed by a direct
   before/after comparison (4 of 5 vs. 5 of 5 batched items correctly skipped on a no-op rebuild).
   One-character fix; committed as `793bc98`.
+- **`IMyriadGenerator.Generate`'s `GeneratorContext` has no way to carry a checker/options handle —
+  a real blocker for any future persistent, multi-composition host, not just a Q026 footnote (added
+  2026-07-19).** `Q026-real-generator-reentrant-composition` needed a way for a reentrant-queried
+  generator to reach the live `FSharpChecker`/`FSharpProjectOptions` mid-composition, and
+  `GeneratorContext` (`src/Myriad.Core/Types.fs`) has no field for one — the quartet worked around
+  this with a process-global static side-channel, which Q026's own review found races roughly 50% of
+  the time when reused for a second composition in the same process (`FSharpChecker`'s
+  `DocumentSource` callback gives no cross-file ordering guarantee). This is not just an artifact of
+  Q026's own toy harness: it's the actual, current shape of `IMyriadGenerator`'s public interface, and
+  every future spike in this space (item 18/19's live-watcher vision, or any multi-composition
+  successor to Q026) will re-hit the identical race unless `GeneratorContext` is widened for real
+  before then. Not itself a spike — an interface-shape decision to make before the next quartet that
+  touches this, not a hypothesis to test.
 - **No `#line` pragmas in generated output.** Errors in generated code point at the generated
   file, not the source declaration that produced it. Cheap, mechanical fix.
 - **Config lives behind an indirection.** An attribute carries a string key, which is looked up

@@ -1,0 +1,3 @@
+reentrantCallbackFired=true
+A: reentrant=526ms  warm=2ms  cold=125ms  (reentrant/cold=4.208 reentrant/warm=263.000 warm/cold=0.016)
+B: reentrant=82ms  warm=4ms  cold=137ms  (reentrant/cold=0.599 reentrant/warm=20.500 warm/cold=0.029)

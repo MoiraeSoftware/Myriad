@@ -1,0 +1,12 @@
+Q028 03-review independent rerun (clean rm -rf bin obj; dotnet build -c Release; 4 fresh processes)
+FSharp.Compiler.Service 43.9.101 (NU1608 FSharp.Core 9.0.303 vs 9.0.101, same as every prior quartet)
+
+N=10 control : warmup=—    cold=1018ms repeatMed=8ms  editOneMed=52ms   repeatRatio=0.0079 editOneRatio=0.0511
+N=10 warmup  : warmup=765ms cold=441ms  repeatMed=11ms editOneMed=61ms   repeatRatio=0.0249 editOneRatio=0.1383
+N=300 control: warmup=—    cold=2365ms repeatMed=228ms editOneMed=1244ms repeatRatio=0.0964 editOneRatio=0.5260
+N=300 warmup : warmup=759ms cold=1795ms repeatMed=232ms editOneMed=1214ms repeatRatio=0.1292 editOneRatio=0.6763
+
+cold reduction under warmup: N=10 1018->441 = 577ms ; N=300 2365->1795 = 570ms (essentially N-independent -> fixed absolute tax, confirmed)
+warmup standalone cost: 759-765ms ; residual (warmup cost minus cold reduction): ~185-190ms (partial transfer, matches executor's disclosed ~130-200ms)
+editOneRatio shift: N=10 0.051->0.138 (~2.7x) ; N=300 0.526->0.676 (~1.3x). Direction reproduces; N=300 magnitude noisier than executor's +65% (single-sample).
+control cold (1018ms) reproduces Q023 run-n10.txt (1037ms) within ~2% -> copied harness measures the same thing.

@@ -113,6 +113,11 @@ StyleCopReport.xml
 *.tmp_proj
 *_wpftmp.csproj
 *.log
+# Same failure class as the unanchored "artifacts/" bug above: this generic VS-boilerplate *.log
+# rule was silently excluding real quartet evidence (found 2026-07-19, Q029's own raw LSP
+# transcript -- the reviewer's load-bearing control for that quartet's verdict -- was gitignored
+# and nearly committed without it). Un-ignore .log files specifically under a quartet's artifacts/.
+!experiments/Q*/artifacts/**/*.log
 *.vspscc
 *.vssscc
 .builds

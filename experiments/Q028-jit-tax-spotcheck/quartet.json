@@ -1,0 +1,14 @@
+{
+  "id": "Q028",
+  "status": "closed",
+  "verdict": "REVISE. The empirical core ships and reproduced independently from a clean rebuild (rm -rf bin obj; dotnet build -c Release; four fresh processes, FCS 43.9.101). The measurement region of Program.fs is byte-identical to Q023's spike (diff-confirmed; only header comments + an opt-in runWarmup and a third argv branch differ), and the no-warmup control cold (my 1018ms) reproduces Q023's own run-n10.txt (1037ms) within ~2%. The first ParseAndCheckProject in Q023/Q024's OWN harness does carry the same one-time JIT/FCS-init tax Q027 found in its separate toy: warmup dropped cold by 577ms at N=10 (1018->441) and 570ms at N=300 (2365->1795) -- essentially N-independent, a cleaner 'fixed absolute size' confirmation than the executor's own 570/667. editOne/repeat raw ms barely move (measured warm), so the tax is a cold-only effect; the cold-denominated ratios rise, non-uniformly (editOneRatio N=10 ~2.7x 0.051->0.138, matching 'nearly triples'; N=300 smaller). The corrected-reading direction (editOne is a LARGER fraction of tax-corrected cold, not smaller) is right and conservative (the disclosed ~185-190ms residual tax means true cold is even lower, true ratio even higher). runWarmup was read critically and genuinely isolates a process-global tax: its own checker/DocumentSource/project never touch checkerRef/optsRef/files, so it cannot prime the measured project's per-instance cache -- it warms exactly the process-global JIT/static-init/referenced-assembly-metadata state the tax is made of. REVISE not SHIP for one specific, citable reason: the hypothesis's framing that this touches 'editOneRatio values feeding Q024's regression' is wrong on the frozen docs -- Q024 fits editOneMedian in MILLISECONDS vs successors (ms/successor slope, results line 46/50) and publishes no editOneRatio column at all, so it is cold-independent and its SHIP verdict is untouched. The correction lands on Q023's ratio column and its '51% of cold' prose, NOT on Q024's cost model; the pre-registration overstated the reach into Q024 (lineage's overclaim shape, mild, in the safe direction). Not KILL: numbers reproduce, isolation sound, single-sample and partial-transfer limitations disclosed. Also do not cite the '+65% at N=300' magnitude (single-sample; I got +29%); cite the direction and the robust ~2.7x at N=10. See 03-review.md.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": null
+}

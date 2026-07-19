@@ -1,0 +1,16 @@
+Q028 - JIT/FCS-init tax spot-check on Q023's own scale-cost spike (BACKLOG.md item 23)
+Single-N-per-process run: N=300 editIdx=0 warmup=false
+
+=== N = 300, editIdx = 0 ===
+  cold:         2520ms  errs=0  callbackInvocations=301
+  repeat1:       327ms  errs=0  callbackInvocations=301
+  repeat2:       292ms  errs=0  callbackInvocations=301
+  repeat3:       315ms  errs=0  callbackInvocations=301
+  editOne1:     1181ms  errs=0  callbackInvocations=301
+  editOne2:     1281ms  errs=0  callbackInvocations=301
+  editOne3:     1185ms  errs=0  callbackInvocations=301
+  Observer.fs generated text unchanged across value-only edit (type shape untouched): true
+  cold=2520ms  repeatMedian=315ms (ratio=0.125)  editOneMedian=1185ms (ratio=0.470)
+
+=== Result (N=300, editIdx=0, warmup=false) ===
+cold=2520ms repeatMedian=315ms (ratio=0.1250) editOneMedian=1185ms (ratio=0.4702) observerStable=true

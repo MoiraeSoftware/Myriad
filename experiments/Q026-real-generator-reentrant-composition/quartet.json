@@ -1,0 +1,14 @@
+{
+  "id": "Q026",
+  "status": "closed",
+  "verdict": "SHIP, scoped. Both pre-registered rounds pass at Q010's evidentiary bar and reproduce 12/12 independently: the real, unmodified Myriad.Plugins.LensesGenerator, discovered by MyriadGeneratorAttribute reflection + Activator.CreateInstance + IMyriadGenerator cast (not a constructor call, verified line-by-line against src/Myriad/Program.fs) and formatted through the real Fantomas pipeline, is reentrant-queried inside one in-process FSharpChecker by a second, real, reflection-discovered IMyriadGenerator (ReentrantJsonGenerator), whose emitted references to PersonLenses.Name/Age resolve — by two independent symbol checks — to the real generated virtual file, zero errors, both non-bypass sentinels true. The genuinely new thing over Q010 (which used hand-typed stand-ins) is the real invocation mechanism, and review strengthened it: a three-field/mixed-type/reordered shape the executor never ran (variant A) generalizes cleanly. But scope tightly. What is proven is the composition/invocation mechanism, not that ReentrantJsonGenerator is a real serializer: a nested non-primitive field shape (variant B) shows the reentrant inspection correctly surfaces the real Address type and all symbols resolve, yet the generator's toy %s/%d sniffing then emits code that deterministically fails to typecheck (caught, tellingly, as a real typed diagnostic at composition time — a point for the in-process-hosting thesis). NEW finding, making 02-results.md's abstract precondition-5 caveat concrete: the process-global static Q026Bridge side-channel does not survive reuse for a second composition in one process — it races ~50% (KeyNotFound on Files.[fileA]) because FCS's DocumentSource gives no source-request ordering guarantee, while each single composition is 10-12/10-12 stable — so it breaks under exactly the persistent/multi-composition host condition item 18/22 needs, and a real integration must widen GeneratorContext to carry the checker handle rather than use a global mutable. The ALC caveat is now evidenced not speculated: under plain Assembly.LoadFrom exactly one Q026.Bridge loads and the generator's copy ReferenceEquals the harness's (true), which is why the side-channel works and why an isolated ALC would not guarantee it. Inherited unresolved from Q010: whether the reentrancy is genuinely in-flight or lands on warm state (no timing added). No FSharpChecker exists in the real CLI (verified) — this is the mechanism working hosted in a new standalone process, not Myriad's CLI doing it. See 03-review.md.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": "2026-07-18"
+}

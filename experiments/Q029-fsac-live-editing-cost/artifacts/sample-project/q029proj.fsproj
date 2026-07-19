@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="File0000.fs" />
+    <Compile Include="File0001.fs" />
+    <Compile Include="File0002.fs" />
+    <Compile Include="File0003.fs" />
+    <Compile Include="File0004.fs" />
+    <Compile Include="File0005.fs" />
+    <Compile Include="File0006.fs" />
+    <Compile Include="File0007.fs" />
+    <Compile Include="File0008.fs" />
+    <Compile Include="File0009.fs" />
+    <Compile Include="File0010.fs" />
+    <Compile Include="File0011.fs" />
+    <Compile Include="File0012.fs" />
+    <Compile Include="File0013.fs" />
+    <Compile Include="File0014.fs" />
+    <Compile Include="File0015.fs" />
+    <Compile Include="File0016.fs" />
+    <Compile Include="File0017.fs" />
+    <Compile Include="File0018.fs" />
+    <Compile Include="File0019.fs" />
+  </ItemGroup>
+</Project>

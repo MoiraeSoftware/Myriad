@@ -28,16 +28,16 @@ adversarial-review discipline (adapted from an ML-training experiment convention
 pre-registration, or a spike whose result doesn't survive its own adversarial review, doesn't get
 oversold. Read a quartet's `03-review.md` for the honest verdict, not just `02-results.md`.
 
-**Status as of 2026-07-17 — twenty-four quartets (Q001–Q024), twenty-one closed, three planned. Full
+**Status as of 2026-07-19 — twenty-nine quartets (Q001–Q029), twenty-seven closed, two planned. Full
 digest: `experiments/FINDINGS.md`** — read that first, it synthesizes both lines without requiring all
-twenty-one `03-review.md`s as context. One-line summary: **nothing has been merged into `src/` from the
+twenty-five `03-review.md`s as context. One-line summary: **nothing has been merged into `src/` from the
 architecture-exploration track, and Myriad's real IDE-invisibility gap is narrowed but still not
-solved** — twenty-four quartets have mapped the space and, for the first time, actually closed part of
+solved** — twenty-seven quartets have mapped the space and, for the first time, actually closed part of
 it: `Q022` hooked Myriad's own MSBuild codegen target into the design-time-build path and confirmed,
 against a literal `fsautocomplete` process over real LSP (not `FSharpChecker`-as-library, a standing
 gap this file had flagged since Q006), that it makes a generated member appear with zero `dotnet build`
 — but only at project load/reload time, not during live source editing (REVISE; see below). Myriad's-
-own-architecture line has six scoped SHIPs (Q002, Q003, Q010, Q015, Q021, Q024) and proof that
+own-architecture line has eight scoped SHIPs (Q002, Q003, Q010, Q015, Q021, Q024, Q025, Q026) and proof that
 overclaiming is easy even inside this repo's own discipline, in at least three distinct ways — not just
 claiming more than was shown (Q001 NULL, Q006 REVISE, Q014 REVISE — each looked stronger before
 adversarial review, and Q021's own results write-up had a secondary claim struck by review too) but also
@@ -70,6 +70,74 @@ its headline "two channels that cannot disagree" claim struck as tautological, w
 equivalent and the F# team's own stated answer is "use Myriad" — this repo's IDE-invisibility gap is not
 a solved problem Myriad merely hasn't adopted, it's a real architectural gap the language itself has
 left open.
+
+Two more quartets closed 2026-07-18. `Q025` reached the goal Q015's own review named unmet (real
+generation-time *computation*, not FSI handing back a `MethodInfo` pointer to already-host-compiled
+code): a hand-written interpreter walking a real, checker-produced `FSharpExpr` tree directly (six
+patterns, zero `FsiEvaluationSession`/`Reflection.Emit`) reflection-invokes already-compiled
+reference-assembly functions and drives differing generated output — SHIP, scoped (a mechanism proof
+over six patterns and two fixtures, not "generation-time computation solved"; review also caught a
+falsified "generic calls fail loudly" claim in the frozen docs). `Q026` then closed `BACKLOG.md` item
+22's own cheapest falsifier — the first quartet to reentrant-compose Myriad's *real, unmodified*
+`LensesGenerator` (discovered via `MyriadGeneratorAttribute` reflection, exactly mirroring
+`src/Myriad/Program.fs`'s own plugin-discovery code) with a second real `IMyriadGenerator`, rather
+than the hand-typed stand-ins every prior reentrant quartet (Q010, Q021, Q023, Q024) used — SHIP,
+scoped: the composition mechanism works and generalizes to an untested shape, but review found the
+composed generator's own naive emission logic breaks on a nested field type (mechanism still correct,
+generator toy) and, more consequentially, that the static side-channel standing in for a checker
+handle (since `IMyriadGenerator.Generate` has no parameter to carry one) races on reuse across more
+than one composition in the same process — a concrete, load-bearing finding for item 18/22's deeper
+live-host vision, not just this quartet's own plumbing.
+
+`Q027` then settled a question every quartet since `Q010` had inherited unresolved (Q010's own review
+Objection 1): is a reentrant `DocumentSource.Custom` call — made from inside a later file's callback
+while the outer `ParseAndCheckProject` is still unreturned — genuinely fresh work, or a cache hit
+landing on already-resolved state? **REVISE.** The core conclusion holds and is strengthened: a warm
+repeat costs 2-4ms while both reentrant calls cost tens to hundreds of ms, decisively ruling out the
+cache-hit explanation. But the executor's own headline number (first reentrant call costs 4.2x *more*
+than an isolated cold check) didn't survive review's own controls — ~91% of that gap turned out to be
+an unrelated ~400-500ms one-time JIT/FCS-init tax that only the *first* typecheck in any process pays,
+not something a "cold" baseline measured later in the same process ever pays; a direct, non-reentrant
+first check on the same checker actually costs *more* (~929ms) than the reentrant one, since the outer
+call had already begun building the shared snapshot. Warmed, both reentrant calls (17-48ms) land
+exactly on the design's own pre-registered REVISE outcome. New lineage-wide caution: any single "first
+check" timing this thread has ever reported carries the same tax — `BACKLOG.md` item 23 named the cheap
+spot-check (whether `Q023`/`Q024`'s own cost-model numbers were affected).
+
+**That spot-check ran the same week, as `Q028` — CLOSED, REVISE (2026-07-19).** Confirmed on an
+independent rebuild of `Q023`'s own actual spike code (not just Q027's separate toy): `Q023`'s own `cold`
+measurement does carry the same tax, a roughly fixed ~570-577ms one-time cost at both N=10 and N=300,
+inflating `Q023`'s published `cold`-denominated ratios materially (`editOneRatio` at N=10 rises ~2.7x once
+isolated by a warmup control). The correction is conservative — `editOne` is a *larger* fraction of a
+tax-corrected `cold` than published, not smaller — and disturbs neither quartet's qualitative verdict
+(real incremental caching under `TransparentCompiler`; cost linear in compilation-order successors).
+REVISE rather than SHIP for one reason the review insisted on: the pre-registered hypothesis wrongly
+claimed the correction reaches `Q024`'s own regression, which is fit in ms/successor, not on any ratio,
+and publishes no `editOneRatio` column — `Q024`'s SHIP verdict is untouched; the correction lands only on
+`Q023`'s own ratio/percentage prose. See `Q028-jit-tax-spotcheck/03-review.md`.
+
+**The single most-named unresolved next step across the last several sessions has now closed too, as
+`Q029` — SHIP, scoped (2026-07-19).** A real `fsautocomplete` 0.83.0 process, driven over hand-rolled
+LSP (reusing Q022's own harness) against a genuinely-weighted, real multi-file F# project with an actual
+compilation-order dependency chain, confirmed FSAC's own per-file incremental editing path reproduces
+Q023/Q024's position-dependent, linear-in-successors cost curve: editing the last file settles in
+~6-9ms, the first file in ~120ms (N=20) / ~243ms (N=40), ~6ms/successor, independently reproduced from a
+clean rebuild. The load-bearing control is stronger than a number match — the raw LSP transcript shows
+the `documentAnalyzed` cascade is strictly position-gated (exactly `successors+1` files re-analyzed, in
+compilation order, verified by hand at three edit positions), decisively ruling out a position-blind
+refresh or stale-cache reading, making this the best-controlled real-FSAC measurement in the lineage so
+far. Review trimmed one framing overshoot (the identical correction Q024's own review already made for
+the same claim): "N-invariant per-successor rate" overreaches on two N values — cite "no detectable
+drift across N=20 and N=40" instead. One finding cuts toward the pessimistic Myriad reading: the tested
+edit was value-only (exported signature untouched) yet FSAC still re-checked the whole tail — FSAC
+invalidates on file content, not on whether the exported signature changed. Scoped: small N (≤40), one
+linear dependency-chain topology that can't yet distinguish "FSAC invalidates by compilation order" from
+"FSAC invalidates by true dependents." See `Q029-fsac-live-editing-cost/03-review.md`. The review's own
+named next step, not yet spiked: a wide/shallow dependency shape (an early file only a few later files
+actually reference) to test whether FSAC invalidates by true dependents or the whole compilation-order
+suffix regardless — the one test that would tell whether Myriad's "attributed types sit early =
+expensive" caveat is as bad as this linear-chain result implies, or softened by dependency-precise
+invalidation.
 
 **Next steps, prioritized, with why:** `experiments/BACKLOG.md`. Split into spike-shaped hypotheses
 (need a quartet — both Myriad-specific and general-type-provider ideas, kept in separate sections)

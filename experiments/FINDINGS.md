@@ -1,12 +1,12 @@
 # Findings so far — what's real, what's not
 
-Cross-quartet digest as of 2026-07-18, twenty-five quartets in (Q001–Q025, twenty-three closed, two
+Cross-quartet digest as of 2026-07-19, twenty-nine quartets in (Q001–Q029, twenty-seven closed, two
 planned).
 Separately, on 2026-07-16, Q008 and Q009's missing artifacts were filled in by recovering
 and re-verifying their actual original source — see "A gap in this file's own credibility" below; this
 was a reconstruction of existing verdicts, not a new quartet, so it doesn't change the quartet count.
 This is not a replacement for reading a closed quartet's own `03-review.md` — each is written to stand
-alone — it's a synthesis for deciding what to do next without re-reading all fifteen. Two intertwined
+alone — it's a synthesis for deciding what to do next without re-reading all twenty-seven. Two intertwined
 but distinct threads share this quartet discipline; keep them separate, because they answer different
 questions and one is Myriad-specific while the other explicitly isn't.
 
@@ -209,41 +209,160 @@ that actually buy real capability or just be novelty?
   REVISE ceiling ("a production interpreter would need to reimplement a materially large fraction of F#'s
   semantics"). Cite Q025 as "direct `FSharpExpr` interpretation is viable for a small closed set of
   shapes with no FSI," never as "generators can now compute at generation time" (Q025, SHIP scoped).
+- `BACKLOG.md` item 22 named the first cross-mechanism integration milestone in this thread: every prior
+  reentrant-composition result (Q010, Q021, Q023, Q024) exercised the mechanism against hand-typed
+  stand-ins, never Myriad's own real generator code — Q010's own "B.fs" is a hand-typed transcription of
+  what `LensesGenerator` produces, and its "second generator" is a bare inlined function that never
+  implemented `IMyriadGenerator` at all. Q026 closed item 22's own cheapest falsifier (deliberately
+  narrower than its full live-watcher vision): the real, unmodified `LensesGenerator` — discovered via
+  `MyriadGeneratorAttribute` reflection and `Activator.CreateInstance`, exactly mirroring
+  `src/Myriad/Program.fs`'s own plugin-discovery code, then formatted through the real Fantomas pipeline —
+  is reentrant-queried inside one in-process `FSharpChecker` by a second, real, similarly-discovered
+  `IMyriadGenerator` (`ReentrantJsonGenerator`), verified at Q010's own bar: both callback sentinels fired
+  (no silent `DocumentSource.Custom` bypass), zero diagnostics, and two independent symbol-resolution
+  checks confirming the generated serializer's references resolve to the real generated file, not a
+  textual coincidence. Reproduced 12/12 by review, plus a three-field, mixed-type shape the executor never
+  tried, generalizing cleanly. **SHIP, scoped — with review adding two new, concrete findings rather than
+  merely reproducing.** First: a nested non-primitive field shape shows the reentrant *mechanism* still
+  correctly surfaces the real nested type by typed inspection, but the second generator's own toy
+  type-sniffing then emits code that fails to typecheck — caught as a real diagnostic at composition time,
+  evidence for the in-process-hosting thesis even as it scopes the SHIP down to "the composition mechanism
+  works," not "the composed generator is production-grade." Second, and more consequential for anything
+  built on this: the static side-channel standing in for the checker/options handle
+  `IMyriadGenerator.Generate` has no parameter to carry races roughly 50% of the time when reused for a
+  second composition in the same process (`FSharpChecker`'s `DocumentSource` callback gives no cross-file
+  ordering guarantee) — concretely demonstrating that a real persistent, multi-composition host (the
+  deeper ask behind items 18/22) needs `GeneratorContext` itself widened, not a global mutable standing in
+  for it. Review also converted the disclosed `Assembly.LoadFrom`-vs-`PluginLoader` ALC gap from
+  speculation to evidence (the side-channel's single shared assembly load is exactly why it works today,
+  and an isolated ALC would not guarantee it) and reconfirmed directly from `src/Myriad/Program.fs` that
+  Myriad's real CLI still has zero `FSharpChecker` usage — this closes item 22's cheapest falsifier
+  precisely, without showing Myriad's actual CLI can host any of this today (Q026, SHIP scoped).
+- Q010's own review (Objection 1) named a gap every quartet since inherited unresolved: is the
+  reentrant `DocumentSource.Custom` call, made from inside a later file's callback while the outer
+  `ParseAndCheckProject` is still on the stack, genuinely fresh work, or a cache hit landing on state
+  FCS's own file-order walk had already resolved before ever asking for the later file's source? Q021,
+  Q023, Q024, and Q026 all restated this caveat by name and added no instrumentation. Q027 finally
+  built it, deliberately isolated in a minimal hand-typed 3-file toy (not a real-generator harness, so
+  generator-invocation cost couldn't confound the FCS-internal signal). **REVISE — the load-bearing
+  conclusion is confirmed and strengthened, but the executor's own magnitude framing was overturned by
+  review.** Reproduced across 5 independent processes: a genuinely warm repeat costs 2-4ms, while both
+  reentrant calls cost tens to hundreds of milliseconds — decisively ruling out "reentrant lands on
+  already-cached/idle state," exactly the benign explanation Q010's review flagged as equally
+  consistent with that quartet's own aggregate timing. But the executor's own headline number — the
+  *first* reentrant call costs 4.2x *more* than an isolated cold check, read as possibly "reentrancy
+  overhead on top of first-touch cost" — did not survive review's own added controls: ~91% of that gap
+  is a pure position-in-process artifact (the reentrant call happens to be the very first typecheck
+  performed in the process, paying a one-time ~400-500ms JIT/FCS-static-init/assembly-metadata-read
+  tax that a cold baseline measured 5th, in an already-warm process, never pays), with a further ~20%
+  of the residual gap traced to an uncontrolled `keepAssemblyContents` mismatch between the checkers
+  being compared. Most tellingly, a *direct*, non-reentrant first check on the identical checker costs
+  *more* than the reentrant one (~929ms vs ~515ms) — proving reentrancy makes the first touch *cheaper*,
+  not more expensive, because the outer call has already begun building the shared project snapshot by
+  the time the callback fires. Review also closed the executor's own disclosed-as-inference,
+  unresolved question — why the first reentrant call (A) cost more than cold while the second (B) cost
+  less — by reversing the call order and adding a third call: it is a call-order amortization effect,
+  not a property of which file is checked, confirmed directly rather than left as a guess. Warmed, both
+  reentrant calls (17-48ms) land squarely on the design's own pre-registered REVISE outcome — "reentrant
+  sits meaningfully between cold and warm, not close to either" — the correct citable claim, never the
+  raw first-in-process numbers the results write-up led with. A new, lineage-wide caution came out of
+  this as a side effect: any single "first check" timing this whole thread has ever reported carries
+  this same one-time tax and should be re-read with that in mind — `BACKLOG.md` item 23 now names the
+  cheap follow-up (spot-checking whether Q023/Q024's own cost-model numbers were affected) (Q027,
+  REVISE).
+- `BACKLOG.md` item 23's own follow-up — does the tax Q027's review found also inflate Q023/Q024's own
+  `cold` numbers, since both quartets measured `cold` as the first `ParseAndCheckProject` call in a
+  fresh process — was run as Q028, reusing Q023's own checked-in spike code unmodified plus an opt-in
+  throwaway warmup step. **REVISE.** Independently reproduced on a clean rebuild: yes, the tax is real
+  in Q023's own actual harness (not just Q027's separate toy), roughly fixed in absolute size across
+  N=10 and N=300 (~570-577ms both, not proportional to N), and it inflates `cold` enough to shift
+  Q023's own published `cold`-denominated ratios materially (`editOneRatio` at N=10 rises ~2.7x once
+  isolated by warmup, reproduced within a few percent independently). The corrected direction is
+  conservative: `editOne` is a *larger* fraction of a tax-corrected `cold` than Q023 published, not
+  smaller, so neither quartet's qualitative verdict is disturbed. REVISE rather than SHIP for one
+  specific reason: the pre-registered hypothesis wrongly claimed the correction reaches "`editOneRatio`
+  values feeding Q024's regression" — Q024's own fitted slope is ms/successor, not ratio-based, and
+  Q024 publishes no ratio column at all, so it's cold-independent and untouched; the correction lands
+  only on Q023's own ratio/percentage prose (Q028, REVISE).
+- `BACKLOG.md` item 18's own single highest-priority named follow-up, restated by every quartet in this
+  sub-line since Q021 — does FSAC's real, LSP-driven, per-file incremental editing path (a literal
+  `fsautocomplete` process, not a direct `ParseAndCheckProject` call) reproduce Q023/Q024's
+  position-dependent, linear-in-successors cost curve — was finally run as Q029, reusing Q022's own
+  hand-rolled LSP harness and Q023's genuinely-weighted file generator. **SHIP, scoped.** Independently
+  reproduced from a clean FSAC 0.83.0 restore and rerun: a live FSAC session's per-edit re-analysis cost
+  is a monotonic, ~linear function of compilation-order successors after the edited file, matching
+  Q023/Q024's cost model through FSAC's real path (last file ~6-9ms, first file ~120ms at N=20 / ~243ms
+  at N=40, ~6ms/successor). The load-bearing control is stronger than a simple number match: the raw LSP
+  transcript shows the `documentAnalyzed` cascade is strictly position-gated — exactly `successors+1`
+  files re-analyzed, in compilation order, verified by hand at three edit positions — decisively ruling
+  out a position-blind refresh or stale-cache false reading, the one failure mode that would have made
+  this an artifact. This is the best-controlled real-FSAC measurement in the lineage, closing item 18's
+  own top-named follow-up on the favorable side: the cost model transfers to a real editor session, not
+  just a direct-API harness. Review trimmed one framing overshoot, the identical correction Q024's own
+  review made for the same claim: "N-invariant per-successor rate" overreaches on two N values — the
+  supported claim is "no detectable drift across N=20 and N=40." One finding cuts toward the pessimistic
+  Myriad reading: the tested edit was value-only (exported signature byte-identical) yet FSAC still
+  re-checked the whole tail — FSAC invalidates on file content, not on whether the exported signature
+  changed. Scoped hard: small N (≤40), one linear dependency-chain topology that conflates
+  compilation-order-successors with true dependents (can't yet tell whether FSAC invalidates by order or
+  by precise dependency — inherited from Q023/Q024), single session per size, curve shape/scaling shown,
+  not absolute large-project keystroke latency (Q029, SHIP scoped).
 
-**Honest net position:** seven SHIPs (Q002 fully, Q003 narrowly, Q010 scoped, Q015 scoped, Q021 scoped,
-Q024 scoped, Q025 scoped) prove the mechanism is sometimes genuinely valuable — with Q015, Q021, Q024,
-and now Q025 all earning a SHIP only once heavily scoped, a pattern worth noticing on its own: this
-thread's positive results keep shrinking on inspection, not just its negative ones. Five REVISE/NULL
-results (Q001, Q006, Q014, Q022, Q023) prove
-overclaiming is easy — Q014 in a distinct way: a spike can reproduce cleanly and still not be the thing
-its own pre-registration named, because the mechanism that made it into the harness quietly substituted
-for the mechanism in the hypothesis's title, and neither the design nor the results write-up caught the
-swap before adversarial review did; Q015 then showed that even the corrected follow-up, built specifically
-to close that exact gap, still smuggled in a second, subtler substitution (an inert FSI call standing in
-for real generation-time computation) that only surfaced under a review briefed to look for it. Q022 then
-showed the overclaiming risk cuts the other way too: its results write-up's own sharpest claim was a
+**Honest net position:** nine SHIPs (Q002 fully, Q003 narrowly, Q010 scoped, Q015 scoped, Q021 scoped,
+Q024 scoped, Q025 scoped, Q026 scoped, Q029 scoped) prove the mechanism is sometimes genuinely valuable —
+with Q015, Q021, Q024, Q025, Q026, and now Q029 all earning a SHIP only once heavily scoped, a pattern
+worth noticing on its own: this thread's positive results keep shrinking on inspection, not just its
+negative ones. Seven REVISE/NULL results (Q001, Q006, Q014, Q022, Q023, Q027, Q028) prove overclaiming is
+easy. Q001 is the odd one out in that list: its NULL ("typed beats syntax" changed nothing for a pure
+structural-echo generator) is the standing check *against* overclaiming everywhere else in this file, not
+an instance of it. The overclaiming itself shows up in six distinct shapes across five of the other
+REVISE/NULLs plus one SHIP (Q015, which overclaimed on the way to earning its verdict) — named here by
+quartet rather than by a
+loose running count, since an earlier draft of this paragraph numbered them inconsistently against a
+different six-item list (the REVISE/NULL tally above, which is not the same six quartets), a confusion
+exactly of the kind this file's own "gap in this file's own credibility" section exists to prevent:
+**Q006** — a structural wall (type providers can never see a type from the compilation currently in
+progress) initially read as an engineering gap a cleverer static parameter might route around, not a hard
+boundary. **Q014** — mechanism substitution: the spike quietly substituted host-compile-time
+`[<ReflectedDefinition>]` capture for the generation-time `FsiEvaluationSession` evaluation its own title
+and SHIP threshold named, uncaught by its own design or results write-up before adversarial review. **Q015**
+— a second, subtler substitution inside the very follow-up built to close Q014's gap: FSI genuinely ran
+this time, but only to compile a plugin and hand back a `MethodInfo` via a one-line quotation destructure
+that never executes anything, so the real partial-evaluation logic stayed 100% host-compiled code
+identical to Q014's. **Q022** — negative-claim overreach: a results write-up's own sharpest claim was a
 *negative* one ("no in-session reload signal exists, short of a process restart"), stated more absolutely
 than the evidence supported — the executor had ruled out several specific signals but generalized to "no
-signal works," and review, by trying one the executor hadn't (an actual `.fsproj` mtime change, not just
-a notification claiming one happened), found a working in-session reload path and corrected the claim
-back down to what the design's own pre-registration had predicted. Q023 then added a fourth, more subtle
-shape to this same list: not a mechanism substitution and not an overreaching negative, but a
-**measurement of a single, unrepresentative worst-case condition (the first file's edit position)
-reported as the general case** — real data, real numbers, correct code, wrong scope, caught only when
-review swept the one variable (edit position) the design held fixed. Combined
-with Q006's hard wall for type providers on Myriad's real usage pattern, this thread's overclaiming risk
-is now demonstrated across five structurally different mechanisms, spanning mechanism substitution,
-negative-claim overreach, and narrow-condition-as-general-conclusion. **Nothing has been built that would
-replace Myriad's current pipeline end to end**, and nothing in `experiments/` has been merged into
-`src/`. Q010's own review holds back from the hypothesis's strongest framing: unresolved whether the
-reentrancy tested was genuinely mid-flight or landing on an already-idle checker, and it settles only the
-acyclic case (a later generator depending on an earlier one), not mutual cross-generator dependency. Q004
-(cross-assembly typed access) and Q005 (self-verifying generators — typecheck-before-emit) remain the
-next pre-registered steps from the original queue and neither has been run. Q015's own review named the
-most direct unrun next step in this sub-line: make FSI do work that is actually computation (run the
-general implementation against the config and return a value/quotation the host could not have produced
-structurally), not a quotation-destructuring one-liner — only then would "FSI evaluates real computation
-at generation time" be demonstrated rather than assumed.
+signal works," and review, by trying one the executor hadn't (an actual `.fsproj` mtime change, not just a
+notification claiming one happened), found a working in-session reload path and corrected the claim back
+down to what the design's own pre-registration had predicted. **Q023** — a single, unrepresentative
+worst-case condition (always editing the compilation-order *first* file) reported as the general case —
+real data, real numbers, correct code, wrong scope — caught only when review swept the one variable (edit
+position) the design held fixed. **Q027** — a real, reproducible, correctly-measured number whose
+comparison was confounded by two uncontrolled variables (position-in-process, and an uncontrolled
+`keepAssemblyContents` mismatch between the checkers being compared), making a directionally surprising,
+reportable-sounding magnitude claim ("reentrant costs *more* than cold") look like a finding when it was
+an artifact — caught only when review built a warmed-process control and a direct-first-check control the
+executor's own design never attempted. Q028 and Q029 both recurred an already-named shape rather than
+adding a new one, worth noting because it's evidence the taxonomy above is stabilizing, not still growing
+one quartet at a time: Q028's own review flagged its hypothesis's claim that the correction reached Q024's
+regression as "the lineage's recurring overclaim shape" (a consequence asserted broader than what was
+shown, the same genus as Q022's negative-claim overreach, though milder and in the safe direction); Q029's
+"N-invariant per-successor rate" was the identical overreach Q024's own review had already scoped down for
+the same underlying claim, recurring a third time. **Nothing has been built that would replace Myriad's current
+pipeline end to end**, and nothing in `experiments/` has been merged into `src/`. Q010's own review named
+a gap every quartet since inherited unresolved — whether the reentrancy tested was genuinely mid-flight or
+landing on an already-idle checker — and **Q027 has since settled the load-bearing half of it**: five
+independently reproduced process runs decisively rule out "reentrant lands on already-cached/idle state,"
+the specific benign explanation Q010's review flagged as equally consistent with its own aggregate timing.
+What Q027 does not settle, by its own explicit design (no thread instrumentation added): literal
+concurrency of FCS's internal file-order walk relative to the reentrant call. Q010's review also settles
+only the acyclic case (a later generator depending on an earlier one), not mutual cross-generator
+dependency. Q004 (cross-assembly typed access) and Q005 (self-verifying generators — typecheck-before-emit)
+remain the next pre-registered steps from the original queue and neither has been run. Q015's own review
+named "make FSI do work that is actually computation" as the most direct unrun next step in this sub-line —
+**Q025 has since closed that goal, by a different route (direct `FSharpExpr` interpretation, no FSI hosted
+at all)**; the most direct unrun next step now is Q025's own named gaps (`Lambda`/`Application`, DU pattern
+matching, recursion, generic method calls), not Q015's superseded one.
 
 ## Thread 2: general F# type-provider headroom, independent of Myriad
 
@@ -523,6 +642,22 @@ optimum moves, fighting the point of a stable interface).
 - **Every timing number anywhere in this lineage is a single sample**, not a distribution. The
   margins involved (order-of-magnitude gaps between measured numbers and the pre-registered REVISE
   thresholds) mean this hasn't mattered for any verdict yet, but no quartet has run repeated trials.
+- **The first `FSharpChecker` typecheck performed in any fresh process carries a large (~400-500ms in
+  Q027's own toy), one-time JIT-warmup/FCS-static-init/referenced-assembly-metadata-read tax that has
+  nothing to do with whatever is actually being measured, discovered by `Q027`'s review** while
+  settling an unrelated question. A "cold" baseline measured later in the same, already-warm process
+  never pays this tax, so any single-process comparison that times its "first" and "cold"/"baseline"
+  conditions at different positions in the same process's call sequence risks reading this tax as
+  signal. `Q027` itself fell into exactly this trap before its own review caught it. **`BACKLOG.md`
+  item 23's follow-up has since run, as `Q028` (CLOSED, REVISE, 2026-07-19): yes, `Q023`'s own `cold`
+  measurement carries this same tax**, confirmed on an independent rebuild of `Q023`'s actual spike code
+  — a roughly fixed ~570-577ms one-time cost at N=10 and N=300 alike, inflating `Q023`'s own published
+  `cold`-denominated ratios (`editOneRatio` at N=10 rises ~2.7x once the tax is isolated by a warmup
+  control). The correction is conservative (`editOne` is a *larger* fraction of a tax-corrected `cold`
+  than published, not smaller) and doesn't disturb either quartet's qualitative verdict — but it does
+  **not** touch `Q024`'s own fitted regression, which the review found is ms/successor, not ratio-based,
+  and publishes no `editOneRatio` column at all; `Q024`'s SHIP verdict is untouched, and this correction
+  lands only on `Q023`'s ratio/percentage prose. See `Q028-jit-tax-spotcheck/03-review.md`.
 - **Every "works live in the IDE" claim was tested through `FSharpChecker` as a library, never a
   literal Ionide/FSAC/VS session, until Q022 — which partially, not fully, closes this gap.** This was
   judged disqualifying for Q006's specific claim (which was fundamentally about IDE-visible behavior)
@@ -535,7 +670,13 @@ optimum moves, fighting the point of a stable interface).
   of the claim was tested this way — the live-source-edit half failed, and Visual Studio/Rider (different
   project systems) remain untouched. Treat future "works live in the IDE" claims the same way this one
   was judged: real, literal-process evidence for the specific slice actually driven, not a license to
-  claim the whole gap is closed.
+  claim the whole gap is closed. **Q029 extended real-FSAC-process testing to a second, distinct axis
+  (edit *cost*, not code *visibility*)** — a live `fsautocomplete` session's per-edit re-analysis timing,
+  not just whether a member appears — and found the same discipline pays off again: its own reviewer
+  went past the headline numbers to the raw LSP transcript and found a stronger mechanism control (the
+  `documentAnalyzed` cascade's position-gating) than the executor's write-up had leaned on. Still
+  `fsautocomplete` directly, not literal VS Code + Ionide, and still one topology/small-N — the same
+  scope discipline applies.
 - **`TransparentCompiler` — the mechanism underpinning the entire in-process-hosting foundation — is
   still labeled experimental by both FCS and FSAC** as of the pinned version (`43.9.101`). Every
   result in Thread 1 inherits this caveat; Q005, if it ships, would be the first quartet to give a
@@ -737,18 +878,23 @@ cleanly, deterministic across repeats. See "A gap in this file's own credibility
 `Q008-provenance-closed-loop/RECONSTRUCTION.md` / `Q009-field-level-provenance/RECONSTRUCTION.md` for
 the full account. Both SHIP verdicts stand, no longer disputed.
 
-**Next priorities, now that the reconstruction is closed:**
+**Next priorities, now that the reconstruction is closed (written 2026-07-16; both items 3's named
+follow-ups have since closed — kept for the reasoning trail, not as current status, see "Starting the
+next session (updated)" at the end of this file for what's actually next):**
 1. **Retest Q011's own two real providers via the real-project-options PC route** (they were only ever
    checked via `checker.Compile`, never via the route that now resolves Q008/Q09's providers) — cheap,
    would settle whether Q011's specific regression is provider-shape-specific or was simply hitting the
-   same script-vs-real-project axis all along.
+   same script-vs-real-project axis all along. Still not run.
 2. **Retest Q012's toy probes via the real-project-options route** — would fully cross-check
    "generative vs erased" (Q012's axis) against "script vs real-project-options" (this reconstruction's
    axis) on the same minimal shapes, confirming both are real and independent rather than one
-   subsuming the other.
-3. Unchanged and still open: **Q010's own follow-up 1** (instrument the reentrant call to determine
-   whether it was landing on genuinely in-flight state or an already-idle checker). **Q007** remains the
-   best-supported unrun hypothesis from the original queue if none of the above is preferred.
+   subsuming the other. Still not run.
+3. **CLOSED since this was written.** "Q010's own follow-up 1" (instrument the reentrant call to
+   determine whether it was landing on genuinely in-flight state or an already-idle checker) was run as
+   `Q027-reentrant-call-timing` (CLOSED, REVISE, 2026-07-18) — the load-bearing half (ruling out
+   already-cached/idle state) is settled; literal thread concurrency remains untested by design. "Q007"
+   (best-supported unrun hypothesis at the time this was written) was itself run and closed the same
+   session this note was written in (CLOSED, REVISE) — see the Thread 2 section above.
 
 Two smaller, cheap items still worth doing regardless of what's picked next: fix the duplicate-diagnostic
 defect that has recurred unfixed across Q008, Q09, and Q011 (three occurrences); and locate the actual
@@ -937,3 +1083,44 @@ named by its review: test whether Ionide's real project-file watcher (not a hand
 notification) actually fires reliably on an ordinary `.fsproj` save in a literal VS Code + Ionide
 session; (4) Q021's own two smaller named follow-ups: test whether any `ParseAndCheckFileInProject`
 calling pattern honors `DocumentSource.Custom` at all, and test concurrent/interleaved access.
+
+## Starting the next session (updated again, 2026-07-19 — the above predates Q025, Q026, and Q027)
+
+Three more quartets closed since the priority list directly above was written, and it was never
+revised to account for them — flagged here rather than left silently stale. `Q025` (SHIP, scoped)
+closed a different open item, Q015's "make FSI do real computation" gap, by a route (`FSharpExpr`
+interpretation) orthogonal to the FSAC/scale-cost thread the list above is about. `Q026` (SHIP, scoped)
+closed `BACKLOG.md` item 22's cheapest falsifier and surfaced a new, concrete engineering finding: a
+real persistent multi-composition host needs `GeneratorContext` itself widened to carry a checker/
+options handle, since the process-global static side-channel standing in for one races roughly 50% of
+the time on reuse. `Q027` (REVISE) settled Q010's own inherited "mid-flight vs idle-checker" question's
+load-bearing half (genuinely fresh work, not a cache hit) and added a lineage-wide caution: any
+single "first check" timing this thread has ever reported carries a ~400-500ms one-time JIT/FCS-init
+tax, which the list above's own Q023/Q024 numbers were measured before this was known to matter.
+
+Corrected priority order, folding in `BACKLOG.md` item 23 (named the same day as Q027):
+(1) **DONE, 2026-07-19: item 23 ran as `Q028` (CLOSED, REVISE)** — confirmed `Q023`'s own `cold`
+numbers do carry the tax, corrected the ratio framing, and confirmed `Q024`'s ms-based regression is
+untouched; see `Q028-jit-tax-spotcheck/03-review.md` and the Thread 1 section above. This was a gate
+on item (2) below (a live FSAC comparison needs a cost-model baseline already known to be
+uncontaminated) and it's now cleared. (2) **DONE, 2026-07-19: the list's own item (1) also ran, as
+`Q029` (CLOSED, SHIP, scoped)** — a real `fsautocomplete` 0.83.0 session, driven over hand-rolled LSP,
+confirmed FSAC's own per-file incremental editing path reproduces the same position-dependent,
+linear-in-successors cost curve Q023/Q024 found via direct `ParseAndCheckProject` calls, with a
+stronger control than either prior quartet had: the raw LSP transcript shows the `documentAnalyzed`
+cascade is strictly position-gated (exactly `successors+1` files re-analyzed, in order), ruling out a
+position-blind-refresh artifact directly rather than by inference. This closes item 18's own
+single-most-cited follow-up, on the favorable side — see `Q029-fsac-live-editing-cost/03-review.md`.
+Scope that travels forward: small N (≤40), one linear dependency-chain topology (can't yet distinguish
+"FSAC invalidates by compilation order" from "FSAC invalidates by true dependents," since this topology
+makes them identical), single session per size. **The review's own named next step is now the top open
+item**: a wide/shallow dependency shape (an early file only a few later files actually reference, with
+unrelated files between) to test whether FSAC invalidates by true dependents or the whole
+compilation-order suffix regardless — the one test that would tell whether Myriad's "attributed types
+sit early = expensive" caveat is as bad as the linear-chain result implies, or softened by
+dependency-precise invalidation. (3) and (4) above, unchanged (dependency-chained variant partially
+subsumed by Q029's own topology, but the wide/shallow variant above is the sharper, not-yet-run form of
+it). (5) `Q026`'s own named follow-up — widen `GeneratorContext` to carry a real checker/options
+handle — is a prerequisite engineering change, not a quartet, before any future persistent
+multi-composition host can be attempted safely; do this before, not after, extending Q026's composition
+mechanism to a third generator or a live-watcher wiring (item 19).

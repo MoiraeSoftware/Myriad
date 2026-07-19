@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="ReentrantJsonGenerator.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FSharp.Compiler.Service" Version="43.9.101" />
+    <PackageReference Include="Fantomas.FCS" Version="7.0.5" />
+    <Reference Include="Myriad.Core">
+      <HintPath>..\..\..\..\src\Myriad.Core\bin\Release\net9.0\Myriad.Core.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <ProjectReference Include="..\Q026.Bridge\Q026.Bridge.fsproj" />
+  </ItemGroup>
+</Project>

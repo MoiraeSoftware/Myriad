@@ -1,0 +1,31 @@
+[13:50:53.746] generated project: C:\Users\Dave\AppData\Local\Temp\claude\C--Users-Dave-Documents-GitHub-Myriad\527d5ede-65ae-4f00-b12e-22b9bc3ce8c2\scratchpad\q029c  (N=40 files)
+[13:50:53.750] running dotnet restore ...
+[13:50:54.272] dotnet restore exit=0
+[13:50:55.045] initialize OK
+[13:50:57.060] fsharp/workspaceLoad -> file:///C:/Users/Dave/AppData/Local/Temp/claude/C--Users-Dave-Documents-GitHub-Myriad/527d5ede-65ae-4f00-b12e-22b9bc3ce8c2/scratchpad/q029c/q029proj.fsproj
+[13:50:58.255] workspaceLoad OK
+[13:51:09.965] all files opened, initial analysis settled
+[13:51:09.965] === warm-up edit (DISCARDED) ===
+[13:51:11.933] warm-up: p=20 settleMs=501 hoverMs=114 resolved=true (discarded)
+[13:51:13.516] p= 0 successors=39 rep=1 settleMs=  242 hoverMs=   16 resolved=true
+[13:51:15.126] p= 0 successors=39 rep=2 settleMs=  249 hoverMs=   12 resolved=true
+[13:51:16.748] p= 0 successors=39 rep=3 settleMs=  243 hoverMs=    9 resolved=true
+[13:51:18.262] p=10 successors=29 rep=1 settleMs=  176 hoverMs=   15 resolved=true
+[13:51:19.764] p=10 successors=29 rep=2 settleMs=  158 hoverMs=   15 resolved=true
+[13:51:21.305] p=10 successors=29 rep=3 settleMs=  172 hoverMs=    6 resolved=true
+[13:51:22.767] p=20 successors=19 rep=1 settleMs=  126 hoverMs=    6 resolved=true
+[13:51:24.281] p=20 successors=19 rep=2 settleMs=  132 hoverMs=   16 resolved=true
+[13:51:25.729] p=20 successors=19 rep=3 settleMs=  114 hoverMs=   14 resolved=true
+[13:51:27.147] p=30 successors= 9 rep=1 settleMs=   63 hoverMs=   15 resolved=true
+[13:51:28.548] p=30 successors= 9 rep=2 settleMs=   63 hoverMs=   16 resolved=true
+[13:51:29.979] p=30 successors= 9 rep=3 settleMs=   59 hoverMs=   14 resolved=true
+[13:51:31.339] p=39 successors= 0 rep=1 settleMs=    6 hoverMs=   15 resolved=true
+[13:51:32.709] p=39 successors= 0 rep=2 settleMs=    6 hoverMs=   15 resolved=true
+[13:51:34.064] p=39 successors= 0 rep=3 settleMs=    7 hoverMs=   15 resolved=true
+[13:51:34.066] wrote C:\Users\Dave\Documents\GitHub\Myriad\experiments\Q029-fsac-live-editing-cost\artifacts\q029-results-N40.csv
+[13:51:34.066] === SUMMARY (median settleMs per position) ===
+[13:51:34.072] position  0  successors=39  medianSettleMs=  243  (raw: 242,243,249)
+[13:51:34.072] position 10  successors=29  medianSettleMs=  172  (raw: 158,172,176)
+[13:51:34.072] position 20  successors=19  medianSettleMs=  126  (raw: 114,126,132)
+[13:51:34.072] position 30  successors= 9  medianSettleMs=   63  (raw: 59,63,63)
+[13:51:34.072] position 39  successors= 0  medianSettleMs=    6  (raw: 6,6,7)
