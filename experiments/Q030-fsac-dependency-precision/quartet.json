@@ -1,0 +1,14 @@
+{
+  "id": "Q030",
+  "status": "closed",
+  "verdict": "SHIP, scoped. H_conservative confirmed and independently reproduced (FSAC 0.83.0+96fabed8 re-restored, full harness rerun into a fresh dir: Hub edit 28/28/28, dependent@25 5/5/5, unrelated@27 3/3/3 on the first try; topology re-verified from generated source; raw transcript hand-recounted). In a live fsautocomplete session a value-only edit to an early file re-analyzes the ENTIRE compilation-order suffix after it -- every order-successor whether or not it references the edited file -- and nothing before it. NOT dependency-precise. Built the lineage's first wide/shallow topology (N=30, Hub=File0002, only 3 scattered dependents File0007/0016/0025 confirmed via grep of the generated source, 24 interleaved unrelated files) so the two regimes predicted sets differing by 24 files. The decisive controls: editing File0025 (referenced by NOTHING) still cascades to {25..29}, proving the rule is purely positional and reference-blind; the two pre-Hub files File0000/File0001 emit documentAnalyzed exactly once ever (initial didOpen), never in any of the 10 edit cascades -- a genuine suffix, not a blanket refresh. The harness sends didChange+didSave on the edited file ONLY (no hover/re-request on successors), so the 27 suffix events are FCS-driven not solicited -- the measurement-vs-mechanism confound that struck Q021 does not apply. Resolves the standing Q023/Q024/Q029 order-vs-dependency ambiguity (each review's top follow-up) on the PESSIMISTIC side for Myriad: an early attributed type pays full order-suffix cost regardless of how few files reference it. Review added the mechanism the executor omitted, which STRENGTHENS the finding: F# checks every file against the accumulated signature environment of all predecessors, so the order-suffix IS the genuine dependency set and H_precise is near-ill-defined for F# -- this is structural, not a fixable FSAC quirk. One honest inheritance (not a defect): documentAnalyzed=real-re-typecheck rests on Q029's established 1:1 property (corroborated by ~6-13ms/successor cost) rather than per-file freshness hovers re-run here. No framing overshoot to trim -- a rare clean pass. Overturns nothing: Q029's cost curve stands, its x-axis is confirmed to be order-successors. Scope: value-only edit, one FCS version, N=30, one hub position (three edit positions de-risk generalization), single machine. Detail: 03-review.md.",
+  "required_files": [
+    "00-hypothesis.md",
+    "01-design.md",
+    "02-results.md",
+    "03-review.md"
+  ],
+  "completion_check": "strict",
+  "allow_partial_state": false,
+  "last_validated": null
+}

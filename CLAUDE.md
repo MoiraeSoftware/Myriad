@@ -28,7 +28,7 @@ adversarial-review discipline (adapted from an ML-training experiment convention
 pre-registration, or a spike whose result doesn't survive its own adversarial review, doesn't get
 oversold. Read a quartet's `03-review.md` for the honest verdict, not just `02-results.md`.
 
-**Status as of 2026-07-19 — twenty-nine quartets (Q001–Q029), twenty-seven closed, two planned. Full
+**Status as of 2026-07-19 — thirty quartets (Q001–Q030), twenty-eight closed, two planned. Full
 digest: `experiments/FINDINGS.md`** — read that first, it synthesizes both lines without requiring all
 twenty-five `03-review.md`s as context. One-line summary: **nothing has been merged into `src/` from the
 architecture-exploration track, and Myriad's real IDE-invisibility gap is narrowed but still not
@@ -138,6 +138,27 @@ actually reference) to test whether FSAC invalidates by true dependents or the w
 suffix regardless — the one test that would tell whether Myriad's "attributed types sit early =
 expensive" caveat is as bad as this linear-chain result implies, or softened by dependency-precise
 invalidation.
+
+**That named next step ran too, the same day, as `Q030` — CLOSED, SHIP (2026-07-19), a rare clean
+review pass with no framing overshoot found.** A wide/shallow topology (N=30, an early "Hub" file
+referenced by only 3 of the 27 later files, scattered among 24 unrelated ones) showed a value-only edit
+to Hub re-analyzes **all 27 order-successors, not just the 3 true dependents** — the entire
+compilation-order suffix — reproduced independently 3/3 reps and confirmed by hand against the raw LSP
+transcript, with two controls (editing a file referenced by nothing still cascades to its full
+order-suffix; pre-Hub files never re-fire across 10 edit cascades) ruling out both a
+harness-solicited-request explanation and a blanket refresh. **This settles the order-vs-dependency
+question `Q023`/`Q024`/`Q029` each named as their own top follow-up, on the unfavorable side for
+Myriad**: an early attributed type pays the full order-suffix re-check cost regardless of how few files
+truly reference it. The review went further than the executor and found this is not a fixable FSAC
+limitation but F#'s own ordered-file compilation semantics — every file is checked against the
+accumulated signature environment of all preceding files, so the compilation-order suffix genuinely *is*
+the dependency set in F#'s model — making the pessimistic reading structural, not something a later FCS
+release might relax. Overturns nothing: `Q029`'s cost curve stands, its x-axis is now confirmed to be
+order-successors. See `Q030-fsac-dependency-precision/03-review.md`. With this and `Q029` both closed,
+the FSAC-cost sub-line (`Q023`→`Q024`→`Q029`→`Q030`) is settled as far as this repo's tooling can
+currently test it; the most direct remaining step if this thread continues toward an actual
+persistent-host attempt is `Q026`'s own named engineering prerequisite — widening `GeneratorContext` to
+carry a real checker/options handle — not another cost-model spike.
 
 **Next steps, prioritized, with why:** `experiments/BACKLOG.md`. Split into spike-shaped hypotheses
 (need a quartet — both Myriad-specific and general-type-provider ideas, kept in separate sections)

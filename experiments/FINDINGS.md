@@ -1,12 +1,12 @@
 # Findings so far — what's real, what's not
 
-Cross-quartet digest as of 2026-07-19, twenty-nine quartets in (Q001–Q029, twenty-seven closed, two
+Cross-quartet digest as of 2026-07-19, thirty quartets in (Q001–Q030, twenty-eight closed, two
 planned).
 Separately, on 2026-07-16, Q008 and Q009's missing artifacts were filled in by recovering
 and re-verifying their actual original source — see "A gap in this file's own credibility" below; this
 was a reconstruction of existing verdicts, not a new quartet, so it doesn't change the quartet count.
 This is not a replacement for reading a closed quartet's own `03-review.md` — each is written to stand
-alone — it's a synthesis for deciding what to do next without re-reading all twenty-seven. Two intertwined
+alone — it's a synthesis for deciding what to do next without re-reading all twenty-eight. Two intertwined
 but distinct threads share this quartet discipline; keep them separate, because they answer different
 questions and one is Myriad-specific while the other explicitly isn't.
 
@@ -307,12 +307,43 @@ that actually buy real capability or just be novelty?
   compilation-order-successors with true dependents (can't yet tell whether FSAC invalidates by order or
   by precise dependency — inherited from Q023/Q024), single session per size, curve shape/scaling shown,
   not absolute large-project keystroke latency (Q029, SHIP scoped).
+- Q023, Q024, and Q029 all disclosed the same blind spot as their own top follow-up: every one of them
+  used a linear dependency chain (file N always references file N-1), making "compilation-order
+  successors" and "true dependents" identical by construction, so none could tell whether FSAC/FCS
+  invalidates by real dependency or by raw compilation-order position. Q030 built the lineage's first
+  wide/shallow topology to separate the two — N=30, an early "Hub" file referenced by only 3 of the 27
+  later files, scattered among 24 unrelated ones — and answered it. **SHIP, scoped, a rare clean pass:
+  the reviewer found no framing overshoot to trim.** A value-only edit to Hub re-analyzed **all 27
+  order-successors**, not just the 3 true dependents — the entire compilation-order suffix — reproduced
+  3/3 reps and confirmed independently by hand-recounting the raw LSP transcript against a topology
+  verified directly from generated source, not the write-up. Two controls close off the obvious
+  alternative explanations: editing a file referenced by *nothing* still cascades to its full
+  order-suffix, proving the rule is purely positional and reference-blind; the two pre-Hub files never
+  re-fire across any of 10 edit cascades, ruling out a blanket project-wide refresh. The harness solicits
+  analysis only on the edited file itself, so the measurement-vs-mechanism confound that struck Q021 (an
+  earlier "always fully re-checks" claim the review there found unsupported) doesn't apply here — these
+  are FCS-driven events, not harness-solicited ones. **This resolves the order-vs-dependency ambiguity
+  Q023/Q024/Q029 each named as their own top follow-up, on the pessimistic side for Myriad**: an early
+  attributed type pays the full order-suffix re-check cost regardless of how few files truly reference
+  it. The review went past the executor's own framing and found the mechanism is stronger than "an FSAC
+  choice that might be relaxed later": F# checks every file against the accumulated signature environment
+  of *all* preceding files, so the compilation-order suffix genuinely *is* the dependency set in F#'s
+  ordered-file model — the pessimistic reading is structural to the language, not a version-specific FCS
+  limitation a later release might fix. Overturns nothing: Q029's cost curve stands, its x-axis is now
+  confirmed to be order-successors, not an over-pessimistic proxy. Scoped: value-only edit only
+  (signature-changing edits untested), one N, one hub position — though three different edit positions in
+  the same session, including a file referenced by nothing, substantially de-risk the generalization
+  concern this lineage has been burned by before (Q023's own single-edit-position mistake) (Q030, SHIP
+  scoped).
 
-**Honest net position:** nine SHIPs (Q002 fully, Q003 narrowly, Q010 scoped, Q015 scoped, Q021 scoped,
-Q024 scoped, Q025 scoped, Q026 scoped, Q029 scoped) prove the mechanism is sometimes genuinely valuable —
-with Q015, Q021, Q024, Q025, Q026, and now Q029 all earning a SHIP only once heavily scoped, a pattern
-worth noticing on its own: this thread's positive results keep shrinking on inspection, not just its
-negative ones. Seven REVISE/NULL results (Q001, Q006, Q014, Q022, Q023, Q027, Q028) prove overclaiming is
+**Honest net position:** ten SHIPs (Q002 fully, Q003 narrowly, Q010 scoped, Q015 scoped, Q021 scoped,
+Q024 scoped, Q025 scoped, Q026 scoped, Q029 scoped, Q030 scoped) prove the mechanism is sometimes
+genuinely valuable — with Q015, Q021, Q024, Q025, Q026, Q029, and now Q030 all earning a SHIP only once
+heavily scoped, a pattern worth noticing on its own: this thread's positive results keep shrinking on
+inspection, not just its negative ones. Notably, Q030's own scoping cuts the other way from most of that
+list — it isn't a narrower capability than first claimed, it's the same clean finding with a harder,
+structural explanation attached, landing unfavorably for Myriad rather than favorably. Seven REVISE/NULL
+results (Q001, Q006, Q014, Q022, Q023, Q027, Q028) prove overclaiming is
 easy. Q001 is the odd one out in that list: its NULL ("typed beats syntax" changed nothing for a pure
 structural-echo generator) is the standing check *against* overclaiming everywhere else in this file, not
 an instance of it. The overclaiming itself shows up in six distinct shapes across five of the other
@@ -1113,14 +1144,22 @@ position-blind-refresh artifact directly rather than by inference. This closes i
 single-most-cited follow-up, on the favorable side — see `Q029-fsac-live-editing-cost/03-review.md`.
 Scope that travels forward: small N (≤40), one linear dependency-chain topology (can't yet distinguish
 "FSAC invalidates by compilation order" from "FSAC invalidates by true dependents," since this topology
-makes them identical), single session per size. **The review's own named next step is now the top open
-item**: a wide/shallow dependency shape (an early file only a few later files actually reference, with
-unrelated files between) to test whether FSAC invalidates by true dependents or the whole
-compilation-order suffix regardless — the one test that would tell whether Myriad's "attributed types
-sit early = expensive" caveat is as bad as the linear-chain result implies, or softened by
-dependency-precise invalidation. (3) and (4) above, unchanged (dependency-chained variant partially
-subsumed by Q029's own topology, but the wide/shallow variant above is the sharper, not-yet-run form of
-it). (5) `Q026`'s own named follow-up — widen `GeneratorContext` to carry a real checker/options
-handle — is a prerequisite engineering change, not a quartet, before any future persistent
-multi-composition host can be attempted safely; do this before, not after, extending Q026's composition
-mechanism to a third generator or a live-watcher wiring (item 19).
+makes them identical), single session per size. **DONE, 2026-07-19: the review's own named next step
+also ran, as `Q030` (CLOSED, SHIP, scoped) — and answered on the unfavorable side.** A wide/shallow
+topology (N=30, an early "Hub" referenced by only 3 of 27 later files) showed a value-only edit
+re-analyzes **all 27 order-successors, not just the 3 true dependents** — the whole compilation-order
+suffix, reproduced 3/3 reps and confirmed by hand against the raw LSP transcript, with controls ruling
+out both a harness-solicited-request explanation and a blanket project-wide refresh. Review found this
+is not a fixable FSAC limitation but F#'s own ordered-file compilation semantics (every file checks
+against the accumulated signature environment of all predecessors), making the pessimistic reading
+structural, not version-specific. See `Q030-fsac-dependency-precision/03-review.md`. **This closes the
+order-vs-dependency question that was the single largest remaining unknown in the whole FSAC-cost
+sub-line (Q023→Q024→Q029→Q030) — settled, unfavorably for Myriad, not softened.** (3) and (4) above,
+unchanged (dependency-chained variant now subsumed by Q030's own topology). (5) `Q026`'s own named
+follow-up — widen `GeneratorContext` to carry a real checker/options handle — is a prerequisite
+engineering change, not a quartet, before any future persistent multi-composition host can be attempted
+safely; do this before, not after, extending Q026's composition mechanism to a third generator or a
+live-watcher wiring (item 19). With items (1)-(2) of this list and the FSAC-cost sub-line both now
+closed, item (5) — the `GeneratorContext` engineering prerequisite — is the most direct remaining step
+if this thread continues toward an actual persistent-host attempt, rather than another cost-model
+spike.

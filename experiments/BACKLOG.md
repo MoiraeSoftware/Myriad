@@ -620,12 +620,26 @@ Ordered by how directly each one closes a gap the last quartet named, not by gue
     one linear dependency-chain topology that conflates compilation-order-successors with true
     dependents (can't yet tell whether FSAC invalidates by order or by precise dependency), single
     session per size — curve shape/scaling shown, not absolute large-project keystroke latency. The
-    review's own named next step, not yet spiked: a wide/shallow dependency shape (one early file only a
-    few later files actually reference) to test whether FSAC invalidates by true dependents or by the
-    whole compilation-order suffix regardless — the one test that would tell whether Myriad's
-    "attributed types sit early = expensive" caveat is as bad as this linear-chain result implies, or
-    softened by dependency-precise invalidation. Second follow-up, shared with Q023: test the
-    dependency-chained variant both quartets' own designs deliberately deferred. See
+    review's own named next step — a wide/shallow dependency shape (one early file only a few later
+    files actually reference) to test whether FSAC invalidates by true dependents or by the whole
+    compilation-order suffix regardless — **was run: PROMOTED TO Q030, CLOSED, SHIP (as of
+    2026-07-19).** See `Q030-fsac-dependency-precision/03-review.md` for the full verdict. **Answer:
+    the whole compilation-order suffix, regardless of true dependency — confirmed, and this is the
+    pessimistic outcome for Myriad, not the softened one.** N=30, one early "Hub" file referenced by
+    only 3 of the 27 later files (scattered among 24 unrelated ones); editing Hub re-analyzed all 27
+    order-successors, not just the 3 true dependents, reproduced 3/3 reps and hand-confirmed against
+    the raw LSP transcript. Two controls seal it: editing a file referenced by *nothing* still
+    cascades to its full order-suffix; the pre-Hub files never re-fire across 10 edit cascades, ruling
+    out a blanket refresh. **Review found this isn't a fixable FSAC quirk but F#'s own ordered-file
+    compilation semantics — every file is checked against the accumulated signature environment of all
+    preceding files, so the compilation-order suffix genuinely *is* the dependency set, making the
+    pessimistic reading structural, not version-specific.** This resolves the order-vs-dependency
+    ambiguity `Q023`/`Q024`/`Q029` each disclosed as their own top follow-up, on the unfavorable side:
+    for Myriad specifically, an early attributed type pays the full order-suffix re-check cost
+    regardless of how few files actually reference it. Overturns nothing — `Q029`'s cost curve stands,
+    its x-axis is now confirmed to be order-successors, not an over-pessimistic proxy. Second
+    follow-up, shared with Q023: test the dependency-chained variant both quartets' own designs
+    deliberately deferred — largely subsumed by Q030's own topology now. See
     `Q024-position-sweep-across-scale/03-review.md`.
 
 19. **A `myriad-live` watcher daemon that drives Q022's own already-proven reload signal on every save
