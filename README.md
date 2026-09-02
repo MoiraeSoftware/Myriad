@@ -274,7 +274,6 @@ dotnet new myriadgenerator -n myMyriadPlugin
 
 ### Also see
 * [Applied Metaprogramming with Myriad And Falanx](https://7sharp9.dev/programming/2019-04-24-applied-metaprogramming-with-myriad/)
-* [Myriad Intro](https://7sharp9.dev/programming/2019-11-06-myriad-intro/)
 
 ### External plugins
 
