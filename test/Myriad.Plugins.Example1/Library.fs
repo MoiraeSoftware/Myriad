@@ -88,3 +88,18 @@ type DiagnosticsErrorGen() =
                   Range = None }
 
             None, [ diagnostic ]
+
+/// Reports whether Myriad passed Generation.InlineGenerationParameter, for the inline generation tests.
+/// Ignores the input's content, so generating inline into the same file repeatedly gives the same output.
+[<MyriadGenerator("inlineflag")>]
+type InlineFlagGen() =
+    interface IMyriadGenerator with
+        member _.ValidInputExtensions = seq { ".txt" }
+
+        member _.Generate(context: GeneratorContext) =
+            let isInline =
+                match context.AdditionalParameters.TryGetValue Generation.InlineGenerationParameter with
+                | true, value -> value
+                | _ -> "absent"
+
+            Output.Source $"// inline generation: %s{isInline}"

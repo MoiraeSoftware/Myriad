@@ -30,6 +30,9 @@ let private buildConfiguration = DirectoryInfo(AppContext.BaseDirectory).Parent.
 let private myriadCliDll = Path.Combine(repoRoot.FullName, "src", "Myriad", "bin", buildConfiguration, "net9.0", "Myriad.dll")
 let private example1PluginDll = Path.Combine(AppContext.BaseDirectory, "Myriad.Plugins.Example1.dll")
 let private testTxtPath = Path.Combine(repoRoot.FullName, "test", "Myriad.IntegrationPluginTests", "Test.txt")
+let private pluginsDll = Path.Combine(AppContext.BaseDirectory, "Myriad.Plugins.dll")
+let private myriadTomlPath = Path.Combine(repoRoot.FullName, "test", "Myriad.IntegrationPluginTests", "myriad.toml")
+let private selfGenerateFixturePath = Path.Combine(repoRoot.FullName, "test", "Myriad.IntegrationPluginTests", "InputSelfGenerate.fs")
 
 /// Runs the real Myriad CLI as a subprocess, the same way MSBuild's <Exec> does, and
 /// captures its exit code and combined stdout/stderr.
@@ -117,6 +120,198 @@ let parseAdditionalParamsTests =
             let result = Myriad.Implementation.parseAdditionalParams "Expr=a=b|Other=c"
             Expect.equal result.["Expr"] "a=b" "only the first '=' should split the entry"
             Expect.equal result.["Other"] "c" "second entry should still be parsed"
+        }
+    ]
+
+let generationOutputTests =
+    let tempFile (extension: string) =
+        Path.Combine(Path.GetTempPath(), $"myriad_output_test_{Guid.NewGuid()}{extension}")
+
+    // Set on output before running the CLI again: if the CLI leaves the file alone, it keeps this timestamp.
+    let longAgo = DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+
+    let unit inlineGeneration parameters : Myriad.Implementation.CodegenUnit =
+        { InputFile = "Input.fs"
+          OutputFile = None
+          ConfigKey = None
+          AdditionalParams = dict parameters
+          InlineGeneration = inlineGeneration
+          GeneratorFilters = [] }
+
+    let runInlineFlagGen (inputFile: string) (outputArgs: string list) =
+        runMyriadCli [ "--inputfile"; inputFile; yield! outputArgs; "--plugin"; example1PluginDll; "--generator-filter"; "InlineFlagGen" ]
+
+    testList "Generation output" [
+        testList "Generation.fileHasLines" [
+            test "is true for the lines File.WriteAllLines wrote, including elements spanning several lines" {
+                let path = tempFile ".fs"
+                try
+                    let lines = [ "// header"; "module A\nlet x = 1\n" ]
+                    File.WriteAllLines(path, lines)
+                    Expect.isTrue (Generation.fileHasLines path lines) "the lines just written should match"
+                finally
+                    File.Delete path
+            }
+
+            test "ignores line endings" {
+                let path = tempFile ".fs"
+                try
+                    File.WriteAllText(path, "module A\r\nlet x = 1\r\n")
+                    Expect.isTrue (Generation.fileHasLines path [ "module A\nlet x = 1" ]) "CRLF and LF lines should match"
+                finally
+                    File.Delete path
+            }
+
+            test "is false for different lines or a missing file" {
+                let path = tempFile ".fs"
+                try
+                    File.WriteAllLines(path, [ "module A"; "let x = 1" ])
+                    Expect.isFalse (Generation.fileHasLines path [ "module A"; "let x = 2" ]) "changed lines should not match"
+                    Expect.isFalse (Generation.fileHasLines path [ "module A" ]) "fewer lines should not match"
+                    Expect.isFalse (Generation.fileHasLines (tempFile ".fs") [ "module A" ]) "a missing file should not match"
+                finally
+                    File.Delete path
+            }
+        ]
+
+        testList "generatorParameters" [
+            test "adds the inline generation parameter for inline units, keeping the unit's own parameters" {
+                let parameters = Myriad.Implementation.generatorParameters (unit true [ "Namespace", "A" ])
+                Expect.equal parameters[Generation.InlineGenerationParameter] "true" "inline units should get the parameter"
+                Expect.equal parameters["Namespace"] "A" "the unit's own parameters should be kept"
+            }
+
+            test "sets it to false for units with an output file of their own" {
+                let parameters = Myriad.Implementation.generatorParameters (unit false [ "Namespace", "A" ])
+                Expect.equal parameters[Generation.InlineGenerationParameter] "false" "other units should get false, not an absent parameter"
+                Expect.equal parameters["Namespace"] "A" "the unit's own parameters should be kept"
+            }
+
+            test "overrides a value from the unit's own parameters" {
+                let parameters =
+                    Myriad.Implementation.generatorParameters (unit false [ Generation.InlineGenerationParameter, "true" ])
+
+                Expect.equal parameters[Generation.InlineGenerationParameter] "false" "a stale value must not reach generators"
+            }
+        ]
+
+        test "the CLI tells generators when their output is appended to the input file" {
+            let inputFile = tempFile ".txt"
+            try
+                File.Copy(testTxtPath, inputFile)
+                let exitCode, output = runInlineFlagGen inputFile [ "--inlinegeneration" ]
+                Expect.equal exitCode 0 $"CLI should succeed: {output}"
+                Expect.stringContains (File.ReadAllText inputFile) "// inline generation: true" "the generator should see the inline parameter"
+            finally
+                File.Delete inputFile
+        }
+
+        test "the CLI tells generators writing to an output file of their own that they are not inline" {
+            let outputFile = tempFile ".fs"
+            try
+                let exitCode, output = runInlineFlagGen testTxtPath [ "--outputfile"; outputFile ]
+                Expect.equal exitCode 0 $"CLI should succeed: {output}"
+                Expect.stringContains (File.ReadAllText outputFile) "// inline generation: false" "the generator should see the parameter set to false"
+            finally
+                File.Delete outputFile
+        }
+
+        test "the CLI does not rewrite an output file whose content is unchanged, but does rewrite a changed one" {
+            let outputFile = tempFile ".fs"
+            try
+                runInlineFlagGen testTxtPath [ "--outputfile"; outputFile ] |> ignore
+                let generated = File.ReadAllText outputFile
+
+                File.SetLastWriteTimeUtc(outputFile, longAgo)
+                runInlineFlagGen testTxtPath [ "--outputfile"; outputFile ] |> ignore
+                Expect.equal (File.GetLastWriteTimeUtc outputFile) longAgo "unchanged output should not be written"
+
+                File.WriteAllText(outputFile, "stale")
+                File.SetLastWriteTimeUtc(outputFile, longAgo)
+                runInlineFlagGen testTxtPath [ "--outputfile"; outputFile ] |> ignore
+                Expect.notEqual (File.GetLastWriteTimeUtc outputFile) longAgo "changed output should be written"
+                Expect.equal (File.ReadAllText outputFile) generated "changed output should be regenerated"
+            finally
+                File.Delete outputFile
+        }
+
+        test "the CLI does not rewrite an inline input file whose generated code is unchanged" {
+            let inputFile = tempFile ".txt"
+            try
+                File.Copy(testTxtPath, inputFile)
+                runInlineFlagGen inputFile [ "--inlinegeneration" ] |> ignore
+                let generated = File.ReadAllText inputFile
+
+                File.SetLastWriteTimeUtc(inputFile, longAgo)
+                runInlineFlagGen inputFile [ "--inlinegeneration" ] |> ignore
+                Expect.equal (File.GetLastWriteTimeUtc inputFile) longAgo "an unchanged input file should not be written"
+                Expect.equal (File.ReadAllText inputFile) generated "the input file should still hold its generated code once"
+            finally
+                File.Delete inputFile
+        }
+
+        test "generated output ends in a single newline, so trimming final newlines does not cause a rewrite" {
+            let outputFile = tempFile ".fs"
+
+            // Example1Gen returns an AST: Fantomas' formatted output is what ends in a newline of its own.
+            let runExample1Gen () =
+                runMyriadCli [ "--inputfile"; testTxtPath; "--outputfile"; outputFile; "--plugin"; example1PluginDll; "--generator-filter"; "Example1Gen" ]
+
+            try
+                let exitCode, output = runExample1Gen ()
+                Expect.equal exitCode 0 $"CLI should succeed: {output}"
+                let generated = File.ReadAllText outputFile
+                Expect.isFalse (generated.EndsWith("\n\n") || generated.EndsWith("\n\r\n")) "output should not end in a blank line"
+
+                // What an editor trimming final newlines on save does.
+                File.WriteAllText(outputFile, generated.TrimEnd('\r', '\n'))
+                File.SetLastWriteTimeUtc(outputFile, longAgo)
+                runExample1Gen () |> ignore
+                Expect.equal (File.GetLastWriteTimeUtc outputFile) longAgo "a file differing only in final newlines should not be written"
+            finally
+                File.Delete outputFile
+        }
+
+        test "an edit outside the attributed types does not rewrite an inline file, an edit to one does" {
+            let inputFile = tempFile ".fs"
+
+            let runLenses () =
+                runMyriadCli [
+                    "--inputfile"; inputFile
+                    "--inlinegeneration"
+                    "--configfile"; myriadTomlPath
+                    "--plugin"; pluginsDll
+                    "--generator-filter"; "LensesGenerator"
+                ]
+
+            let generatedSection () =
+                let text = File.ReadAllText inputFile
+                text.Substring(text.IndexOf Generation.header[1])
+
+            try
+                // The fixture carries the integration build's own generated section; settle it to this run's.
+                File.Copy(selfGenerateFixturePath, inputFile)
+                let exitCode, output = runLenses ()
+                Expect.equal exitCode 0 $"CLI should succeed: {output}"
+                let generated = generatedSection ()
+
+                // Edit a comment above the attributed types, the way a user would, then regenerate.
+                let edited = File.ReadAllText(inputFile).Replace("open Myriad.Plugins", "open Myriad.Plugins\n// an unrelated edit")
+                File.WriteAllText(inputFile, edited)
+                File.SetLastWriteTimeUtc(inputFile, longAgo)
+                runLenses () |> ignore
+                Expect.equal (File.GetLastWriteTimeUtc inputFile) longAgo "an unrelated edit should not make Myriad write the file"
+                Expect.equal (File.ReadAllText inputFile) edited "the user's edit should be kept as is"
+                Expect.equal (generatedSection ()) generated "the generated section should be byte-identical"
+
+                // Add a field to an attributed record: the generated section must change, and be written.
+                File.WriteAllText(inputFile, edited.Replace("four: float32 }", "four: float32; five: int }"))
+                File.SetLastWriteTimeUtc(inputFile, longAgo)
+                runLenses () |> ignore
+                Expect.notEqual (File.GetLastWriteTimeUtc inputFile) longAgo "an edit to an attributed type should be written"
+                Expect.stringContains (generatedSection ()) "x.five" "the new field should get a lens"
+            finally
+                File.Delete inputFile
         }
     ]
 
@@ -549,4 +744,6 @@ let tests =
         diagnosticsTests
 
         parseAdditionalParamsTests
+
+        generationOutputTests
     ]
