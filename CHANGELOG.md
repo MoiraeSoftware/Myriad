@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Generators are told when their output is appended to the input file (`MyriadInlineGeneration` / `--inlinegeneration`): `GeneratorContext.AdditionalParameters` then contains `Generation.InlineGenerationParameter` (`"MyriadInlineGeneration"`) set to `"true"`. Inline output has to fit into the input file, e.g. without a namespace declaration after a top-level module, and generators previously had no way to know. Being a literal, the key can be used by plugins running on older Myriad versions too, where it is simply absent.
+
+### Fixed
+- Unchanged generated output is no longer written. Myriad regenerates every file whenever any attributed file changes, and previously rewrote every output even when its content was identical, giving it a new timestamp. For `MyriadInlineGeneration` that meant rewriting the source file being edited on every regeneration, including in design-time builds, so editors saw it change on disk after unrelated edits; for separate output files it triggered needless recompiles. Output is compared line by line with the existing file, so line endings and a byte order mark do not count as changes.
 
 ## [1.0.0] - 2026-09-18
 ### Changed

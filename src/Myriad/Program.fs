@@ -97,6 +97,16 @@ module Implementation =
                 | idx -> Some(entry.Substring(0, idx), entry.Substring(idx + 1)))
             |> dict
 
+    /// The parameters a unit's generators get: its own, plus Generation.InlineGenerationParameter when
+    /// the output is appended to the input file.
+    let generatorParameters (unit: CodegenUnit) : IDictionary<string, string> =
+        if unit.InlineGeneration then
+            let parameters = Dictionary<string, string>(unit.AdditionalParams)
+            parameters[Generation.InlineGenerationParameter] <- "true"
+            parameters
+        else
+            unit.AdditionalParams
+
     let parseManifest (path: string) : CodegenUnit list =
         let model = Toml.Parse(File.ReadAllText path, path).ToModel()
         match model.TryGetValue "unit" with
@@ -236,7 +246,7 @@ module Main =
                         try
                             if instance.ValidInputExtensions |> Seq.contains (Path.GetExtension(unit.InputFile))
                             then
-                                let context = GeneratorContext.Create(unit.ConfigKey, configHandler, unit.InputFile, projectContext, unit.AdditionalParams)
+                                let context = GeneratorContext.Create(unit.ConfigKey, configHandler, unit.InputFile, projectContext, generatorParameters unit)
 
                                 match rawInstance with
                                 | :? IMyriadGeneratorWithDiagnostics as diagnosticsInstance ->
@@ -318,19 +328,26 @@ About to format generated ouptut from %A{genType}"""
                 if verbose then
                     printfn $"Generated Code:\n%A{code}"
 
+                // Unchanged output is not written, so the file keeps its timestamp: rewriting it would trigger
+                // recompiles, and for inline generation make editors reload the source file being edited.
                 if unit.InlineGeneration then
-                    let tempFile = Path.GetTempFileName()
-                    let linesToKeep = Generation.linesToKeep unit.InputFile
+                    let lines = [ yield! Generation.linesToKeep unit.InputFile; yield! code ]
 
-                    if verbose then printfn $"Inline generation: Writing to temp file: '%s{tempFile}'"
-                    File.WriteAllLines(tempFile, seq{ yield! linesToKeep; yield! code} )
-                    if verbose then printfn $"Inline generation: Removing input file: '%s{tempFile}'"
-                    File.Delete(unit.InputFile)
-                    if verbose then
-                        printfn $"Inline generation: Renaming temp file to input file: '%s{tempFile}' -> '%s{unit.InputFile}'"
-                    File.Move(tempFile, unit.InputFile)
+                    if Generation.fileHasLines unit.InputFile lines then
+                        if verbose then printfn $"Inline generation: '%s{unit.InputFile}' is unchanged"
+                    else
+                        let tempFile = Path.GetTempFileName()
+                        if verbose then printfn $"Inline generation: Writing to temp file: '%s{tempFile}'"
+                        File.WriteAllLines(tempFile, lines)
+                        if verbose then printfn $"Inline generation: Removing input file: '%s{tempFile}'"
+                        File.Delete(unit.InputFile)
+                        if verbose then
+                            printfn $"Inline generation: Renaming temp file to input file: '%s{tempFile}' -> '%s{unit.InputFile}'"
+                        File.Move(tempFile, unit.InputFile)
                 else
                     match unit.OutputFile with
+                    | Some filename when Generation.fileHasLines filename code ->
+                        if verbose then printfn $"Code generation: '%s{filename}' is unchanged"
                     | Some filename ->
                         if verbose then printfn $"Code generation: Writing output file: '%s{filename}'"
                         File.WriteAllLines(filename, code)
