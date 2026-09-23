@@ -3,11 +3,11 @@ namespace Myriad.Core
 open System.IO
 
 module Generation =
-    /// Set to "true" in a generator's GeneratorContext.AdditionalParameters when its output is appended
-    /// to the input file (MyriadInlineGeneration / --inlinegeneration) rather than written to a file of
-    /// its own, since the output must then fit into the input file, e.g. without a namespace declaration
-    /// after a top-level module. Being a literal, it can be used by plugins running on older Myriad
-    /// versions too, where the parameter is simply absent.
+    /// Set in a generator's GeneratorContext.AdditionalParameters to "true" when its output is appended
+    /// to the input file (MyriadInlineGeneration / --inlinegeneration), and to "false" when it is written
+    /// to a file of its own. Inline output must fit into the input file, e.g. without a namespace
+    /// declaration after a top-level module. Being a literal, it can be used by plugins running on older
+    /// Myriad versions too, where the parameter is absent.
     [<Literal>]
     let InlineGenerationParameter = "MyriadInlineGeneration"
 

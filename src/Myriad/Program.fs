@@ -97,15 +97,13 @@ module Implementation =
                 | idx -> Some(entry.Substring(0, idx), entry.Substring(idx + 1)))
             |> dict
 
-    /// The parameters a unit's generators get: its own, plus Generation.InlineGenerationParameter when
-    /// the output is appended to the input file.
+    /// The parameters a unit's generators get: its own, plus Generation.InlineGenerationParameter set to
+    /// "true" when the output is appended to the input file and "false" otherwise, overriding any value
+    /// the unit's own parameters carry, so that the parameter is only ever absent on older Myriad versions.
     let generatorParameters (unit: CodegenUnit) : IDictionary<string, string> =
-        if unit.InlineGeneration then
-            let parameters = Dictionary<string, string>(unit.AdditionalParams)
-            parameters[Generation.InlineGenerationParameter] <- "true"
-            parameters
-        else
-            unit.AdditionalParams
+        let parameters = Dictionary<string, string>(unit.AdditionalParams)
+        parameters[Generation.InlineGenerationParameter] <- if unit.InlineGeneration then "true" else "false"
+        parameters
 
     let parseManifest (path: string) : CodegenUnit list =
         let model = Toml.Parse(File.ReadAllText path, path).ToModel()
@@ -322,7 +320,10 @@ About to format generated ouptut from %A{genType}"""
                             | Some (Output.Source source) -> source
                             | None -> "")
 
-                    outputCode |> String.concat Environment.NewLine
+                    // Fantomas output already ends in a newline and WriteAllLines adds another, which left
+                    // a trailing blank line that editors trimming final newlines would remove, making the
+                    // file differ from the generated output, and so be rewritten, on every regeneration.
+                    (outputCode |> String.concat Environment.NewLine).TrimEnd('\r', '\n')
 
                 let code = Generation.getHeaderedCode formattedCode
                 if verbose then

@@ -266,7 +266,3 @@ module Currency =
         match x with
         | Custom _ -> true
         | _ -> false
-
-
-
-
