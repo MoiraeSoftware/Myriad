@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.1.0] - 2026-09-24
 ### Added
 - Generators are told when their output is appended to the input file (`MyriadInlineGeneration` / `--inlinegeneration`): `GeneratorContext.AdditionalParameters` contains `Generation.InlineGenerationParameter` (`"MyriadInlineGeneration"`), set to `"true"` for inline output and `"false"` for output written to a file of its own, overriding any value from `MyriadParams`. Inline output has to fit into the input file, e.g. without a namespace declaration after a top-level module, and generators previously had no way to know. Being a literal, the key can be used by plugins running on older Myriad versions too, where it is absent.
 
