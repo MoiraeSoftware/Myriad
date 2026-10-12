@@ -11,29 +11,124 @@ open System.Diagnostics
 open Myriad.Core.Ast
 open Tomlyn.Model
 open McMaster.NETCore.Plugins
+open System.Reflection
+open System.Runtime.Loader
 
 module Implementation =
-    let findPlugins (isVerbose: bool) (path: string) =
+    /// A plugin that could not be loaded, with a message naming the plugin and what it needed.
+    exception PluginLoadException of string
 
-        let loader = PluginLoader.CreateFromAssemblyFile(path, [|typeof<MyriadGeneratorAttribute>; typeof<IMyriadGenerator> |], fun config -> config.PreferSharedTypes <- true)
-        let assembly = loader.LoadDefaultAssembly()
-        let types =
-            try
-                assembly.GetTypes()
-            with
-            | :? Reflection.ReflectionTypeLoadException as ex ->
-                if isVerbose then
-                    eprintfn "ReflectionTypeLoadException loading '%s':" path
-                    for loaderEx in ex.LoaderExceptions do
-                        if loaderEx <> null then
-                            eprintfn "  - %s" (loaderEx.Message)
-                ex.Types |> Array.filter (fun t -> t <> null)
-        let gens =
-            [ for t in types do
-                if t.GetCustomAttributes(typeof<MyriadGeneratorAttribute>, true).Length > 0
-                then yield t ]
-        gens
-        
+    /// Assemblies whose types cross the plugin boundary: Myriad.Core's GeneratorContext and Output, built
+    /// from F# lists, options and functions and Fantomas.FCS's syntax tree. A plugin can only
+    /// work against the host's own copy of these, so whichever version it was compiled against, it gets
+    /// the host's. The default load context refuses a request for a newer version than it has, which is
+    /// what a plugin built with a newer SDK makes for FSharp.Core.
+    let private hostSharedAssemblies =
+        [ typeof<list<int>>.Assembly
+          typeof<IMyriadGenerator>.Assembly
+          typeof<SynModuleOrNamespace>.Assembly ]
+        |> List.map (fun a -> a.GetName().Name, a)
+        |> dict
+
+    /// Given to the plugin loader as the context it prefers for shared types. Any other assembly is left
+    /// to the default context (returning null), so framework assemblies keep their version check: a
+    /// plugin built for a newer runtime than the host runs on still fails to load, and is reported.
+    /// A plugin calling an FSharp.Core API missing from the host's copy fails when it makes that call.
+    type private HostSharedLoadContext() =
+        inherit AssemblyLoadContext("Myriad.HostShared")
+        override _.Load(name: AssemblyName) =
+            match name.Name with
+            | null -> null
+            | simpleName ->
+                match hostSharedAssemblies.TryGetValue simpleName with
+                | true, assembly -> assembly
+                | _ -> null
+
+    let private hostSharedLoadContext = lazy (HostSharedLoadContext())
+
+    /// The version of an assembly the host has, loading it from the host's framework if it is not loaded yet.
+    let private hostVersion (simpleName: string) =
+        AssemblyLoadContext.Default.Assemblies
+        |> Seq.tryFind (fun a -> a.GetName().Name = simpleName)
+        |> Option.orElseWith (fun () ->
+            try Some(AssemblyLoadContext.Default.LoadFromAssemblyName(AssemblyName simpleName)) with _ -> None)
+        |> Option.map (fun a -> string (a.GetName().Version))
+
+    /// Describes an assembly that could not be loaded. `requested` is the exception's FileName, which for
+    /// a failed assembly reference is the assembly's display name rather than a path.
+    let describeAssemblyLoadFailure (requested: string) =
+        if String.IsNullOrEmpty requested || not (requested.Contains ", Version=") then
+            None
+        else
+            match (try Some(AssemblyName requested) with _ -> None) with
+            | None -> None
+            | Some name ->
+                let provided =
+                    match hostVersion name.Name with
+                    | Some version -> $"the Myriad host provides version %s{version}"
+                    | None -> "the Myriad host does not provide it and it was not found next to the plugin"
+                Some $"it needs %s{name.Name} version %O{name.Version}, but %s{provided} (Myriad runs on .NET %O{Environment.Version})"
+
+    let private pluginLoadError (path: string) (ex: exn) =
+        let reason =
+            (match ex with
+             | :? FileNotFoundException as e -> describeAssemblyLoadFailure e.FileName
+             | :? FileLoadException as e -> describeAssemblyLoadFailure e.FileName
+             | _ -> None)
+            |> Option.defaultValue ex.Message
+        PluginLoadException $"Myriad could not load plugin '%s{path}': %s{reason}"
+
+    /// A note for a generator failure that comes from the plugin calling into a newer FSharp.Core than the
+    /// host's, which it is given in place of its own (see HostSharedLoadContext); empty otherwise.
+    let fsharpCoreMismatchNote (pluginAssembly: Assembly) (ex: exn) =
+        match ex with
+        | :? MissingMemberException
+        | :? TypeLoadException ->
+            let host = typeof<list<int>>.Assembly.GetName().Version
+            pluginAssembly.GetReferencedAssemblies()
+            |> Array.tryFind (fun n -> n.Name = "FSharp.Core" && not (isNull n.Version) && n.Version > host)
+            |> Option.map (fun n ->
+                $"%s{Environment.NewLine}The plugin was built against FSharp.Core %d{n.Version.Major}.%d{n.Version.Minor}, but Myriad provides FSharp.Core %d{host.Major}.%d{host.Minor}, so APIs added since are missing: build the plugin against FSharp.Core %d{host.Major}.%d{host.Minor}.x or lower.")
+            |> Option.defaultValue ""
+        | _ -> ""
+
+    let findPlugins (isVerbose: bool) (path: string) =
+        if not (File.Exists path) then
+            raise (PluginLoadException $"Myriad could not load plugin '%s{path}': the file does not exist")
+
+        try
+            let loader =
+                PluginLoader.CreateFromAssemblyFile(
+                    path,
+                    [| typeof<MyriadGeneratorAttribute>; typeof<IMyriadGenerator> |],
+                    fun config ->
+                        config.PreferSharedTypes <- true
+                        config.DefaultContext <- (hostSharedLoadContext.Value :> AssemblyLoadContext))
+            let assembly = loader.LoadDefaultAssembly()
+            let types, loaderExceptions =
+                try
+                    assembly.GetTypes(), [||]
+                with
+                | :? Reflection.ReflectionTypeLoadException as ex ->
+                    if isVerbose then
+                        eprintfn "ReflectionTypeLoadException loading '%s':" path
+                        for loaderEx in ex.LoaderExceptions do
+                            if loaderEx <> null then
+                                eprintfn "  - %s" (loaderEx.Message)
+                    ex.Types |> Array.filter (fun t -> t <> null), ex.LoaderExceptions |> Array.filter (fun e -> e <> null)
+            let gens =
+                [ for t in types do
+                    if t.GetCustomAttributes(typeof<MyriadGeneratorAttribute>, true).Length > 0
+                    then yield t ]
+            // Types that fail to load are skipped, as before, but a plugin left with no generators at all
+            // because of it would otherwise silently generate nothing.
+            match gens, Array.tryHead loaderExceptions with
+            | [], Some loaderEx -> raise loaderEx
+            | _ -> gens
+        with
+        | PluginLoadException _ -> reraise ()
+        | ex -> raise (pluginLoadError path ex)
+
     let getConfigHandler (isVerbose: bool) (config: Model.TomlTable option) (name: string) =
         if isVerbose then
             printfn $"Looking for: %s{name} in config"
@@ -263,7 +358,7 @@ module Main =
                         with
                         | exc ->
                             let info = $"%s{genType.Name} Failure"
-                            let message = exc.ToString()
+                            let message = exc.ToString() + fsharpCoreMismatchNote genType.Assembly exc
                             None, Some ($"%s{info}%s{Environment.NewLine}!CompilationError%s{Environment.NewLine}%s{message}")
 
                     if verbose then printfn $"Result: %A{result}"
@@ -367,8 +462,13 @@ About to format generated ouptut from %A{genType}"""
             match ae.ErrorCode with
             | ErrorCode.HelpText -> 0
             | _ -> 2
+        | PluginLoadException message ->
+            printfn $"ERROR: %s{message}"
+            5
         | :? FileNotFoundException as fnf ->
-            printfn $"ERROR: inputfile %s{fnf.FileName} doesn not exist\n%s{parser.PrintUsage()}"
+            match describeAssemblyLoadFailure fnf.FileName with
+            | Some reason -> printfn $"ERROR: Myriad could not load an assembly: %s{reason}"
+            | None -> printfn $"ERROR: file %s{fnf.FileName} does not exist\n%s{parser.PrintUsage()}"
             4
         | error ->
             printfn $"OTHER: %A{error}"

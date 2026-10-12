@@ -1,8 +1,14 @@
 <Project>
   <Import Project="Directory.Build.props" />
 
+  <PropertyGroup>
+    <!-- Myriad.Sdk bundles the Myriad CLI from the Myriad package restored here. A folder of its own,
+         emptied by Clean, so a same-versioned package left in the NuGet cache by an earlier pack is never bundled. -->
+    <MyriadSdkRestorePackagesDir>$([System.IO.Path]::GetFullPath("$(MSBuildThisFileDirectory)/bin/sdk-restore-packages"))</MyriadSdkRestorePackagesDir>
+  </PropertyGroup>
+
   <Target Name="Clean">
-    <RemoveDir Directories="$(NupkgsDir)" />
+    <RemoveDir Directories="$(NupkgsDir);$(MyriadSdkRestorePackagesDir)" />
   </Target>
 
   <Target Name="Restore">
@@ -35,8 +41,9 @@
     <!-- Pack the main sln first so the Myriad tool nupkg is available locally -->
     <Exec Command='dotnet pack src/Myriad.sln -c Release -o "$(NupkgsDir)" /p:Version=$(PackVersion)' />
     <!-- Restore Myriad.Sdk pointing at the local nupkg directory so the just-built
-         Myriad package is resolved without requiring it to be published on nuget.org -->
-    <Exec Command='dotnet restore src/Myriad.Sdk/Myriad.Sdk.proj /p:Version=$(PackVersion) --source "$(NupkgsDir)" --source "https://api.nuget.org/v3/index.json"' />
+         Myriad package is resolved without requiring it to be published on nuget.org.
+         Myriad.Sdk.proj bundles that package's CLI into Myriad.Sdk. -->
+    <Exec Command='dotnet restore src/Myriad.Sdk/Myriad.Sdk.proj /p:Version=$(PackVersion) --packages "$(MyriadSdkRestorePackagesDir)" --source "$(NupkgsDir)" --source "https://api.nuget.org/v3/index.json"' />
     <!-- Pack Myriad.Sdk using the restore done above (skip redundant restore) -->
     <Exec Command='dotnet pack src/Myriad.Sdk/Myriad.Sdk.proj -c Release -o "$(NupkgsDir)" /p:Version=$(PackVersion) --no-restore' />
   </Target>

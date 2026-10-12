@@ -315,6 +315,44 @@ let generationOutputTests =
         }
     ]
 
+let pluginLoadingTests =
+    testList "Plugin loading" [
+        test "a plugin that does not exist is reported as a plugin, not as a missing input file" {
+            let missingPlugin = Path.Combine(Path.GetTempPath(), $"myriad_missing_plugin_{Guid.NewGuid()}.dll")
+            let outputFile = Path.Combine(Path.GetTempPath(), $"myriad_missing_plugin_test_{Guid.NewGuid()}.fs")
+            try
+                let exitCode, output =
+                    runMyriadCli [ "--inputfile"; testTxtPath; "--outputfile"; outputFile; "--plugin"; missingPlugin ]
+                Expect.equal exitCode 5 $"CLI should exit with the plugin load failure code: {output}"
+                Expect.stringContains output $"could not load plugin '{missingPlugin}'" "the message should name the plugin"
+                Expect.isFalse (output.Contains "inputfile") "the message should not blame the input file"
+            finally
+                if File.Exists outputFile then File.Delete outputFile
+        }
+
+        test "an assembly version the host cannot provide is described with both versions" {
+            let hostFSharpCore = typeof<list<int>>.Assembly.GetName().Version
+            let reason =
+                Myriad.Implementation.describeAssemblyLoadFailure
+                    "FSharp.Core, Version=99.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+            let expected =
+                $"it needs FSharp.Core version 99.1.0.0, but the Myriad host provides version {hostFSharpCore} (Myriad runs on .NET {Environment.Version})"
+            Expect.equal reason (Some expected) "the reason should name the assembly, the version needed and the version the host has"
+        }
+
+        test "an assembly the host does not have is described as not found" {
+            let reason =
+                Myriad.Implementation.describeAssemblyLoadFailure "Not.A.Real.Assembly, Version=1.2.3.4, Culture=neutral, PublicKeyToken=null"
+            Expect.isSome reason "an assembly display name should be described"
+            Expect.stringContains reason.Value "Not.A.Real.Assembly version 1.2.3.4" "the reason should name the assembly and version"
+            Expect.stringContains reason.Value "does not provide it" "the reason should say the host does not have it"
+        }
+
+        test "a missing file is not mistaken for an assembly" {
+            Expect.isNone (Myriad.Implementation.describeAssemblyLoadFailure "/tmp/Input.fs") "a path is not an assembly display name"
+        }
+    ]
+
 let literalBindingTests =
     testList "Literal binding tests" [
         test "extractLiteralBindings returns string literal" {
@@ -742,6 +780,8 @@ let tests =
         literalBindingTests
 
         diagnosticsTests
+
+        pluginLoadingTests
 
         parseAdditionalParamsTests
 

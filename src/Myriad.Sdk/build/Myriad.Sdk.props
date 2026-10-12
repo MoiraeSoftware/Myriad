@@ -1,20 +1,14 @@
 <Project>
 
     <PropertyGroup>
-        <MyriadSdk_Generator_ExeHost>dotnet </MyriadSdk_Generator_ExeHost>
-        <!-- Extract the version from the Myriad.Sdk package directory path so we can locate the matching Myriad tool package -->
-        <_MyriadSdkVersion>$([System.IO.Path]::GetFileName($([System.IO.Path]::GetDirectoryName($([System.IO.Path]::GetDirectoryName('$(MSBuildThisFileFullPath)'))))))</_MyriadSdkVersion>
-        <!-- Remember whether the consumer supplied a custom exe BEFORE we set the default,
-             so that the PackageDownload below can use the same check. -->
-        <_MyriadSdkUseDefaultExe Condition="'$(MyriadSdk_Generator_Exe)' == ''">true</_MyriadSdkUseDefaultExe>
-        <MyriadSdk_Generator_Exe Condition="'$(_MyriadSdkUseDefaultExe)' == 'true'">$([System.IO.Path]::Combine('$(NuGetPackageRoot)', 'myriad', '$(_MyriadSdkVersion)', 'tools', 'net8.0', 'any', 'Myriad.dll'))</MyriadSdk_Generator_Exe>
+        <!-- LatestMajor runs Myriad on the newest installed .NET runtime rather than the oldest one it
+             accepts, so plugins built for a newer runtime than Myriad's own target framework can load. -->
+        <MyriadSdk_Generator_ExeHost Condition="'$(MyriadSdk_Generator_ExeHost)' == ''">dotnet --roll-forward LatestMajor </MyriadSdk_Generator_ExeHost>
+        <!-- The Myriad CLI ships inside this package (see Myriad.Sdk.proj). It used to be fetched by a
+             PackageDownload declared here, but NuGet evaluates a project for restore without the
+             build props of its packages (ExcludeRestorePackageImports=true), so restore never saw it
+             and the CLI was never downloaded. -->
+        <MyriadSdk_Generator_Exe Condition="'$(MyriadSdk_Generator_Exe)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)../tools/net8.0/any/Myriad.dll'))</MyriadSdk_Generator_Exe>
     </PropertyGroup>
-
-    <!-- Download the matching Myriad tool package into the NuGet cache so that
-         MyriadSdk_Generator_Exe above resolves to a valid path at build time.
-         Skipped when the consumer provides a custom MyriadSdk_Generator_Exe. -->
-    <ItemGroup Condition="'$(_MyriadSdkUseDefaultExe)' == 'true'">
-        <PackageDownload Include="Myriad" Version="[$(_MyriadSdkVersion)]" />
-    </ItemGroup>
 
 </Project>

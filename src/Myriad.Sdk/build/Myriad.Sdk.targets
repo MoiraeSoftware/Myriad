@@ -146,8 +146,15 @@
     <Target Name="MyriadSdkGenerateInputCache" DependsOnTargets="ResolveAssemblyReferences;_MyriadSdkFilesList" BeforeTargets="MyriadSdkGenerateCode">
 
         <Touch Condition="!Exists($(MyriadConfigFile))" Files="$(MyriadConfigFile)" AlwaysCreate="true" />
-        
-        <GetFileHash Files="%(MyriadCodegen.Identity);$(MyriadSdk_Generator_Exe);$(MyriadConfigFile)">
+
+        <!-- Generator plugins are hashed by content so that rebuilding one, or reverting it, regenerates,
+             while a rebuild that leaves its bytes unchanged does not. One that does not exist is left for
+             Myriad itself to report, which names it as a plugin. -->
+        <ItemGroup>
+            <_MyriadSdkGeneratorHashInput Include="@(MyriadSdkGenerator->'%(FullPath)')" Condition="Exists('%(MyriadSdkGenerator.FullPath)')" />
+        </ItemGroup>
+
+        <GetFileHash Files="%(MyriadCodegen.Identity);$(MyriadSdk_Generator_Exe);$(MyriadConfigFile);@(_MyriadSdkGeneratorHashInput)">
             <Output TaskParameter="Items" ItemName="MyriadCodegenHash" />
         </GetFileHash>
 

@@ -8,10 +8,30 @@
     <NoBuild>true</NoBuild>
     <PackageId>Myriad.Sdk</PackageId>
     <Description>MSBuild integration between Myriad and .NET Sdk projects</Description>
+    <!-- The bundled CLI's assemblies are deliberately outside lib/: they are run, not referenced. -->
+    <NoWarn>$(NoWarn);NU5100</NoWarn>
   </PropertyGroup>
+  <!-- The Myriad CLI ships inside this package, copied from the matching Myriad tool package, so that
+       restoring Myriad.Sdk is all a consumer needs (Myriad.Sdk.props points at tools/net8.0/any/Myriad.dll).
+       A PackageDownload in Myriad.Sdk.props cannot do this: restore evaluates the consuming project
+       without its packages' build props. -->
   <ItemGroup>
     <PackageDownload Include="Myriad" Version="[$(Version)]" />
   </ItemGroup>
+  <PropertyGroup>
+    <_MyriadToolDir>$([MSBuild]::EnsureTrailingSlash('$(NuGetPackageRoot)'))myriad/$(Version.ToLowerInvariant())/tools/net8.0/any/</_MyriadToolDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="$(_MyriadToolDir)**" Exclude="$(_MyriadToolDir)DotnetToolSettings.xml">
+      <Pack>true</Pack>
+      <PackagePath>tools/net8.0/any/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      <Visible>false</Visible>
+    </Content>
+  </ItemGroup>
+  <Target Name="_MyriadSdkCheckBundledCli" BeforeTargets="GenerateNuspec">
+    <Error Condition="!Exists('$(_MyriadToolDir)Myriad.dll')"
+           Text="The Myriad CLI to bundle was not found at '$(_MyriadToolDir)Myriad.dll'. Restore this project with the Myriad $(Version) package available first (see the Pack target in build.proj)." />
+  </Target>
   <ItemGroup>
     <Content Include="build\Myriad.Sdk.props">
       <Pack>true</Pack>
