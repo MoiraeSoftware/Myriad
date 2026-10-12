@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- `Myriad.Sdk` now ships the Myriad CLI inside its package (`tools/net8.0/any/`), and `MyriadSdk_Generator_Exe` points there. The CLI used to be fetched by a `PackageDownload` in `Myriad.Sdk.props`, which restore never saw (NuGet evaluates a project for restore with `ExcludeRestorePackageImports=true`, which excludes its packages' build props), so a consumer following the README failed its first build with MSB3954 because `myriad/<version>/tools/net8.0/any/Myriad.dll` did not exist. A `PackageDownload Include="Myriad"` added to a consuming project as a workaround is no longer needed and can be removed.
+- Plugins compiled against a newer `FSharp.Core` than Myriad's (the default with the .NET 10 SDK) load. Plugins are now always given Myriad's own `FSharp.Core`, `Myriad.Core` and `Fantomas.FCS`, which their interface types require; previously a request for a newer version failed to load, or loaded a second copy whose types did not match Myriad's. A plugin calling an API missing from Myriad's `FSharp.Core` fails at that call, with a message naming both versions.
+- A plugin that cannot be loaded is reported as such, naming the plugin, the assembly it needed and the version Myriad has, with exit code 5. Previously this printed `inputfile <assembly name> doesn not exist` with exit code 4, or, when every type in the plugin failed to load, silently generated nothing.
+- Rebuilding a generator plugin (`MyriadSdkGenerator`) regenerates the output: plugins are part of the inputs hashed for Myriad's rebuild check, by content, so reverting a plugin regenerates too and rebuilding one into identical bytes does not.
+
+### Changed
+- `MyriadSdk_Generator_ExeHost` defaults to `dotnet --roll-forward LatestMajor ` (was `dotnet `), so Myriad runs on the newest installed .NET runtime and can load plugins targeting it, instead of the oldest runtime it accepts. It is only set when not already set, so a value from `Directory.Build.props` is kept.
 
 ## [1.1.0] - 2026-09-24
 ### Added

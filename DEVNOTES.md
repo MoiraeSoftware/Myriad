@@ -4,7 +4,8 @@
 
 Rebuilding is determined by:
 * the hash of the version of myriad
-* reference paths
+* reference paths (the paths only: a referenced assembly whose content changes at the same path does not count)
+* the content of every generator plugin (`@(MyriadSdkGenerator)`), so rebuilding a plugin regenerates, and so does reverting it, while a rebuild that leaves its bytes unchanged does not
 * every attributed file's content, output path, config key and params
 
 The MSBuild implementation relies on `_MyriadSdkCodeGenInputCache` property which is defined in [Myriad.Sdk.targets](./src/Myriad.Sdk/build/Myriad.Sdk.targets) - one combined hash over every codegen input, not a per-file hash. Because of that, `MyriadSdkGenerateCode`'s own up-to-date check is a single stamp file (`_MyriadSdkGenerateStamp`) covering the whole project, not one output-file check per attributed file: editing any one attributed file already invalidates the combined hash and forces every file to regenerate, so a per-file check would only have been misleading, not actually finer-grained. Confirmed by editing a single file and observing every generated file get regenerated, not just the one that depended on it (see below for why only changed output is then written).

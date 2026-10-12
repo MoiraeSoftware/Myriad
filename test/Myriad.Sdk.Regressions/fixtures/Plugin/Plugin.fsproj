@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- A plugin as `dotnet new classlib -lang F#` makes it: the SDK's own target framework and implicit
+       FSharp.Core, unless run.fsx is told otherwise. -->
+  <PropertyGroup>
+    <TargetFramework>$(PluginTargetFramework)</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Generator.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Myriad.Core" Version="$(MyriadVersion)" />
+    <PackageReference Update="FSharp.Core" Version="$(PluginFSharpCoreVersion)" Condition="'$(PluginFSharpCoreVersion)' != ''" />
+  </ItemGroup>
+</Project>

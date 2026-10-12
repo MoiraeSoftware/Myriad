@@ -26,7 +26,7 @@ To use Myriad via its MSBuild support you add the `Myriad.Core` and `Myriad.Sdk`
     </ItemGroup>
 ```
 
-`Myriad.Sdk` automatically pulls in the `Myriad` CLI tool as a NuGet transitive dependency — no separate `dotnet tool install` step is required.
+`Myriad.Sdk` ships the `Myriad` CLI inside its own package, so restoring it is all that is needed: no separate `dotnet tool install` or package download is required. Builds run the CLI with `dotnet --roll-forward LatestMajor`, on the newest .NET runtime installed; set `MyriadSdk_Generator_ExeHost` (and `MyriadSdk_Generator_Exe`) to run it differently.
 
 An input file is specified by using the usual `Compile` element:
 ```xml
@@ -167,6 +167,8 @@ The full fsproj is detail below:
 ## Plugins
 
 Plugins for Myriad are supplied by including the nuget package in your project. The nuget infrastructure supplies the necessary MSBuild props and targets so that the plugin is used by Myriad automatically. Following the source for the fields plugin can be used as reference until more details about authoring plugins is created.
+
+A plugin always runs against the `FSharp.Core`, `Myriad.Core` and `Fantomas.FCS` that Myriad itself ships, whichever versions it was compiled against, since their types cross between Myriad and the plugin. A plugin built with a newer `FSharp.Core` (the default with a newer .NET SDK) therefore loads, but fails when it calls an `FSharp.Core` API that Myriad's copy does not have yet; Myriad's error then names both versions. Pin the plugin's `FSharp.Core` to Myriad's version to rule that out.
 
 ### Naming of plugins
 

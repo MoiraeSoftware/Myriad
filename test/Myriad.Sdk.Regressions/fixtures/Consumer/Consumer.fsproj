@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(ConsumerTargetFramework)</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Input.fs" />
+    <Compile Include="Generated.fs">
+      <MyriadFile>Input.fs</MyriadFile>
+    </Compile>
+  </ItemGroup>
+  <!-- The README's setup, plus the plugin under test. -->
+  <ItemGroup>
+    <PackageReference Include="Myriad.Core" Version="$(MyriadVersion)" />
+    <PackageReference Include="Myriad.Sdk" Version="$(MyriadVersion)" />
+    <MyriadSdkGenerator Include="../Plugin/bin/Debug/$(PluginTargetFramework)/Plugin.dll" />
+  </ItemGroup>
+</Project>
